@@ -1,0 +1,46 @@
+<?php
+
+if (!defined('sugarEntry') || !sugarEntry) {
+    die('Not A Valid Entry Point');
+}
+
+$mod_strings = [
+    'LBL_ASSIGNED_TO_ID' => 'Assigned User Id',
+    'LBL_ASSIGNED_TO_NAME' => 'Assigned to',
+    'LBL_ID' => 'ID',
+    'LBL_DATE_ENTERED' => 'Date Created',
+    'LBL_DATE_MODIFIED' => 'Date Modified',
+    'LBL_MODIFIED' => 'Modified By',
+    'LBL_MODIFIED_ID' => 'Modified By Id',
+    'LBL_MODIFIED_NAME' => 'Modified By Name',
+    'LBL_CREATED' => 'Created By',
+    'LBL_CREATED_ID' => 'Created By Id',
+    'LBL_DESCRIPTION' => 'Description',
+    'LBL_DELETED' => 'Deleted',
+    'LBL_NAME' => 'Campaign Name',
+    'LBL_CREATED_USER' => 'Created by User',
+    'LBL_MODIFIED_USER' => 'Modified by User',
+    'LBL_LIST_NAME' => 'Campaign Name',
+    'LBL_EDIT_BUTTON' => 'Edit',
+    'LBL_REMOVE' => 'Remove',
+    'LBL_LIST_FORM_TITLE' => 'Radio Campaigns List',
+    'LBL_MODULE_NAME' => 'Radio Campaigns',
+    'LBL_MODULE_TITLE' => 'Radio Campaigns',
+    'LBL_HOMEPAGE_TITLE' => 'My Radio Campaigns',
+    'LNK_NEW_RECORD' => 'Create Radio Campaign',
+    'LNK_LIST' => 'View Radio Campaigns',
+    'LBL_SEARCH_FORM_TITLE' => 'Search Radio Campaigns',
+    'LBL_HISTORY_SUBPANEL_TITLE' => 'View History',
+    'LBL_ACTIVITIES_SUBPANEL_TITLE' => 'Activities',
+    'LBL_NEW_FORM_TITLE' => 'New Radio Campaign',
+    'LBL_START_DATE' => 'Start Date',
+    'LBL_END_DATE' => 'End Date',
+    'LBL_NUMBER_OF_SPOTS' => 'Number of Spots',
+    'LBL_SPOT_LENGTH' => 'Spot Duration',
+    'LBL_STATUS' => 'Status',
+    'LBL_MYRIAD_CART_NUMBER' => 'Myriad Cart Number',
+    'LBL_QUOTE_REFERENCE' => 'Quote Reference',
+    'LBL_LINKED_QUOTE_ID' => 'Source Quote ID',
+    'LBL_EXPORT_TO_MYRIAD' => 'Export to Myriad',
+    'LBL_RT_RADIOCAMPAIGNS_AOS_QUOTES_FROM_AOS_QUOTES_TITLE' => 'Quotes',
+];

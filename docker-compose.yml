@@ -1,0 +1,52 @@
+services:
+  mariadb:
+    image: mariadb:10.11
+    container_name: radio_crm_mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASS}
+      MARIADB_DATABASE: ${DB_NAME:-suitecrm_db}
+      MARIADB_USER: ${DB_USER:-suitecrm_user}
+      MARIADB_PASSWORD: ${DB_PASS}
+      TZ: ${TZ:-Africa/Johannesburg}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./docker/mariadb-custom.cnf:/etc/mysql/conf.d/99-custom.cnf:ro
+      - /srv/radio_crm_backups:/srv/radio_crm_backups
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p\"$$MARIADB_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  suitecrm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pukfm/suitecrm:8.10.1-php8.3
+    container_name: radio_crm_web
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    environment:
+      SUITECRM_VERSION: ${SUITECRM_VERSION:-8.10.1}
+      SUITECRM_SITE_URL: ${SUITECRM_SITE_URL:-http://84.8.141.105}
+      SUITECRM_ADMIN_USER: ${SUITECRM_ADMIN_USER:-admin}
+      SUITECRM_ADMIN_PASS: ${SUITECRM_ADMIN_PASS}
+      DB_HOST: ${DB_HOST:-mariadb}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-suitecrm_db}
+      DB_USER: ${DB_USER:-suitecrm_user}
+      DB_PASS: ${DB_PASS}
+      TZ: ${TZ:-Africa/Johannesburg}
+    volumes:
+      - /var/www/html:/var/www/html
+      - /srv/myriad_exports:/srv/myriad_exports
+      - /srv/radio_crm_backups:/srv/radio_crm_backups
+      - /home/ubuntu/suitecrm:/opt/radio_crm_repo
+
+volumes:
+  mariadb_data:

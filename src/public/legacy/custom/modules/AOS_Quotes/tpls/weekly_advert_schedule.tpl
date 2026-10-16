@@ -1,0 +1,489 @@
+{* PUKfm Weekly Advert Schedule Template - Embedded inside AOS_Quotes EditView form *}
+<div id="weekly_advert_schedule_wrapper" style="margin: 15px 0; padding: 15px; border: 1px solid #d0d7de; border-radius: 6px; background: #ffffff;">
+    <h4 style="margin-top: 0; margin-bottom: 12px; color: #1f2328; font-weight: 600;">
+        PUKfm Weekly Advert Schedule
+    </h4>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; margin-bottom: 14px; padding: 10px 12px; background: #f6f8fa; border: 1px solid #d8dee4; border-radius: 4px;">
+        <div>
+            <label for="campaign_start_date_c" style="display: block; font-weight: 600; margin-bottom: 4px;">
+                Campaign Start Date
+            </label>
+            <input type="date"
+                   id="campaign_start_date_c"
+                   name="campaign_start_date_c"
+                   value="{$PUKFM_START_DATE|escape:'html'}"
+                   class="pukfm-date-input"
+                   style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px;" />
+        </div>
+        <div>
+            <label for="campaign_end_date_c" style="display: block; font-weight: 600; margin-bottom: 4px;">
+                Campaign End Date
+            </label>
+            <input type="date"
+                   id="campaign_end_date_c"
+                   name="campaign_end_date_c"
+                   value="{$PUKFM_END_DATE|escape:'html'}"
+                   class="pukfm-date-input"
+                   style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px;" />
+        </div>
+
+        <!-- RADIO_CLEAR_ALL_SPOTS_START -->
+        <div>
+            <button type="button"
+                    id="pukfm_clear_all_spots"
+                    class="button"
+                    style="padding: 6px 14px; background: #d9534f; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                Clear All Spots
+            </button>
+        </div>
+        <!-- RADIO_CLEAR_ALL_SPOTS_END -->
+    </div>
+
+    <div id="pukfm_schedule_validation_msg"
+         style="display: none; margin-bottom: 12px; padding: 8px 12px; background: #ffebe9; border: 1px solid #ff818266; color: #cf222e; border-radius: 4px; font-weight: 600;">
+    </div>
+
+    <div id="pukfm_weekly_total_bar"
+         style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center; margin-bottom: 12px; padding: 10px 14px; background: #ddf4ff; border: 1px solid #54aeff66; border-radius: 4px; font-size: 14px; font-weight: 600; color: #0969da;">
+        <div>
+            Total Spots: <span id="radio_total_spots_detail">{$PUKFM_TOTAL_SPOTS|default:0}</span>
+        </div>
+        <div>
+            Weekly spots: <span id="pukfm_weekly_total">{$PUKFM_WEEKLY_SPOTS|default:0}</span>
+        </div>
+        <div id="pukfm_sync_status" style="font-size: 12px; font-weight: normal; color: #57606a;"></div>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table id="pukfm_schedule_table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+                <tr style="background: #24292f; color: #ffffff; text-align: center;">
+                    <th style="padding: 8px; border: 1px solid #d0d7de; text-align: left; min-width: 160px;">Slot</th>
+                    <th style="padding: 8px; border: 1px solid #d0d7de; text-align: center; min-width: 110px;">Time</th>
+                    <th style="padding: 8px; border: 1px solid #d0d7de; width: 75px;">Mon</th>
+                    <th style="padding: 8px; border: 1px solid #d0d7de; width: 75px;">Tue</th>
+                    <th style="padding: 8px; border: 1px solid #d0d7de; width: 75px;">Wed</th>
+                    <th style="padding: 8px; border: 1px solid #d0d7de; width: 75px;">Thu</th>
+                    <th style="padding: 8px; border: 1px solid #d0d7de; width: 75px;">Fri</th>
+                    <th style="padding: 8px; border: 1px solid #d0d7de; width: 75px;">Sat</th>
+                    <th style="padding: 8px; border: 1px solid #d0d7de; width: 75px;">Sun</th>
+                </tr>
+            </thead>
+            <tbody>
+                {foreach from=$PUKFM_SLOTS key=slotKey item=slot}
+                    {assign var="hourCount" value=$slot.hours|@count}
+                    {assign var="hourIndex" value=0}
+                    {foreach from=$slot.hours key=hourKey item=hourInfo}
+                        <tr style="border-bottom: 1px solid #d8dee4; background: {if $hourIndex % 2 == 0}#ffffff{else}#f6f8fa{/if};">
+                            {if $hourIndex == 0}
+                                <td rowspan="{$hourCount}"
+                                    style="padding: 8px; border: 1px solid #d0d7de; font-weight: 600; vertical-align: middle; background: #f0f4f8;">
+                                    <div>{$slot.label|escape:'html'}</div>
+                                    <div style="font-size: 11px; color: #57606a; font-weight: normal;">
+                                        {$slot.part_number|escape:'html'} (R{$slot.rate|string_format:"%.2f"})
+                                    </div>
+                                </td>
+                            {/if}
+                            <td style="padding: 6px 8px; border: 1px solid #d0d7de; text-align: center; font-family: monospace; white-space: nowrap;">
+                                {$hourInfo.label|escape:'html'}
+                            </td>
+                            {foreach from=$PUKFM_DAYS key=dayKey item=dayInfo}
+                                {assign var="fieldName" value="`$dayKey`_`$slotKey`_`$hourKey`_c"}
+                                {assign var="cellVal" value=$PUKFM_CELL_VALUES[$fieldName]|default:0}
+                                <td style="padding: 4px; border: 1px solid #d0d7de; text-align: center;">
+                                    <input type="number"
+                                           min="0"
+                                           step="1"
+                                           id="{$fieldName}"
+                                           name="{$fieldName}"
+                                           value="{$cellVal}"
+                                           data-day="{$dayKey}"
+                                           data-php-w="{$dayInfo.php_w}"
+                                           data-slot="{$slotKey}"
+                                           data-part-number="{$slot.part_number|escape:'html'}"
+                                           data-hour="{$hourKey}"
+                                           class="pukfm-schedule-cell"
+                                           style="width: 58px; padding: 4px; text-align: center; border: 1px solid #c0c7cf; border-radius: 3px;" />
+                                </td>
+                            {/foreach}
+                        </tr>
+                        {assign var="hourIndex" value=$hourIndex+1}
+                    {/foreach}
+                {/foreach}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- RADIO_SAVE_BUTTON_FIX_START -->
+<script type="text/javascript">
+{literal}
+(function() {
+    var RADIO_PART_NUMBERS = {
+        'PRE-BREAKFAST': true,
+        'MORNING-BUZZ': true,
+        'MIDMORNING-BANTER': true,
+        'MIDDAY-PULSE': true,
+        'CRUISE-CONTROL': true,
+        'SPECIALTY-SHOW-1': true,
+        'SPECIALTY-SHOW-2': true,
+        'MUSIC-UNLIMITED': true
+    };
+
+    var ajaxSeq = 0;
+    var debounceTimer = null;
+
+    function parseYmd(dateStr) {
+        if (!dateStr) return null;
+        var m = String(dateStr).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) return null;
+        var y = parseInt(m[1], 10);
+        var mo = parseInt(m[2], 10);
+        var d = parseInt(m[3], 10);
+        // Use UTC noon to avoid any browser timezone/DST shift on calendar arithmetic
+        var dt = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
+        if (dt.getUTCFullYear() !== y || (dt.getUTCMonth() + 1) !== mo || dt.getUTCDate() !== d) {
+            return null;
+        }
+        return dt;
+    }
+
+    function weekdayOccurrences(startDt, endDt, phpWeekday) {
+        if (!startDt || !endDt || endDt.getTime() < startDt.getTime()) {
+            return 0;
+        }
+        var startW = startDt.getUTCDay(); // Sunday = 0 .. Saturday = 6
+        var offset = (phpWeekday - startW + 7) % 7;
+        var firstMs = startDt.getTime() + (offset * 86400000);
+        if (firstMs > endDt.getTime()) {
+            return 0;
+        }
+        var diffDays = Math.round((endDt.getTime() - firstMs) / 86400000);
+        return 1 + Math.floor(diffDays / 7);
+    }
+
+    function getScheduleInputs() {
+        return Array.prototype.slice.call(
+            document.querySelectorAll('#weekly_advert_schedule_wrapper input.pukfm-schedule-cell')
+        );
+    }
+
+    function showValidationMessage(msg) {
+        var box = document.getElementById('pukfm_schedule_validation_msg');
+        if (!box) return;
+        if (msg) {
+            box.textContent = msg;
+            box.style.display = 'block';
+        } else {
+            box.textContent = '';
+            box.style.display = 'none';
+        }
+    }
+
+    function computeLocalTotals() {
+        var startInput = document.getElementById('campaign_start_date_c');
+        var endInput = document.getElementById('campaign_end_date_c');
+        var rawStart = startInput ? startInput.value.trim() : '';
+        var rawEnd = endInput ? endInput.value.trim() : '';
+
+        var startDt = parseYmd(rawStart);
+        var endDt = parseYmd(rawEnd);
+        var dateError = '';
+        var dateRangeValid = false;
+
+        if ((rawStart !== '' && !startDt) || (rawEnd !== '' && !endDt)) {
+            dateError = 'Please enter valid Campaign Start Date and Campaign End Date (YYYY-MM-DD).';
+        } else if (startDt && endDt) {
+            if (endDt.getTime() < startDt.getTime()) {
+                dateError = 'Campaign End Date cannot be earlier than Campaign Start Date.';
+            } else {
+                dateRangeValid = true;
+            }
+        }
+
+        var repeats = {};
+        if (dateRangeValid) {
+            for (var w = 0; w <= 6; w++) {
+                repeats[w] = weekdayOccurrences(startDt, endDt, w);
+            }
+        }
+
+        var inputs = getScheduleInputs();
+        var weeklySpots = 0;
+        var totalSpots = 0;
+        var hasInvalidQuantity = false;
+        var payloadCells = {};
+
+        for (var i = 0; i < inputs.length; i++) {
+            var inp = inputs[i];
+            var rawVal = inp.value.trim();
+            var qty = 0;
+            if (rawVal !== '') {
+                if (!/^\d+$/.test(rawVal)) {
+                    hasInvalidQuantity = true;
+                    inp.style.borderColor = '#cf222e';
+                } else {
+                    qty = parseInt(rawVal, 10);
+                    inp.style.borderColor = '#c0c7cf';
+                }
+            } else {
+                inp.style.borderColor = '#c0c7cf';
+            }
+
+            payloadCells[inp.name] = qty;
+            if (qty > 0) {
+                weeklySpots += qty;
+                if (dateRangeValid) {
+                    var phpW = parseInt(inp.getAttribute('data-php-w'), 10);
+                    totalSpots += qty * (repeats[phpW] || 0);
+                }
+            }
+        }
+
+        var validationMsg = dateError;
+        if (!validationMsg && hasInvalidQuantity) {
+            validationMsg = 'Schedule quantities must be nonnegative whole numbers (0, 1, 2, ...).';
+        }
+        showValidationMessage(validationMsg);
+
+        var weeklyEl = document.getElementById('pukfm_weekly_total');
+        var totalEl = document.getElementById('radio_total_spots_detail');
+        if (weeklyEl) weeklyEl.textContent = String(weeklySpots);
+        if (totalEl) totalEl.textContent = String(dateRangeValid ? totalSpots : 0);
+
+        return {
+            valid: (validationMsg === ''),
+            start_date: rawStart,
+            end_date: rawEnd,
+            weekly_spots: weeklySpots,
+            total_spots: dateRangeValid ? totalSpots : 0,
+            cells: payloadCells
+        };
+    }
+
+    function applyProductsToQuoteDom(response) {
+        if (!response || !Array.isArray(response.active_products)) {
+            return;
+        }
+
+        // Map active schedule products by part_number
+        var wantedByPart = {};
+        for (var i = 0; i < response.active_products.length; i++) {
+            var prod = response.active_products[i];
+            if (prod.total_qty > 0) {
+                wantedByPart[prod.part_number] = prod;
+            }
+        }
+
+        // Inspect existing AOS_Quotes product rows in the DOM
+        var partInputs = document.querySelectorAll('input[id^="product_part_number"]');
+        var existingRadioRowByPart = {};
+
+        for (var j = 0; j < partInputs.length; j++) {
+            var pInput = partInputs[j];
+            var m = pInput.id.match(/^product_part_number(\d+)$/);
+            if (!m) continue;
+            var idx = m[1];
+            var deletedEl = document.getElementById('product_deleted' + idx);
+            if (deletedEl && deletedEl.value === '1') {
+                continue;
+            }
+            var partVal = (pInput.value || '').trim().toUpperCase();
+            if (RADIO_PART_NUMBERS[partVal]) {
+                if (wantedByPart[partVal] && !existingRadioRowByPart[partVal]) {
+                    existingRadioRowByPart[partVal] = idx;
+                } else {
+                    // Remove/soft-delete radio product row that is now 0 or duplicate
+                    if (typeof window.deleteProductLine === 'function') {
+                        try { window.deleteProductLine(idx); } catch (e) {}
+                    } else if (deletedEl) {
+                        deletedEl.value = '1';
+                        var rowEl = document.getElementById('product_body' + idx);
+                        if (rowEl) rowEl.style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        // Update or create rows for each active schedule product
+        for (var k = 0; k < response.active_products.length; k++) {
+            var item = response.active_products[k];
+            if (item.total_qty <= 0) continue;
+
+            var rowIdx = existingRadioRowByPart[item.part_number];
+            if (rowIdx === undefined && typeof window.insertProductLine === 'function') {
+                try {
+                    // Ensure product group 0 exists if needed by AOS_Quotes
+                    if (typeof window.insertGroup === 'function' && !document.getElementById('group_body0')) {
+                        window.insertGroup();
+                    }
+                    rowIdx = window.insertProductLine('group_body0', '0');
+                } catch (e) {
+                    rowIdx = undefined;
+                }
+            }
+
+            if (rowIdx !== undefined) {
+                var setField = function(prefix, val) {
+                    var el = document.getElementById(prefix + rowIdx);
+                    if (el) el.value = val;
+                };
+                setField('product_name', item.product_name);
+                setField('product_part_number', item.part_number);
+                setField('product_product_id', item.product_id || '');
+                setField('product_product_qty', item.total_qty);
+                setField('product_product_list_price', Number(item.unit_price).toFixed(2));
+                setField('product_product_unit_price', Number(item.unit_price).toFixed(2));
+                setField('product_vat', item.vat_rate || '15.0');
+                setField('product_vat_amt', Number(item.vat_amt).toFixed(2));
+                setField('product_product_total_price', Number(item.net_total).toFixed(2));
+                setField('product_item_description', item.description || '');
+                setField('product_description', '');
+            }
+        }
+
+        if (typeof window.calculateTotal === 'function') {
+            try { window.calculateTotal('0'); } catch (e) {}
+        } else if (response.totals) {
+            var setSummary = function(id, val) {
+                var el = document.getElementById(id);
+                if (el) el.value = Number(val).toFixed(2);
+            };
+            setSummary('total_amt', response.totals.total_amt);
+            setSummary('subtotal_amount', response.totals.subtotal_amount);
+            setSummary('tax_amount', response.totals.tax_amount);
+            setSummary('total_amount', response.totals.total_amount);
+        }
+    }
+
+    function triggerAjaxSync(state) {
+        if (!state.valid) return;
+        var currentSeq = ++ajaxSeq;
+        var statusEl = document.getElementById('pukfm_sync_status');
+        if (statusEl) statusEl.textContent = 'Syncing schedule totals...';
+
+        var formEl = document.getElementById('EditView');
+        var recordId = '';
+        if (formEl && formEl.elements['record']) {
+            recordId = formEl.elements['record'].value || '';
+        }
+
+        var payload = {
+            quote_id: recordId,
+            campaign_start_date_c: state.start_date,
+            campaign_end_date_c: state.end_date,
+            cells: state.cells
+        };
+
+        fetch('index.php?entryPoint=radio_schedule_ajax_sync', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (currentSeq !== ajaxSeq) {
+                // Stale response; ignore
+                return;
+            }
+            if (data && data.success) {
+                var weeklyEl = document.getElementById('pukfm_weekly_total');
+                var totalEl = document.getElementById('radio_total_spots_detail');
+                if (weeklyEl) weeklyEl.textContent = String(data.weekly_spots);
+                if (totalEl) totalEl.textContent = String(data.total_spots);
+                applyProductsToQuoteDom(data);
+                if (statusEl) statusEl.textContent = '';
+            } else if (data && data.message) {
+                showValidationMessage(data.message);
+                if (statusEl) statusEl.textContent = '';
+            }
+        })
+        .catch(function() {
+            if (currentSeq === ajaxSeq && statusEl) {
+                statusEl.textContent = '';
+            }
+        });
+    }
+
+    function scheduleRecalcAndSync(immediate) {
+        var state = computeLocalTotals();
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+        }
+        if (immediate) {
+            triggerAjaxSync(state);
+        } else {
+            debounceTimer = setTimeout(function() {
+                triggerAjaxSync(state);
+            }, 220);
+        }
+    }
+
+    function initScheduleEvents() {
+        var wrapper = document.getElementById('weekly_advert_schedule_wrapper');
+        if (!wrapper) return;
+
+        // Ensure wrapper resides inside #EditView form so all 168 inputs and 2 dates submit on Save
+        var editForm = document.getElementById('EditView') || document.forms['EditView'];
+        if (editForm && !editForm.contains(wrapper)) {
+            editForm.appendChild(wrapper);
+        }
+
+        var inputs = getScheduleInputs();
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].addEventListener('input', function() { scheduleRecalcAndSync(false); });
+            inputs[i].addEventListener('change', function() { scheduleRecalcAndSync(false); });
+        }
+
+        var startInput = document.getElementById('campaign_start_date_c');
+        var endInput = document.getElementById('campaign_end_date_c');
+        if (startInput) {
+            startInput.addEventListener('change', function() { scheduleRecalcAndSync(true); });
+            startInput.addEventListener('input', function() { scheduleRecalcAndSync(false); });
+        }
+        if (endInput) {
+            endInput.addEventListener('change', function() { scheduleRecalcAndSync(true); });
+            endInput.addEventListener('input', function() { scheduleRecalcAndSync(false); });
+        }
+
+        var clearBtn = document.getElementById('pukfm_clear_all_spots');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var allInputs = getScheduleInputs();
+                for (var j = 0; j < allInputs.length; j++) {
+                    allInputs[j].value = '0';
+                    allInputs[j].style.borderColor = '#c0c7cf';
+                }
+                scheduleRecalcAndSync(true);
+            });
+        }
+
+        if (editForm) {
+            editForm.addEventListener('submit', function(e) {
+                var state = computeLocalTotals();
+                if (!state.valid) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            });
+        }
+
+        computeLocalTotals();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initScheduleEvents);
+    } else {
+        initScheduleEvents();
+    }
+})();
+{/literal}
+</script>
+<!-- RADIO_SAVE_BUTTON_FIX_END -->

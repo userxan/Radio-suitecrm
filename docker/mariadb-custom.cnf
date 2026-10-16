@@ -1,0 +1,7 @@
+[mysqld]
+character-set-server = utf8mb4
+collation-server = utf8mb4_general_ci
+innodb_buffer_pool_size = 128M
+max_connections = 60
+max_allowed_packet = 64M
+sql_mode = "NO_ENGINE_SUBSTITUTION"

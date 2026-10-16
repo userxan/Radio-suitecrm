@@ -1,0 +1,128 @@
+<?php
+
+if (!defined('sugarEntry') || !sugarEntry) {
+    die('Not A Valid Entry Point');
+}
+
+$dictionary['RT_RadioCampaigns'] = [
+    'table' => 'rt_radiocampaigns',
+    'audited' => true,
+    'inline_edit' => true,
+    'duplicate_merge' => true,
+    'fields' => [
+        'start_date' => [
+            'name' => 'start_date',
+            'vname' => 'LBL_START_DATE',
+            'type' => 'date',
+            'massupdate' => false,
+            'no_default' => false,
+            'comments' => 'Campaign Start Date',
+            'importable' => 'true',
+            'duplicate_merge' => 'disabled',
+            'duplicate_merge_dom_value' => '0',
+            'audited' => true,
+            'reportable' => true,
+            'unified_search' => false,
+            'enable_range_search' => true,
+            'options' => 'date_range_search_dom',
+        ],
+        'end_date' => [
+            'name' => 'end_date',
+            'vname' => 'LBL_END_DATE',
+            'type' => 'date',
+            'massupdate' => false,
+            'no_default' => false,
+            'comments' => 'Campaign End Date',
+            'importable' => 'true',
+            'duplicate_merge' => 'disabled',
+            'duplicate_merge_dom_value' => '0',
+            'audited' => true,
+            'reportable' => true,
+            'unified_search' => false,
+            'enable_range_search' => true,
+            'options' => 'date_range_search_dom',
+        ],
+        'number_of_spots' => [
+            'name' => 'number_of_spots',
+            'vname' => 'LBL_NUMBER_OF_SPOTS',
+            'type' => 'int',
+            'len' => 11,
+            'default' => 0,
+            'audited' => true,
+            'reportable' => true,
+            'importable' => 'true',
+        ],
+        'spot_length' => [
+            'name' => 'spot_length',
+            'vname' => 'LBL_SPOT_LENGTH',
+            'type' => 'enum',
+            'options' => 'spot_length_list',
+            'len' => 100,
+            'default' => '30 sec',
+            'audited' => true,
+            'reportable' => true,
+            'importable' => 'true',
+            'massupdate' => true,
+        ],
+        'status' => [
+            'name' => 'status',
+            'vname' => 'LBL_STATUS',
+            'type' => 'enum',
+            'options' => 'rt_campaign_status_list',
+            'len' => 100,
+            'default' => 'Draft',
+            'audited' => true,
+            'reportable' => true,
+            'importable' => 'true',
+            'massupdate' => true,
+        ],
+        'myriad_cart_number' => [
+            'name' => 'myriad_cart_number',
+            'vname' => 'LBL_MYRIAD_CART_NUMBER',
+            'type' => 'varchar',
+            'len' => 255,
+            'audited' => true,
+            'reportable' => true,
+            'importable' => 'true',
+        ],
+        'quote_reference' => [
+            'name' => 'quote_reference',
+            'vname' => 'LBL_QUOTE_REFERENCE',
+            'type' => 'varchar',
+            'len' => 255,
+            'audited' => true,
+            'reportable' => true,
+            'importable' => 'true',
+        ],
+        'linked_quote_id' => [
+            'name' => 'linked_quote_id',
+            'vname' => 'LBL_LINKED_QUOTE_ID',
+            'type' => 'varchar',
+            'len' => 36,
+            'audited' => false,
+            'reportable' => true,
+            'importable' => 'true',
+        ],
+        'rt_radiocampaigns_aos_quotes' => [
+            'name' => 'rt_radiocampaigns_aos_quotes',
+            'type' => 'link',
+            'relationship' => 'rt_radiocampaigns_aos_quotes',
+            'source' => 'non-db',
+            'module' => 'AOS_Quotes',
+            'bean_name' => 'AOS_Quotes',
+            'vname' => 'LBL_RT_RADIOCAMPAIGNS_AOS_QUOTES_FROM_AOS_QUOTES_TITLE',
+        ],
+    ],
+    'relationships' => [],
+    'optimistic_locking' => true,
+    'unified_search' => true,
+];
+
+if (!class_exists('VardefManager')) {
+    require_once 'include/SugarObjects/VardefManager.php';
+}
+VardefManager::createVardef(
+    'RT_RadioCampaigns',
+    'RT_RadioCampaigns',
+    ['basic', 'assignable']
+);

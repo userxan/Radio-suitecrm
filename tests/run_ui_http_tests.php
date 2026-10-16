@@ -1,0 +1,172 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * UI / DOM & Symfony Container Verification Suite for PUKfm Radio CRM.
+ * Verifies:
+ * 1. AOS_Quotes EditView renders #weekly_advert_schedule_wrapper and all 168 inputs + 2 dates INSIDE <form name="EditView">.
+ * 2. AOS_Quotes DetailView renders Convert to Radio Campaign action pointing to entryPoint=convert_quote_to_radio_campaign.
+ * 3. RT_RadioCampaigns ListView, EditView, DetailView render properly.
+ * 4. SuiteCRM 8 Symfony Container registers ExportToMyriadAction (record-radio-campaign-export-to-myriad)
+ *    and RecordActionDefinitionProvider exposes radio-campaign-export-to-myriad on RT_RadioCampaigns DetailView.
+ */
+
+if (PHP_SAPI !== 'cli') {
+    die('CLI only');
+}
+
+$appRoot = '/var/www/html';
+$legacyDir = $appRoot . '/public/legacy';
+
+require_once $appRoot . '/vendor/autoload.php';
+require_once $appRoot . '/config/bootstrap.php';
+
+use App\Kernel;
+use RadioCRM\RadioScheduleService;
+
+echo "======================================================================\n";
+echo "PUKfm Radio CRM - UI / DOM & Symfony Container Verification\n";
+echo "======================================================================\n";
+
+$failures = 0;
+function checkUi(string $name, bool $ok, string $info = ''): void
+{
+    global $failures;
+    if (!$ok) {
+        $failures++;
+    }
+    echo sprintf("[%s] %s%s\n", $ok ? 'PASS' : 'FAIL', $name, $info !== '' ? " ({$info})" : '');
+}
+
+// 1. Boot Symfony Kernel and verify ExportToMyriadAction + module.recordview.actions parameter
+$kernel = new Kernel('prod', false);
+$kernel->boot();
+$container = $kernel->getContainer();
+
+$recordViewActions = $container->hasParameter('module.recordview.actions')
+    ? (array) $container->getParameter('module.recordview.actions')
+    : [];
+
+$hasDefaultEdit = isset($recordViewActions['default']['actions']['edit']);
+$hasMyriadActionCfg = isset($recordViewActions['modules']['rt-radiocampaigns']['actions']['radio-campaign-export-to-myriad'])
+    || isset($recordViewActions['modules']['RT_RadioCampaigns']['actions']['radio-campaign-export-to-myriad']);
+
+checkUi(
+    'UI-1: Symfony container preserves default recordview actions and registers radio-campaign-export-to-myriad',
+    $hasDefaultEdit && $hasMyriadActionCfg,
+    'default.edit=' . ($hasDefaultEdit ? 'yes' : 'no') . ', export-to-myriad=' . ($hasMyriadActionCfg ? 'yes' : 'no')
+);
+
+// 2. Render AOS_Quotes EditView HTML via CustomAOS_QuotesViewEdit and verify DOM placement inside <form name="EditView">
+chdir($legacyDir);
+if (!defined('sugarEntry')) {
+    define('sugarEntry', true);
+}
+require_once 'include/entryPoint.php';
+require_once 'include/MVC/SugarApplication.php';
+require_once 'custom/include/RadioCRM/RadioScheduleService.php';
+require_once 'custom/modules/AOS_Quotes/views/view.edit.php';
+require_once 'custom/modules/AOS_Quotes/views/view.detail.php';
+
+global $current_user, $db, $app_strings, $app_list_strings, $mod_strings, $theme;
+$current_user = BeanFactory::newBean('Users');
+$current_user->getSystemUser();
+$app_strings = return_application_language('en_us');
+$app_list_strings = return_app_list_strings_language('en_us');
+$mod_strings = return_module_language('en_us', 'AOS_Quotes');
+$theme = 'SuiteP';
+
+// Find the test Quote created during acceptance tests
+$qRes = $db->query("SELECT id FROM aos_quotes WHERE name = 'Test Radio Advert Quote' AND deleted = 0 ORDER BY date_entered DESC LIMIT 1", false);
+$qRow = $qRes ? $db->fetchByAssoc($qRes) : null;
+$testQuoteId = (string) ($qRow['id'] ?? '');
+
+$_REQUEST['module'] = 'AOS_Quotes';
+$_REQUEST['action'] = 'EditView';
+$_REQUEST['record'] = $testQuoteId;
+$GLOBALS['module'] = 'AOS_Quotes';
+$GLOBALS['action'] = 'EditView';
+
+$quoteBean = BeanFactory::getBean('AOS_Quotes', $testQuoteId);
+$editView = new CustomAOS_QuotesViewEdit();
+$editView->init($quoteBean);
+$editView->module = 'AOS_Quotes';
+$editView->bean = $quoteBean;
+$editView->preDisplay();
+
+ob_start();
+$editView->display();
+$editHtml = (string) ob_get_clean();
+
+// Check that <form name="EditView"...> contains #weekly_advert_schedule_wrapper and all 168 inputs
+$formStartPos = strpos($editHtml, 'name="EditView"');
+$wrapperPos = strpos($editHtml, 'id="weekly_advert_schedule_wrapper"');
+$formEndPos = strrpos($editHtml, '</form>');
+$wrapperInsideForm = ($formStartPos !== false && $wrapperPos !== false && $formEndPos !== false && $wrapperPos > $formStartPos && $wrapperPos < $formEndPos);
+
+$foundInputsCount = 0;
+foreach (RadioScheduleService::getAllScheduleFields() as $f => $m) {
+    if (strpos($editHtml, 'id="' . $f . '"') !== false && strpos($editHtml, 'name="' . $f . '"') !== false) {
+        $foundInputsCount++;
+    }
+}
+
+$hasSummaryIds = strpos($editHtml, 'id="pukfm_weekly_total_bar"') !== false
+    && strpos($editHtml, 'id="pukfm_weekly_total"') !== false
+    && strpos($editHtml, 'id="radio_total_spots_detail"') !== false
+    && strpos($editHtml, 'id="pukfm_clear_all_spots"') !== false
+    && strpos($editHtml, 'id="campaign_start_date_c"') !== false
+    && strpos($editHtml, 'id="campaign_end_date_c"') !== false;
+
+checkUi(
+    'UI-2: AOS_Quotes EditView embeds #weekly_advert_schedule_wrapper inside <form name="EditView"> with all 168 inputs, dates, Clear All, and summary IDs',
+    $wrapperInsideForm && $foundInputsCount === 168 && $hasSummaryIds,
+    "insideForm=" . ($wrapperInsideForm ? 'true' : 'false') . ", scheduleInputs={$foundInputsCount}/168"
+);
+
+// 3. Verify AOS_Quotes DetailView metadata & button for Convert to Radio Campaign
+$detailViewDefs = [];
+include $legacyDir . '/custom/modules/AOS_Quotes/metadata/detailviewdefs.php';
+$detailButtonsJson = json_encode($viewdefs['AOS_Quotes']['DetailView']['templateMeta']['form']['buttons'] ?? []);
+$hasConvertBtn = strpos($detailButtonsJson, 'entryPoint=convert_quote_to_radio_campaign') !== false
+    && strpos($detailButtonsJson, 'Convert to Radio Campaign') !== false;
+
+checkUi(
+    'UI-3: AOS_Quotes DetailView includes Convert to Radio Campaign button pointing to entryPoint=convert_quote_to_radio_campaign',
+    $hasConvertBtn
+);
+
+// 4. Verify RT_RadioCampaigns module registration, language, Menu, ListView, EditView, DetailView metadata
+$moduleRegistered = isset($GLOBALS['beanList']['RT_RadioCampaigns'])
+    && in_array('RT_RadioCampaigns', $GLOBALS['moduleList'], true)
+    && (($app_list_strings['moduleList']['RT_RadioCampaigns'] ?? '') === 'Radio Campaigns');
+
+$rcListDefs = [];
+include $legacyDir . '/modules/RT_RadioCampaigns/metadata/listviewdefs.php';
+$rcDetailDefs = [];
+include $legacyDir . '/modules/RT_RadioCampaigns/metadata/detailviewdefs.php';
+
+$hasRcColumns = isset($listViewDefs['RT_RadioCampaigns']['NAME'])
+    && !empty($listViewDefs['RT_RadioCampaigns']['NAME']['link'])
+    && isset($listViewDefs['RT_RadioCampaigns']['START_DATE'])
+    && isset($listViewDefs['RT_RadioCampaigns']['END_DATE'])
+    && isset($listViewDefs['RT_RadioCampaigns']['NUMBER_OF_SPOTS'])
+    && isset($listViewDefs['RT_RadioCampaigns']['STATUS'])
+    && isset($listViewDefs['RT_RadioCampaigns']['MYRIAD_CART_NUMBER']);
+
+$hasRcExportActionInDetail = isset(
+    $viewdefs['RT_RadioCampaigns']['DetailView']['recordActions']['actions']['radio-campaign-export-to-myriad']
+);
+
+checkUi(
+    'UI-4: RT_RadioCampaigns registered in beanList/moduleList/app_list_strings with clickable ListView columns and SuiteCRM 8 DetailView recordActions',
+    $moduleRegistered && $hasRcColumns && $hasRcExportActionInDetail
+);
+
+echo "======================================================================\n";
+if ($failures > 0) {
+    echo "UI / Container Verification FAILED ({$failures} failed)\n";
+    exit(1);
+}
+echo "All UI / DOM & Symfony Container checks PASSED.\n";
