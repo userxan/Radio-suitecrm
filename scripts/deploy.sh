@@ -67,6 +67,7 @@ done
 # 6. Clear SuiteCRM 8 Symfony cache and ensure cache ownership
 echo "[Deploy] Clearing SuiteCRM 8 Symfony cache..."
 docker exec -u www-data radio_crm_web php /var/www/html/bin/console cache:clear
-chown -R 33:33 "${APP_ROOT}/cache" "${APP_ROOT}/public/legacy/cache"
+chown -R 33:33 "${APP_ROOT}/cache" "${APP_ROOT}/public/legacy/cache" "${APP_ROOT}/logs"
+chmod -R 775 "${APP_ROOT}/cache" "${APP_ROOT}/public/legacy/cache"
 
 echo "[Deploy] Deployment completed successfully."
