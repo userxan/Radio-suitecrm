@@ -45,6 +45,13 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
         $rawStart = $_REQUEST['campaign_start_date_c'] ?? ($this->bean->campaign_start_date_c ?? '');
         $rawEnd = $_REQUEST['campaign_end_date_c'] ?? ($this->bean->campaign_end_date_c ?? '');
 
+        if (empty($rawStart) && empty($this->bean->id)) {
+            $rawStart = date('Y-m-d');
+        }
+        if (empty($rawEnd) && empty($this->bean->id)) {
+            $rawEnd = date('Y-m-t');
+        }
+
         $calc = RadioScheduleService::calculateSchedule(
             $inputMap,
             (string) $rawStart,

@@ -131,6 +131,28 @@
         'MUSIC-UNLIMITED': true
     };
 
+    var RADIO_SLOT_RATES = {
+        'PRE-BREAKFAST': 300.00,
+        'MORNING-BUZZ': 320.00,
+        'MIDMORNING-BANTER': 280.00,
+        'MIDDAY-PULSE': 260.00,
+        'CRUISE-CONTROL': 320.00,
+        'SPECIALTY-SHOW-1': 240.00,
+        'SPECIALTY-SHOW-2': 220.00,
+        'MUSIC-UNLIMITED': 120.00
+    };
+
+    var RADIO_SLOT_DESCRIPTIONS = {
+        'PRE-BREAKFAST': 'One 30 second prerecorded advertisement played between 05:00 and 06:00.',
+        'MORNING-BUZZ': 'One 30 second prerecorded advertisement played between 06:00 and 09:00.',
+        'MIDMORNING-BANTER': 'One 30 second prerecorded advertisement played between 09:00 and 12:00.',
+        'MIDDAY-PULSE': 'One 30 second prerecorded advertisement played between 12:00 and 15:00.',
+        'CRUISE-CONTROL': 'One 30 second prerecorded advertisement played between 15:00 and 18:00.',
+        'SPECIALTY-SHOW-1': 'One 30 second prerecorded advertisement played between 18:00 and 21:00.',
+        'SPECIALTY-SHOW-2': 'One 30 second prerecorded advertisement played between 21:00 and 00:00.',
+        'MUSIC-UNLIMITED': 'One 30 second prerecorded advertisement played between 00:00 and 05:00.'
+    };
+
     var ajaxSeq = 0;
     var debounceTimer = null;
 
@@ -141,7 +163,6 @@
         var y = parseInt(m[1], 10);
         var mo = parseInt(m[2], 10);
         var d = parseInt(m[3], 10);
-        // Use UTC noon to avoid any browser timezone/DST shift on calendar arithmetic
         var dt = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
         if (dt.getUTCFullYear() !== y || (dt.getUTCMonth() + 1) !== mo || dt.getUTCDate() !== d) {
             return null;
@@ -153,7 +174,7 @@
         if (!startDt || !endDt || endDt.getTime() < startDt.getTime()) {
             return 0;
         }
-        var startW = startDt.getUTCDay(); // Sunday = 0 .. Saturday = 6
+        var startW = startDt.getUTCDay();
         var offset = (phpWeekday - startW + 7) % 7;
         var firstMs = startDt.getTime() + (offset * 86400000);
         if (firstMs > endDt.getTime()) {
@@ -178,6 +199,112 @@
         } else {
             box.textContent = '';
             box.style.display = 'none';
+        }
+    }
+
+    function applyProductsToQuoteDom(response) {
+        if (!response || !Array.isArray(response.active_products)) {
+            return;
+        }
+
+        var wantedByPart = {};
+        for (var i = 0; i < response.active_products.length; i++) {
+            var prod = response.active_products[i];
+            var q = (prod.total_qty > 0) ? prod.total_qty : prod.weekly_qty;
+            if (q > 0) {
+                wantedByPart[prod.part_number] = prod;
+            }
+        }
+
+        if (typeof window.insertGroup === 'function' && !document.getElementById('product_group0')) {
+            try { window.insertGroup(); } catch (e) {}
+        }
+        var headEl = document.getElementById('product_group0_head');
+        if (headEl) {
+            headEl.style.display = '';
+        }
+
+        var partInputs = document.querySelectorAll('input[id^="product_part_number"]');
+        var existingRadioRowByPart = {};
+
+        for (var j = 0; j < partInputs.length; j++) {
+            var pInput = partInputs[j];
+            var m = pInput.id.match(/^product_part_number(\d+)$/);
+            if (!m) continue;
+            var idx = m[1];
+            var deletedEl = document.getElementById('product_deleted' + idx);
+            if (deletedEl && deletedEl.value === '1') {
+                continue;
+            }
+            var partVal = (pInput.value || '').trim().toUpperCase();
+            if (RADIO_PART_NUMBERS[partVal]) {
+                if (wantedByPart[partVal] && existingRadioRowByPart[partVal] === undefined) {
+                    existingRadioRowByPart[partVal] = idx;
+                } else {
+                    if (typeof window.markLineDeleted === 'function') {
+                        try { window.markLineDeleted(idx, 'product_'); } catch (e) {}
+                    } else if (deletedEl) {
+                        deletedEl.value = '1';
+                        var rowEl = document.getElementById('product_body' + idx);
+                        if (rowEl) rowEl.style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        for (var k = 0; k < response.active_products.length; k++) {
+            var item = response.active_products[k];
+            var lineQty = (item.total_qty > 0) ? item.total_qty : item.weekly_qty;
+            if (lineQty <= 0) continue;
+
+            var rowIdx = existingRadioRowByPart[item.part_number];
+            if (rowIdx === undefined && typeof window.insertProductLine === 'function') {
+                try {
+                    rowIdx = window.insertProductLine('product_group0', '0');
+                } catch (e) {
+                    rowIdx = undefined;
+                }
+            }
+
+            if (rowIdx !== undefined) {
+                var setField = function(prefix, val) {
+                    var el = document.getElementById(prefix + rowIdx);
+                    if (el) el.value = val;
+                };
+                setField('product_name', item.product_name || item.part_number);
+                setField('product_part_number', item.part_number);
+                if (item.product_id) {
+                    setField('product_product_id', item.product_id);
+                }
+                setField('product_product_qty', lineQty);
+                setField('product_product_list_price', Number(item.unit_price).toFixed(2));
+                setField('product_product_unit_price', Number(item.unit_price).toFixed(2));
+                setField('product_vat', item.vat_rate || '15.0');
+                setField('product_vat_amt', Number(item.vat_amt).toFixed(2));
+                setField('product_product_total_price', Number(item.net_total).toFixed(2));
+                setField('product_item_description', item.description || '');
+                setField('product_description', '');
+
+                if (typeof window.calculateLine === 'function') {
+                    try { window.calculateLine(rowIdx, 'product_'); } catch (e) {}
+                }
+            }
+        }
+
+        if (typeof window.calculateTotal === 'function') {
+            try { window.calculateTotal('group0'); } catch (e) {}
+            try { window.calculateTotal(); } catch (e) {}
+        }
+
+        if (response.totals) {
+            var setSummary = function(id, val) {
+                var el = document.getElementById(id);
+                if (el) el.value = Number(val).toFixed(2);
+            };
+            setSummary('total_amt', response.totals.total_amt);
+            setSummary('subtotal_amount', response.totals.subtotal_amount);
+            setSummary('tax_amount', response.totals.tax_amount);
+            setSummary('total_amount', response.totals.total_amount);
         }
     }
 
@@ -214,6 +341,10 @@
         var totalSpots = 0;
         var hasInvalidQuantity = false;
         var payloadCells = {};
+        var slotTotals = {};
+        for (var part in RADIO_SLOT_RATES) {
+            slotTotals[part] = { weekly: 0, total: 0 };
+        }
 
         for (var i = 0; i < inputs.length; i++) {
             var inp = inputs[i];
@@ -234,9 +365,17 @@
             payloadCells[inp.name] = qty;
             if (qty > 0) {
                 weeklySpots += qty;
+                var partNum = inp.getAttribute('data-part-number');
+                if (partNum && slotTotals[partNum]) {
+                    slotTotals[partNum].weekly += qty;
+                }
                 if (dateRangeValid) {
                     var phpW = parseInt(inp.getAttribute('data-php-w'), 10);
-                    totalSpots += qty * (repeats[phpW] || 0);
+                    var reps = repeats[phpW] || 0;
+                    totalSpots += qty * reps;
+                    if (partNum && slotTotals[partNum]) {
+                        slotTotals[partNum].total += qty * reps;
+                    }
                 }
             }
         }
@@ -245,12 +384,59 @@
         if (!validationMsg && hasInvalidQuantity) {
             validationMsg = 'Schedule quantities must be nonnegative whole numbers (0, 1, 2, ...).';
         }
-        showValidationMessage(validationMsg);
+        if (!validationMsg && !dateRangeValid && (rawStart === '' || rawEnd === '')) {
+            showValidationMessage('Tip: Select Campaign Start and End Dates to calculate multi-week totals.');
+        } else {
+            showValidationMessage(validationMsg);
+        }
 
         var weeklyEl = document.getElementById('pukfm_weekly_total');
         var totalEl = document.getElementById('radio_total_spots_detail');
         if (weeklyEl) weeklyEl.textContent = String(weeklySpots);
         if (totalEl) totalEl.textContent = String(dateRangeValid ? totalSpots : 0);
+
+        // Immediate synchronous DOM update so line items and totals update instantly on user input
+        if (validationMsg === '') {
+            var localActive = [];
+            var subtotal = 0.0;
+            var tax = 0.0;
+            var grandTotal = 0.0;
+            for (var pn in slotTotals) {
+                var st = slotTotals[pn];
+                var q = dateRangeValid ? st.total : st.weekly;
+                if (q > 0) {
+                    var rate = RADIO_SLOT_RATES[pn] || 0;
+                    var net = q * rate;
+                    var v = Math.round(net * 0.15 * 100) / 100;
+                    var g = Math.round((net + v) * 100) / 100;
+                    subtotal += net;
+                    tax += v;
+                    grandTotal += g;
+                    localActive.push({
+                        part_number: pn,
+                        product_name: pn,
+                        product_id: '',
+                        unit_price: rate,
+                        total_qty: q,
+                        weekly_qty: st.weekly,
+                        net_total: net,
+                        vat_amt: v,
+                        vat_rate: '15.0',
+                        gross_total: g,
+                        description: RADIO_SLOT_DESCRIPTIONS[pn] || ''
+                    });
+                }
+            }
+            applyProductsToQuoteDom({
+                active_products: localActive,
+                totals: {
+                    total_amt: subtotal,
+                    subtotal_amount: subtotal,
+                    tax_amount: tax,
+                    total_amount: grandTotal
+                }
+            });
+        }
 
         return {
             valid: (validationMsg === ''),
@@ -260,101 +446,6 @@
             total_spots: dateRangeValid ? totalSpots : 0,
             cells: payloadCells
         };
-    }
-
-    function applyProductsToQuoteDom(response) {
-        if (!response || !Array.isArray(response.active_products)) {
-            return;
-        }
-
-        // Map active schedule products by part_number
-        var wantedByPart = {};
-        for (var i = 0; i < response.active_products.length; i++) {
-            var prod = response.active_products[i];
-            if (prod.total_qty > 0) {
-                wantedByPart[prod.part_number] = prod;
-            }
-        }
-
-        // Inspect existing AOS_Quotes product rows in the DOM
-        var partInputs = document.querySelectorAll('input[id^="product_part_number"]');
-        var existingRadioRowByPart = {};
-
-        for (var j = 0; j < partInputs.length; j++) {
-            var pInput = partInputs[j];
-            var m = pInput.id.match(/^product_part_number(\d+)$/);
-            if (!m) continue;
-            var idx = m[1];
-            var deletedEl = document.getElementById('product_deleted' + idx);
-            if (deletedEl && deletedEl.value === '1') {
-                continue;
-            }
-            var partVal = (pInput.value || '').trim().toUpperCase();
-            if (RADIO_PART_NUMBERS[partVal]) {
-                if (wantedByPart[partVal] && !existingRadioRowByPart[partVal]) {
-                    existingRadioRowByPart[partVal] = idx;
-                } else {
-                    // Remove/soft-delete radio product row that is now 0 or duplicate
-                    if (typeof window.deleteProductLine === 'function') {
-                        try { window.deleteProductLine(idx); } catch (e) {}
-                    } else if (deletedEl) {
-                        deletedEl.value = '1';
-                        var rowEl = document.getElementById('product_body' + idx);
-                        if (rowEl) rowEl.style.display = 'none';
-                    }
-                }
-            }
-        }
-
-        // Update or create rows for each active schedule product
-        for (var k = 0; k < response.active_products.length; k++) {
-            var item = response.active_products[k];
-            if (item.total_qty <= 0) continue;
-
-            var rowIdx = existingRadioRowByPart[item.part_number];
-            if (rowIdx === undefined && typeof window.insertProductLine === 'function') {
-                try {
-                    // Ensure product group 0 exists if needed by AOS_Quotes
-                    if (typeof window.insertGroup === 'function' && !document.getElementById('group_body0')) {
-                        window.insertGroup();
-                    }
-                    rowIdx = window.insertProductLine('group_body0', '0');
-                } catch (e) {
-                    rowIdx = undefined;
-                }
-            }
-
-            if (rowIdx !== undefined) {
-                var setField = function(prefix, val) {
-                    var el = document.getElementById(prefix + rowIdx);
-                    if (el) el.value = val;
-                };
-                setField('product_name', item.product_name);
-                setField('product_part_number', item.part_number);
-                setField('product_product_id', item.product_id || '');
-                setField('product_product_qty', item.total_qty);
-                setField('product_product_list_price', Number(item.unit_price).toFixed(2));
-                setField('product_product_unit_price', Number(item.unit_price).toFixed(2));
-                setField('product_vat', item.vat_rate || '15.0');
-                setField('product_vat_amt', Number(item.vat_amt).toFixed(2));
-                setField('product_product_total_price', Number(item.net_total).toFixed(2));
-                setField('product_item_description', item.description || '');
-                setField('product_description', '');
-            }
-        }
-
-        if (typeof window.calculateTotal === 'function') {
-            try { window.calculateTotal('0'); } catch (e) {}
-        } else if (response.totals) {
-            var setSummary = function(id, val) {
-                var el = document.getElementById(id);
-                if (el) el.value = Number(val).toFixed(2);
-            };
-            setSummary('total_amt', response.totals.total_amt);
-            setSummary('subtotal_amount', response.totals.subtotal_amount);
-            setSummary('tax_amount', response.totals.tax_amount);
-            setSummary('total_amount', response.totals.total_amount);
-        }
     }
 
     function triggerAjaxSync(state) {
@@ -388,7 +479,6 @@
         .then(function(res) { return res.json(); })
         .then(function(data) {
             if (currentSeq !== ajaxSeq) {
-                // Stale response; ignore
                 return;
             }
             if (data && data.success) {
@@ -428,7 +518,6 @@
         var wrapper = document.getElementById('weekly_advert_schedule_wrapper');
         if (!wrapper) return;
 
-        // Ensure wrapper resides inside #EditView form so all 168 inputs and 2 dates submit on Save
         var editForm = document.getElementById('EditView') || document.forms['EditView'];
         if (editForm && !editForm.contains(wrapper)) {
             editForm.appendChild(wrapper);
