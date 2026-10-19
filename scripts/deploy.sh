@@ -57,7 +57,7 @@ docker exec radio_crm_web bash -c '
 '
 echo "  = All PHP files passed syntax validation."
 
-# 5. Execute numbered migrations 001..006 as www-data
+# 5. Execute numbered migrations 001..007 as www-data
 echo "[Deploy] Executing database migrations and Quick Repair..."
 for mig in \
     001_create_rt_radiocampaigns_tables.php \
@@ -65,7 +65,8 @@ for mig in \
     003_seed_radio_catalogue_products.php \
     004_professional_quote_pdf_template.php \
     005_radio_crm_market_enhancements.php \
-    006_quick_repair_and_rebuild.php
+    006_radio_station_settings_table.php \
+    007_quick_repair_and_rebuild.php
 do
     docker exec -u www-data radio_crm_web php "/opt/radio_crm_repo/migrations/${mig}"
 done

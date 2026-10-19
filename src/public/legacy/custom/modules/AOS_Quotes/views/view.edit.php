@@ -6,8 +6,10 @@ if (!defined('sugarEntry') || !sugarEntry) {
 
 require_once 'modules/AOS_Quotes/views/view.edit.php';
 require_once 'custom/include/RadioCRM/RadioScheduleService.php';
+require_once 'custom/include/RadioCRM/RadioStationConfigService.php';
 
 use RadioCRM\RadioScheduleService;
+use RadioCRM\RadioStationConfigService;
 
 #[\AllowDynamicProperties]
 class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
@@ -15,16 +17,21 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
     public function display()
     {
         $catalogue = RadioScheduleService::getCatalogueProducts($GLOBALS['db'] ?? null);
+        $stConfig = RadioStationConfigService::getSettings($GLOBALS['db'] ?? null);
+        $confSlots = $stConfig['slots'] ?? RadioStationConfigService::DEFAULT_SLOTS;
+
         $slotsForTpl = [];
         foreach (RadioScheduleService::SLOTS as $slotKey => $slot) {
             $pn = $slot['part_number'];
             $rate = $catalogue[$pn]['price'] ?? $slot['default_rate'];
+            $label = $confSlots[$pn]['title'] ?? $slot['label'];
             $slotsForTpl[$slotKey] = [
                 'key' => $slotKey,
-                'label' => $slot['label'],
+                'label' => $label,
                 'part_number' => $pn,
                 'rate' => $rate,
                 'hours' => $slot['hours'],
+                'programme_time' => $confSlots[$pn]['hours'] ?? ($slot['programme_time'] ?? ''),
             ];
         }
 
@@ -72,6 +79,8 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
             'PUKFM_SPOT_DURATION' => $_REQUEST['spot_duration_c'] ?? ($this->bean->spot_duration_c ?? '30 sec'),
             'PUKFM_APPLIED_PACKAGE' => $_REQUEST['applied_package_c'] ?? ($this->bean->applied_package_c ?? ''),
             'PUKFM_PACKAGES' => RadioScheduleService::getPackageDefinitions(),
+            'PUKFM_STATION_CONFIGURED' => RadioStationConfigService::isConfigured($GLOBALS['db'] ?? null),
+            'PUKFM_STATION_NAME' => $stConfig['station_name'] ?? 'PUKfm 93.6',
         ];
 
         foreach ($tplVars as $k => $v) {

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace RadioCRM;
 
+require_once __DIR__ . '/RadioStationConfigService.php';
+
 use DateTimeImmutable;
 use DateTimeZone;
 
@@ -1080,6 +1082,8 @@ class RadioScheduleService
             $db = $GLOBALS['db'];
         }
 
+        $maxCapacity = (int) RadioStationConfigService::getSetting('hourly_capacity', self::MAX_HOURLY_CAPACITY, $db);
+
         $allFields = self::getAllScheduleFields();
         $matrix = [];
         foreach ($allFields as $f => $m) {
@@ -1090,7 +1094,7 @@ class RadioScheduleService
                 'day' => $m['day_label'],
                 'booked' => 0,
                 'requested' => $req,
-                'remaining' => self::MAX_HOURLY_CAPACITY,
+                'remaining' => $maxCapacity,
                 'status' => 'available',
             ];
         }
@@ -1135,16 +1139,16 @@ class RadioScheduleService
         $violations = [];
         foreach ($matrix as $f => &$item) {
             $total = $item['booked'] + $item['requested'];
-            $item['remaining'] = max(0, self::MAX_HOURLY_CAPACITY - $item['booked']);
-            if ($item['booked'] >= self::MAX_HOURLY_CAPACITY) {
+            $item['remaining'] = max(0, $maxCapacity - $item['booked']);
+            if ($item['booked'] >= $maxCapacity) {
                 $item['status'] = 'full';
-            } elseif ($item['booked'] >= (self::MAX_HOURLY_CAPACITY / 2)) {
+            } elseif ($item['booked'] >= ($maxCapacity / 2)) {
                 $item['status'] = 'filling';
             } else {
                 $item['status'] = 'available';
             }
 
-            if ($total > self::MAX_HOURLY_CAPACITY) {
+            if ($total > $maxCapacity) {
                 $violations[$f] = [
                     'field' => $f,
                     'label' => $item['label'],
@@ -1152,8 +1156,8 @@ class RadioScheduleService
                     'booked' => $item['booked'],
                     'requested' => $item['requested'],
                     'total' => $total,
-                    'limit' => self::MAX_HOURLY_CAPACITY,
-                    'excess' => $total - self::MAX_HOURLY_CAPACITY,
+                    'limit' => $maxCapacity,
+                    'excess' => $total - $maxCapacity,
                 ];
             }
         }
@@ -1161,7 +1165,7 @@ class RadioScheduleService
 
         return [
             'valid' => empty($violations),
-            'max_capacity' => self::MAX_HOURLY_CAPACITY,
+            'max_capacity' => $maxCapacity,
             'violations' => $violations,
             'capacity_matrix' => $matrix,
         ];
@@ -1264,6 +1268,9 @@ class RadioScheduleService
             $db = $GLOBALS['db'];
         }
 
+        $cartStart = (int) RadioStationConfigService::getSetting('cart_range_start', self::CART_RANGE_START, $db);
+        $cartEnd = (int) RadioStationConfigService::getSetting('cart_range_end', self::CART_RANGE_END, $db);
+
         $startStr = self::normalizeDate($startDate) ?? date('Y-m-d');
         $endStr = self::normalizeDate($endDate) ?? date('Y-m-d', strtotime('+30 days'));
 
@@ -1285,20 +1292,20 @@ class RadioScheduleService
             if ($res) {
                 while ($row = $db->fetchByAssoc($res)) {
                     $num = (int) ($row['myriad_cart_number'] ?? 0);
-                    if ($num >= self::CART_RANGE_START && $num <= self::CART_RANGE_END) {
+                    if ($num >= $cartStart && $num <= $cartEnd) {
                         $usedCarts[$num] = true;
                     }
                 }
             }
         }
 
-        for ($cart = self::CART_RANGE_START; $cart <= self::CART_RANGE_END; $cart++) {
+        for ($cart = $cartStart; $cart <= $cartEnd; $cart++) {
             if (!isset($usedCarts[$cart])) {
                 return $cart;
             }
         }
 
-        return self::CART_RANGE_START;
+        return $cartStart;
     }
 
     /**
@@ -1505,7 +1512,17 @@ class RadioScheduleService
             }
         }
 
-        $logoPath = '/var/www/html/public/legacy/custom/include/RadioCRM/pukfm_logo_round.jpeg';
+        $stationSettings = RadioStationConfigService::getSettings($db);
+        $stName = htmlspecialchars((string) ($stationSettings['station_name'] ?? 'PUKfm 93.6'), ENT_QUOTES);
+        $stTagline = htmlspecialchars((string) ($stationSettings['station_tagline'] ?? 'meer as net radio | more than just radio'), ENT_QUOTES);
+        $stAddress = htmlspecialchars((string) ($stationSettings['studio_address'] ?? 'North-West University Potchefstroom Campus Radio'), ENT_QUOTES);
+        $stManager = htmlspecialchars((string) ($stationSettings['station_manager_name'] ?? 'Station Manager / Programme Director'), ENT_QUOTES);
+
+        $customLogoUrl = (string) ($stationSettings['station_logo_url'] ?? '');
+        $logoPath = '/var/www/html/public/legacy/' . ltrim($customLogoUrl, '/');
+        if (!file_exists($logoPath) || empty($customLogoUrl)) {
+            $logoPath = '/var/www/html/public/legacy/custom/include/RadioCRM/pukfm_logo_round.jpeg';
+        }
         $logoHtml = file_exists($logoPath)
             ? '<img src="' . $logoPath . '" width="60" height="60" style="vertical-align:middle;" />'
             : '';
@@ -1559,8 +1576,8 @@ td { padding: 6px; }
         <tr>
             <td width="15%">{$logoHtml}</td>
             <td width="55%">
-                <h2 style="margin:0; color:#5E2B83;">PUKfm 93.6</h2>
-                <div style="color:#666; font-size:11px;">North-West University Potchefstroom Campus Radio<br>meer as net radio | more than just radio</div>
+                <h2 style="margin:0; color:#5E2B83;">{$stName}</h2>
+                <div style="color:#666; font-size:11px;">{$stAddress}<br>{$stTagline}</div>
             </td>
             <td width="30%" align="right">
                 <h3 style="margin:0; color:#1B8FA3;">BROADCAST AFFIDAVIT</h3>
@@ -1594,7 +1611,7 @@ td { padding: 6px; }
 </div>
 
 <div class="cert">
-    This document serves as the official Broadcast Affidavit and Proof of Performance certifying that the commercial advertisement referenced above was broadcast on PUKfm 93.6 as scheduled on the dates and times verified below by our Myriad automated broadcast playout logs.
+    This document serves as the official Broadcast Affidavit and Proof of Performance certifying that the commercial advertisement referenced above was broadcast on {$stName} as scheduled on the dates and times verified below by our Myriad automated broadcast playout logs.
 </div>
 
 <h4 style="color:#5E2B83; margin-top:20px; margin-bottom:5px;">Verified Playout Audit Log</h4>
@@ -1615,13 +1632,13 @@ td { padding: 6px; }
 <table width="100%" style="margin-top:50px;" border="0">
     <tr>
         <td width="45%" style="border-top: 1px solid #333; text-align: center;">
-            <strong>Station Manager / Programme Director</strong><br>
-            PUKfm 93.6 Broadcaster
+            <strong>{$stManager}</strong><br>
+            {$stName} Broadcaster
         </td>
         <td width="10%">&nbsp;</td>
         <td width="45%" style="border-top: 1px solid #333; text-align: center;">
             <strong>Commercial Traffic / Operations Manager</strong><br>
-            PUKfm 93.6 Traffic Department
+            {$stName} Traffic Department
         </td>
     </tr>
 </table>
@@ -1717,6 +1734,7 @@ HTML;
         $totalMinutes = round($totalSeconds / 60, 2);
         $totalBroadcastHours = 24 * $lastDay;
         $avgMinutesPerHour = $totalBroadcastHours > 0 ? round($totalMinutes / $totalBroadcastHours, 2) : 0.0;
+        $icasaLimit = (float) RadioStationConfigService::getSetting('max_ad_minutes_per_hour', 10.0, $db);
 
         return [
             'success' => true,
@@ -1726,8 +1744,8 @@ HTML;
             'total_plays' => $totalPlays,
             'total_minutes' => $totalMinutes,
             'avg_minutes_per_hour' => $avgMinutesPerHour,
-            'icasa_limit_minutes_per_hour' => 10.0,
-            'is_icasa_compliant' => ($avgMinutesPerHour <= 10.0),
+            'icasa_limit_minutes_per_hour' => $icasaLimit,
+            'is_icasa_compliant' => ($avgMinutesPerHour <= $icasaLimit),
             'by_category' => $byCategory,
             'by_daypart' => $byDaypart,
             'csv' => implode("\r\n", $csvRows) . "\r\n",

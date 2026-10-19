@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 $entry_point_registry['radio_campaign_reconcile_logs'] = [
     'file' => 'custom/reconcile_radio_campaign_logs.php',
     'auth' => true,
@@ -21,3 +19,9 @@ $entry_point_registry['radio_campaign_client_review'] = [
     'file' => 'custom/radio_campaign_client_review.php',
     'auth' => false,
 ];
+
+$entry_point_registry['radio_station_wizard'] = [
+    'file' => 'custom/radio_station_wizard.php',
+    'auth' => true,
+];
+

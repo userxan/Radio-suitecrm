@@ -1,8 +1,15 @@
 {* PUKfm Weekly Advert Schedule Template - Embedded inside AOS_Quotes EditView form *}
 <div id="weekly_advert_schedule_wrapper" style="margin: 15px 0; padding: 15px; border: 1px solid #d0d7de; border-radius: 6px; background: #ffffff;">
     <h4 style="margin-top: 0; margin-bottom: 12px; color: #1f2328; font-weight: 600;">
-        PUKfm Weekly Advert Schedule
+        {$PUKFM_STATION_NAME|default:'PUKfm 93.6'} Weekly Advert Schedule
     </h4>
+
+    {if !$PUKFM_STATION_CONFIGURED}
+    <div style="margin-bottom: 12px; padding: 8px 12px; background: #eef8f9; border: 1px solid #1B8FA3; border-radius: 4px; font-size: 13px; color: #0f5664;">
+        📻 <strong>Station Setup Guide:</strong> Need to customize your station name, logo, show schedule, or rate cards? 
+        <a href="index.php?entryPoint=radio_station_wizard" target="_blank" style="color: #5E2B83; font-weight: bold; text-decoration: underline;">Launch the Station Setup Wizard</a>.
+    </div>
+    {/if}
 
     <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; margin-bottom: 14px; padding: 10px 12px; background: #f6f8fa; border: 1px solid #d8dee4; border-radius: 4px;">
         <div>

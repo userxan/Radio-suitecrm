@@ -1,0 +1,80 @@
+{
+  "station_name": "PUKfm 93.6",
+  "station_callsign": "PUKfm",
+  "station_frequency": "93.6 FM",
+  "station_tagline": "meer as net radio | more than just radio",
+  "station_logo_url": "custom/include/RadioCRM/pukfm_logo_round.jpeg",
+  "station_manager_name": "Station Manager / Traffic Director",
+  "station_email": "traffic@pukfm.co.za",
+  "station_phone": "+27 18 299 1111",
+  "studio_address": "NWU Campus, Hoffman St, Potchefstroom, 2531, South Africa",
+  "vat_number": "4010199360",
+  "vat_rate": 15.0,
+  "currency_symbol": "R",
+  "currency_iso": "ZAR",
+  "hourly_capacity": 20,
+  "max_ad_minutes_per_hour": 10.0,
+  "cart_range_start": 2000,
+  "cart_range_end": 2999,
+  "playout_log_dir": "/srv/myriad_reconciliation",
+  "export_dir": "/srv/myriad_exports",
+  "station_configured": true,
+  "slots": {
+    "PRE-BREAKFAST": {
+      "part_number": "PRE-BREAKFAST",
+      "title": "Pre-Breakfast",
+      "hours": "04:00 - 06:00",
+      "rate": 300.0,
+      "description": "Early morning warm-up show (04:00 - 06:00)."
+    },
+    "MORNING-BUZZ": {
+      "part_number": "MORNING-BUZZ",
+      "title": "Morning Buzz (Breakfast Show)",
+      "hours": "06:00 - 09:00",
+      "rate": 320.0,
+      "description": "Flagship morning breakfast drive show (06:00 - 09:00). High student & commuter listenership."
+    },
+    "MIDMORNING-BANTER": {
+      "part_number": "MIDMORNING-BANTER",
+      "title": "Midmorning Banter",
+      "hours": "09:00 - 12:00",
+      "rate": 280.0,
+      "description": "Campus lifestyle, music and entertainment (09:00 - 12:00)."
+    },
+    "MIDDAY-PULSE": {
+      "part_number": "MIDDAY-PULSE",
+      "title": "Midday Pulse",
+      "hours": "12:00 - 15:00",
+      "rate": 260.0,
+      "description": "Lunchtime music, chart hits and campus news (12:00 - 15:00)."
+    },
+    "CRUISE-CONTROL": {
+      "part_number": "CRUISE-CONTROL",
+      "title": "Cruise Control (Afternoon Drive)",
+      "hours": "15:00 - 18:00",
+      "rate": 320.0,
+      "description": "Afternoon drive prime time show (15:00 - 18:00). Peak listener engagement."
+    },
+    "SPECIALTY-SHOW-1": {
+      "part_number": "SPECIALTY-SHOW-1",
+      "title": "Specialty Show 1 (Evening)",
+      "hours": "18:00 - 21:00",
+      "rate": 200.0,
+      "description": "Evening genre-specific programming (18:00 - 21:00). Focused enthusiast demographics."
+    },
+    "SPECIALTY-SHOW-2": {
+      "part_number": "SPECIALTY-SHOW-2",
+      "title": "Specialty Show 2 (Late Evening)",
+      "hours": "21:00 - 00:00",
+      "rate": 180.0,
+      "description": "Late-night music, underground and campus culture (21:00 - 00:00)."
+    },
+    "MUSIC-UNLIMITED": {
+      "part_number": "MUSIC-UNLIMITED",
+      "title": "Music Unlimited (Overnight)",
+      "hours": "00:00 - 04:00",
+      "rate": 150.0,
+      "description": "Automated overnight hit music playout (00:00 - 04:00)."
+    }
+  }
+}
