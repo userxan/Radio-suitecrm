@@ -1,6 +1,6 @@
-# PUKfm Radio CRM — SuiteCRM 8.10.1 Full Technical Rebuild
+# Radio CRM — SuiteCRM 8.10.1 Full Technical Rebuild
 
-This repository contains the complete, reproducible source code, Docker infrastructure, numbered database/vardef/product migrations, operational scripts, and automated acceptance tests for the **PUKfm Radio CRM** built on **SuiteCRM 8.10.1** (`PHP 8.3`, `MariaDB 10.11`, `Apache 2.4`).
+This repository contains the complete, reproducible source code, Docker infrastructure, numbered database/vardef/product migrations, operational scripts, and automated acceptance tests for the ** Radio CRM** built on **SuiteCRM 8.10.1** (`PHP 8.3`, `MariaDB 10.11`, `Apache 2.4`).
 
 ---
 
