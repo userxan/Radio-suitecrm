@@ -434,12 +434,14 @@ assertTest(
     'pdfBytes=' . (file_exists($pdfFile) ? filesize($pdfFile) : 0)
 );
 
-// B4: Package Presets Pricing & Calculation (Option 1: 50 Prime Recorded Ads @ R5,999; Option 3: 120 Prime Recorded Ads @ R15,999)
+// B4: Package Presets Pricing & Calculation (Option 1: R5,999; Option 2: R6,999; Option 3: R15,999; Option 4: R16,999)
 $pkgDefs = RadioScheduleService::getPackageDefinitions();
 $opt1Def = $pkgDefs['option_1'] ?? [];
+$opt2Def = $pkgDefs['option_2'] ?? [];
 $opt3Def = $pkgDefs['option_3'] ?? [];
+$opt4Def = $pkgDefs['option_4'] ?? [];
 
-// 1. Calculate Option 1 for 1 week (2026-06-15 to 2026-06-21)
+// 1. Calculate Option 1 for 1 week (2026-06-15 to 2026-06-21, 50 spots)
 $calcOpt1 = RadioScheduleService::calculateSchedule(
     $opt1Def['prime_slots'] ?? [],
     '2026-06-15',
@@ -457,7 +459,35 @@ $opt1PricingOk = (round($opt1Subtotal, 2) === 5999.00)
     && (round($opt1Tax, 2) === 899.85)
     && (round($opt1Total, 2) === 6898.85);
 
-// 2. Calculate Option 3 for 4 weeks (2026-06-01 to 2026-06-28)
+// 1b. Calculate Option 1 with Mon-to-Mon 8 calendar days (2026-10-19 to 2026-10-26, 60 spots -> 1 package = R5,999.00)
+$calcOpt1MonToMon = RadioScheduleService::calculateSchedule(
+    $opt1Def['prime_slots'] ?? [],
+    '2026-10-19',
+    '2026-10-26',
+    $db,
+    '30 sec',
+    'option_1'
+);
+$opt1MonToMonSubtotal = (float) ($calcOpt1MonToMon['totals']['subtotal_amount'] ?? 0.0);
+$opt1MonToMonOk = ($calcOpt1MonToMon['total_spots'] === 60)
+    && (round($opt1MonToMonSubtotal, 2) === 5999.00)
+    && (round((float) ($calcOpt1MonToMon['totals']['tax_amount'] ?? 0.0), 2) === 899.85);
+
+// 1c. Calculate Option 2 with Mon-to-Mon 8 calendar days (60 spots -> 1 package = R6,999.00)
+$calcOpt2 = RadioScheduleService::calculateSchedule(
+    $opt2Def['prime_slots'] ?? [],
+    '2026-10-19',
+    '2026-10-26',
+    $db,
+    '30 sec',
+    'option_2'
+);
+$opt2Subtotal = (float) ($calcOpt2['totals']['subtotal_amount'] ?? 0.0);
+$opt2Ok = ($calcOpt2['total_spots'] === 60)
+    && (round($opt2Subtotal, 2) === 6999.00)
+    && (round((float) ($calcOpt2['totals']['tax_amount'] ?? 0.0), 2) === 1049.85);
+
+// 2. Calculate Option 3 for 4 weeks (2026-06-01 to 2026-06-28, 120 spots -> R15,999.00)
 $calcOpt3 = RadioScheduleService::calculateSchedule(
     $opt3Def['prime_slots'] ?? [],
     '2026-06-01',
@@ -473,6 +503,20 @@ $opt3Total = (float) ($calcOpt3['totals']['total_amount'] ?? 0.0);
 $opt3PricingOk = (round($opt3Subtotal, 2) === 15999.00)
     && (round($opt3Tax, 2) === 2399.85)
     && (round($opt3Total, 2) === 18398.85);
+
+// 2b. Calculate Option 4 for 4 weeks (120 spots -> R16,999.00)
+$calcOpt4 = RadioScheduleService::calculateSchedule(
+    $opt4Def['prime_slots'] ?? [],
+    '2026-06-01',
+    '2026-06-28',
+    $db,
+    '30 sec',
+    'option_4'
+);
+$opt4Subtotal = (float) ($calcOpt4['totals']['subtotal_amount'] ?? 0.0);
+$opt4Ok = ($calcOpt4['total_spots'] === 120)
+    && (round($opt4Subtotal, 2) === 16999.00)
+    && (round((float) ($calcOpt4['totals']['tax_amount'] ?? 0.0), 2) === 2549.85);
 
 // 3. Save a Quote with Option 1 applied and verify aos_products_quotes rows and aos_quotes totals
 $quotePkg = BeanFactory::newBean('AOS_Quotes');
@@ -519,19 +563,17 @@ $db->query("DELETE FROM aos_quotes WHERE id = '" . $db->quote($quotePkgId) . "'"
 
 assertTest(
     'B4',
-    'Package Presets calculate correct advertised package prices (Option 1 R5,999.00, Option 3 R15,999.00) and persist accurately to Quote totals and line items',
-    $opt1SpotsOk && $opt1PricingOk && $opt3SpotsOk && $opt3PricingOk && $quotePkgOk,
+    'Package Presets calculate correct advertised package prices (Option 1 R5,999.00, Option 2 R6,999.00, Option 3 R15,999.00, Option 4 R16,999.00 even with 8-day Mon-Mon range) and persist accurately to Quote totals and line items',
+    $opt1SpotsOk && $opt1PricingOk && $opt1MonToMonOk && $opt2Ok && $opt3SpotsOk && $opt3PricingOk && $opt4Ok && $quotePkgOk,
     sprintf(
-        'Opt1(sub=%s,tax=%s,tot=%s), Opt3(sub=%s,tax=%s,tot=%s), SavedQuote(sub=%s,tax=%s,tot=%s,lineSub=%s)',
+        'Opt1(sub=%s,tax=%s), Opt1MonMon(sub=%s), Opt2(sub=%s), Opt3(sub=%s), Opt4(sub=%s), SavedQuote(sub=%s,lineSub=%s)',
         $opt1Subtotal,
         $opt1Tax,
-        $opt1Total,
+        $opt1MonToMonSubtotal,
+        $opt2Subtotal,
         $opt3Subtotal,
-        $opt3Tax,
-        $opt3Total,
+        $opt4Subtotal,
         $savedSubtotal,
-        $savedTax,
-        $savedTotal,
         $linesSubtotal
     )
 );

@@ -502,16 +502,9 @@
 
             if (isPkg) {
                 var pkgBaseRate = Math.round(pkgDef.rate * durMult * 100) / 100;
-                var ratePerSpot = pkgBaseRate / pkgDef.total_spots;
                 var activeTotalQty = dateRangeValid ? totalSpots : weeklySpots;
-                var targetSubtotal = 0.0;
-                if (dateRangeValid) {
-                    targetSubtotal = Math.round(activeTotalQty * ratePerSpot * 100) / 100;
-                } else {
-                    targetSubtotal = (pkgDef.type === 'weekly')
-                        ? pkgBaseRate
-                        : Math.round((activeTotalQty / pkgDef.total_spots) * pkgBaseRate * 100) / 100;
-                }
+                var packageCount = Math.max(1, Math.round(activeTotalQty / (pkgDef.total_spots || 1)));
+                var targetSubtotal = Math.round(packageCount * pkgBaseRate * 100) / 100;
 
                 var activeSlotsList = [];
                 for (var pn in slotTotals) {
@@ -785,6 +778,28 @@
         .then(function(data) {
             if (data && data.packages && data.packages[pkgKey]) {
                 var pkg = data.packages[pkgKey];
+
+                var startInput = document.getElementById('campaign_start_date_c');
+                var endInput = document.getElementById('campaign_end_date_c');
+                var sVal = (startInput && startInput.value) ? startInput.value.trim() : '';
+                if (!sVal) {
+                    var now = new Date();
+                    var yr = now.getFullYear();
+                    var mo = (now.getMonth() + 1 < 10 ? '0' : '') + (now.getMonth() + 1);
+                    var da = (now.getDate() < 10 ? '0' : '') + now.getDate();
+                    sVal = yr + '-' + mo + '-' + da;
+                    if (startInput) startInput.value = sVal;
+                }
+                var sDate = parseYmd(sVal);
+                if (sDate && endInput) {
+                    var daysToAdd = (pkg.type === 'weekly') ? 6 : 27;
+                    var eDate = new Date(sDate.getTime() + (daysToAdd * 86400000));
+                    var ey = eDate.getUTCFullYear();
+                    var em = (eDate.getUTCMonth() + 1 < 10 ? '0' : '') + (eDate.getUTCMonth() + 1);
+                    var ed = (eDate.getUTCDate() < 10 ? '0' : '') + eDate.getUTCDate();
+                    endInput.value = ey + '-' + em + '-' + ed;
+                }
+
                 var allInputs = getScheduleInputs();
                 for (var i = 0; i < allInputs.length; i++) {
                     allInputs[i].value = '0';

@@ -485,8 +485,8 @@ class RadioScheduleService
 
         if ($isPackage && $dateRangeValid && $totalSpots > 0) {
             $pkgBaseRate = round((float) $pkgDef['rate'] * $durationMultiplier, 2);
-            $ratePerSpot = $pkgBaseRate / (float) $pkgDef['total_spots'];
-            $targetSubtotal = round($totalSpots * $ratePerSpot, 2);
+            $packageCount = max(1, (int) round($totalSpots / (float) $pkgDef['total_spots']));
+            $targetSubtotal = round($packageCount * $pkgBaseRate, 2);
 
             $activeKeys = [];
             foreach ($slotAggregates as $slotKey => $agg) {
