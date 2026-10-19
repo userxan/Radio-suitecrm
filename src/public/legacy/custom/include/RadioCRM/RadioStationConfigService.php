@@ -34,6 +34,57 @@ class RadioStationConfigService
         'playout_log_dir' => '/srv/myriad_reconciliation',
         'export_dir' => '/srv/myriad_exports',
         'station_configured' => false,
+        'package_presets' => [
+            'option_1' => [
+                'key' => 'option_1',
+                'name' => 'Option 1: 50 Prime Recorded Ads',
+                'type' => 'weekly',
+                'total_spots' => 50,
+                'rate' => 5999.00,
+                'description' => 'Weekly package: 50 Prime Time Recorded Ads (06:00-09:00, 12:00-15:00, 15:00-18:00)',
+            ],
+            'option_2' => [
+                'key' => 'option_2',
+                'name' => 'Option 2: 50 Prime Live Reads',
+                'type' => 'weekly',
+                'total_spots' => 50,
+                'rate' => 6999.00,
+                'description' => 'Weekly package: 50 Prime Time Live Reads',
+            ],
+            'option_3' => [
+                'key' => 'option_3',
+                'name' => 'Option 3: 120 Prime Recorded Ads',
+                'type' => 'monthly',
+                'total_spots' => 120,
+                'rate' => 15999.00,
+                'description' => 'Monthly package: 120 Prime Time Recorded Ads across 4 weeks',
+            ],
+            'option_4' => [
+                'key' => 'option_4',
+                'name' => 'Option 4: 120 Prime Live Reads',
+                'type' => 'monthly',
+                'total_spots' => 120,
+                'rate' => 16999.00,
+                'description' => 'Monthly package: 120 Prime Time Live Reads across 4 weeks',
+            ],
+        ],
+        'duration_multipliers' => [
+            '15 sec' => 0.50,
+            '30 sec' => 1.00,
+            '45 sec' => 1.50,
+            '60 sec' => 2.00,
+        ],
+        'category_discounts' => [
+            'other' => ['name' => 'General / Other', 'discount' => 0.0],
+            'automotive' => ['name' => 'Automotive & Dealerships', 'discount' => 0.0],
+            'dining' => ['name' => 'Restaurants & Fast Food', 'discount' => 0.0],
+            'hospitality' => ['name' => 'Nightlife, Bars & Events', 'discount' => 0.0],
+            'financial' => ['name' => 'Banking & Financial', 'discount' => 0.0],
+            'campus' => ['name' => 'Campus Retail & Student Services', 'discount' => 10.0],
+            'telecom' => ['name' => 'Telecom & Tech', 'discount' => 0.0],
+            'health' => ['name' => 'Healthcare & Fitness', 'discount' => 0.0],
+            'education' => ['name' => 'Education & Departments', 'discount' => 15.0],
+        ],
     ];
 
     public const DEFAULT_SLOTS = [
@@ -42,56 +93,64 @@ class RadioStationConfigService
             'title' => 'Pre-Breakfast',
             'hours' => '05:00 - 06:00',
             'rate' => 120.00,
-            'description' => 'Early morning warm-up show (05:00 - 06:00).',
+            'weekend_rate' => 120.00,
+            'description' => 'One 30 second prerecorded advertisement played between 05:00 and 06:00.',
         ],
         'MORNING-BUZZ' => [
             'part_number' => 'MORNING-BUZZ',
             'title' => 'Morning Buzz (Breakfast Show)',
             'hours' => '06:00 - 09:00',
             'rate' => 350.00,
-            'description' => 'Flagship morning breakfast drive show (06:00 - 09:00). High student & commuter listenership.',
+            'weekend_rate' => 300.00,
+            'description' => 'One 30 second prerecorded advertisement played between 06:00 and 09:00.',
         ],
         'MIDMORNING-BANTER' => [
             'part_number' => 'MIDMORNING-BANTER',
             'title' => 'Midmorning Banter',
             'hours' => '09:00 - 12:00',
             'rate' => 320.00,
-            'description' => 'Campus lifestyle, music and entertainment (09:00 - 12:00).',
+            'weekend_rate' => 320.00,
+            'description' => 'One 30 second prerecorded advertisement played between 09:00 and 12:00.',
         ],
         'MIDDAY-PULSE' => [
             'part_number' => 'MIDDAY-PULSE',
             'title' => 'Midday Pulse',
             'hours' => '12:00 - 15:00',
             'rate' => 350.00,
-            'description' => 'Lunchtime music, chart hits and campus news (12:00 - 15:00).',
+            'weekend_rate' => 350.00,
+            'description' => 'One 30 second prerecorded advertisement played between 12:00 and 15:00.',
         ],
         'CRUISE-CONTROL' => [
             'part_number' => 'CRUISE-CONTROL',
             'title' => 'Cruise Control (Afternoon Drive)',
             'hours' => '15:00 - 18:00',
             'rate' => 350.00,
-            'description' => 'Afternoon drive prime time show (15:00 - 18:00). Peak listener engagement.',
+            'weekend_rate' => 350.00,
+            'description' => 'One 30 second prerecorded advertisement played between 15:00 and 18:00.',
         ],
         'SPECIALTY-SHOW-1' => [
             'part_number' => 'SPECIALTY-SHOW-1',
             'title' => 'Specialty Show 1 (Evening)',
             'hours' => '18:00 - 21:00',
             'rate' => 300.00,
-            'description' => 'Evening genre-specific programming (18:00 - 21:00). Focused enthusiast demographics.',
+            'weekend_rate' => 220.00,
+            'description' => 'One 30 second prerecorded advertisement played between 18:00 and 21:00.',
         ],
         'SPECIALTY-SHOW-2' => [
             'part_number' => 'SPECIALTY-SHOW-2',
             'title' => 'Specialty Show 2 (Late Evening)',
             'hours' => '21:00 - 00:00',
             'rate' => 220.00,
-            'description' => 'Late-night music, underground and campus culture (21:00 - 00:00).',
+            'weekend_rate' => 120.00,
+            'description' => 'One 30 second prerecorded advertisement played between 21:00 and 00:00.',
         ],
         'MUSIC-UNLIMITED' => [
             'part_number' => 'MUSIC-UNLIMITED',
             'title' => 'Music Unlimited (Overnight)',
             'hours' => '00:00 - 05:00',
             'rate' => 120.00,
-            'description' => 'Automated overnight hit music playout (00:00 - 05:00).',
+            'weekend_rate' => 120.00,
+            'description' => 'One 30 second prerecorded advertisement played between 00:00 and 05:00.',
         ],
     ];
 
@@ -147,6 +206,18 @@ class RadioStationConfigService
                     }
                 }
             }
+        }
+
+        if (isset($settings['slots']) && is_array($settings['slots'])) {
+            foreach ($settings['slots'] as $code => &$slot) {
+                if (empty($slot['part_number'])) {
+                    $slot['part_number'] = $code;
+                }
+                if (!isset($slot['weekend_rate'])) {
+                    $slot['weekend_rate'] = (float) ($slot['rate'] ?? 0.0);
+                }
+            }
+            unset($slot);
         }
 
         return $settings;
@@ -235,14 +306,18 @@ class RadioStationConfigService
         $updated = 0;
 
         foreach ($slots as $code => $slot) {
-            $partNumber = (string) ($slot['part_number'] ?? $code);
+            $partNumber = trim((string) ($slot['part_number'] ?? $code));
+            $origPartNumber = trim((string) ($slot['orig_part_number'] ?? ''));
             $title = (string) ($slot['title'] ?? '');
             $hours = (string) ($slot['hours'] ?? '');
             $rate = (float) ($slot['rate'] ?? 0.0);
             $desc = (string) ($slot['description'] ?? '');
 
-            if ($title === '') {
+            if ($title === '' && $partNumber === '') {
                 continue;
+            }
+            if ($partNumber === '') {
+                $partNumber = (string) $code;
             }
 
             $productName = "Radio Advert: {$title} ({$hours})";
@@ -250,7 +325,18 @@ class RadioStationConfigService
             $nameEsc = $db->quote($productName);
             $descEsc = $db->quote($desc);
 
-            // Check if product exists
+            // If original part number was provided and changed, update existing product record's part number
+            if ($origPartNumber !== '' && $origPartNumber !== $partNumber) {
+                $origPnEsc = $db->quote($origPartNumber);
+                $db->query(
+                    "UPDATE aos_products
+                     SET part_number = '{$pnEsc}', date_modified = '{$now}'
+                     WHERE part_number = '{$origPnEsc}' AND deleted = 0",
+                    false
+                );
+            }
+
+            // Check if product exists by current part_number
             $chk = $db->query("SELECT id FROM aos_products WHERE part_number = '{$pnEsc}' AND deleted = 0 LIMIT 1", false);
             if ($chk && ($row = $db->fetchByAssoc($chk))) {
                 $pId = $db->quote($row['id']);

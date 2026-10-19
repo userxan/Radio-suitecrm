@@ -78,10 +78,9 @@
                         name="applied_package_c"
                         style="box-sizing: border-box; width: 100%; height: 38px; padding: 6px 10px; font-size: 13px; font-family: inherit; color: #1f2328; background-color: #ffffff; border: 1px solid #d0d7de; border-radius: 6px; font-weight: 500;">
                     <option value="">-- Custom Schedule --</option>
-                    <option value="option_1" {if $RADIO_APPLIED_PACKAGE == 'option_1'}selected{/if}>Option 1: 50 Prime Recorded Ads (Weekly - R5,999)</option>
-                    <option value="option_2" {if $RADIO_APPLIED_PACKAGE == 'option_2'}selected{/if}>Option 2: 50 Prime Live Reads (Weekly - R6,999)</option>
-                    <option value="option_3" {if $RADIO_APPLIED_PACKAGE == 'option_3'}selected{/if}>Option 3: 120 Prime Recorded Ads (Monthly - R15,999)</option>
-                    <option value="option_4" {if $RADIO_APPLIED_PACKAGE == 'option_4'}selected{/if}>Option 4: 120 Prime Live Reads (Monthly - R16,999)</option>
+                    {foreach from=$RADIO_PACKAGES key=pkgKey item=pkg}
+                        <option value="{$pkgKey}" {if $RADIO_APPLIED_PACKAGE == $pkgKey}selected{/if}>{$pkg.name} ({if $pkg.type == 'monthly'}Monthly{else}Weekly{/if} - {$RADIO_CURRENCY|default:'R'}{$pkg.rate|string_format:'%.2f'})</option>
+                    {/foreach}
                 </select>
             </div>
         </div>
@@ -197,6 +196,9 @@
 
 <!-- RADIO_SAVE_BUTTON_FIX_START -->
 <script type="text/javascript">
+window.RADIO_CONFIG_PACKAGES = {$RADIO_PACKAGES_JSON};
+</script>
+<script type="text/javascript">
 {literal}
 (function() {
     var RADIO_PART_NUMBERS = {
@@ -277,7 +279,7 @@
         }
     }
 
-    var RADIO_PACKAGES = {
+    var RADIO_PACKAGES = (typeof window.RADIO_CONFIG_PACKAGES === 'object' && window.RADIO_CONFIG_PACKAGES) ? window.RADIO_CONFIG_PACKAGES : {
         'option_1': { rate: 5999.00, total_spots: 50, type: 'weekly' },
         'option_2': { rate: 6999.00, total_spots: 50, type: 'weekly' },
         'option_3': { rate: 15999.00, total_spots: 120, type: 'monthly' },

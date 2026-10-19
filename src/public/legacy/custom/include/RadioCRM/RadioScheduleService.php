@@ -323,11 +323,21 @@ class RadioScheduleService
     /**
      * Clean product line description to ensure no verbose schedule summary appears in Quote or PDF (Section 11.1).
      */
-    public static function cleanRadioLineDescription(?string $description, string $partNumber = ''): string
+    public static function cleanRadioLineDescription(?string $description, string $partNumber = '', mixed $db = null): string
     {
         foreach (self::SLOTS as $slot) {
             if ($partNumber !== '' && strcasecmp($slot['part_number'], $partNumber) === 0) {
                 return $slot['description'];
+            }
+        }
+        if (class_exists('RadioCRM\RadioStationConfigService')) {
+            $conf = RadioStationConfigService::getSettings($db);
+            $configuredSlots = $conf['slots'] ?? [];
+            foreach ($configuredSlots as $cSlot) {
+                $cPn = (string) ($cSlot['part_number'] ?? '');
+                if ($partNumber !== '' && $cPn !== '' && strcasecmp($cPn, $partNumber) === 0 && !empty($cSlot['description'])) {
+                    return (string) $cSlot['description'];
+                }
             }
         }
         if ($description === null) {
@@ -340,7 +350,7 @@ class RadioScheduleService
 
     /**
      * Fetch current unit prices and product metadata from aos_products table if DB is available,
-     * falling back to the 8 historical default rates.
+     * dynamically reflecting all configured show slots and custom product codes.
      *
      * @param mixed $db SuiteCRM DBManager instance or null
      * @return array<string, array{id:string, name:string, part_number:string, price:float, description:string, slot_key:string, slot_label:string}>
@@ -348,8 +358,13 @@ class RadioScheduleService
     public static function getCatalogueProducts(mixed $db = null): array
     {
         $catalogue = [];
+        $configuredSlots = class_exists('RadioCRM\RadioStationConfigService')
+            ? (RadioStationConfigService::getSettings($db)['slots'] ?? self::SLOTS)
+            : self::SLOTS;
+
+        // Base slot defaults
         foreach (self::SLOTS as $slotKey => $slot) {
-            $pn = $slot['part_number'];
+            $pn = strtoupper(trim((string) $slot['part_number']));
             $catalogue[$pn] = [
                 'id' => '',
                 'name' => $slot['product_name'],
@@ -361,12 +376,32 @@ class RadioScheduleService
             ];
         }
 
+        // Overlay configured slots (custom part numbers, custom rates, extra slots)
+        foreach ($configuredSlots as $slotKey => $cSlot) {
+            $pn = strtoupper(trim((string) ($cSlot['part_number'] ?? $slotKey)));
+            if ($pn === '') {
+                continue;
+            }
+            $title = (string) ($cSlot['title'] ?? ($catalogue[$pn]['name'] ?? $pn));
+            $hours = (string) ($cSlot['hours'] ?? '');
+            $displayName = $hours !== '' ? "Radio Advert: {$title} ({$hours})" : "Radio Advert: {$title}";
+            $catalogue[$pn] = [
+                'id' => $catalogue[$pn]['id'] ?? '',
+                'name' => $displayName,
+                'part_number' => $pn,
+                'price' => (float) ($cSlot['rate'] ?? ($catalogue[$pn]['price'] ?? 350.00)),
+                'description' => (string) ($cSlot['description'] ?? ($catalogue[$pn]['description'] ?? '')),
+                'slot_key' => $slotKey,
+                'slot_label' => $title,
+            ];
+        }
+
         if ($db === null && isset($GLOBALS['db']) && is_object($GLOBALS['db'])) {
             $db = $GLOBALS['db'];
         }
 
-        if (is_object($db) && method_exists($db, 'query')) {
-            $partList = array_map(static fn($s) => "'" . $s['part_number'] . "'", self::SLOTS);
+        if (is_object($db) && method_exists($db, 'query') && !empty($catalogue)) {
+            $partList = array_map(static fn($pn) => "'" . $db->quote($pn) . "'", array_keys($catalogue));
             $sql = "SELECT id, name, part_number, price, description
                     FROM aos_products
                     WHERE deleted = 0 AND part_number IN (" . implode(',', $partList) . ")
@@ -375,7 +410,7 @@ class RadioScheduleService
             if ($res) {
                 while ($row = $db->fetchByAssoc($res)) {
                     $pn = strtoupper(trim((string) ($row['part_number'] ?? '')));
-                    if (isset($catalogue[$pn]) && $catalogue[$pn]['id'] === '') {
+                    if (isset($catalogue[$pn])) {
                         $catalogue[$pn]['id'] = (string) $row['id'];
                         $catalogue[$pn]['name'] = (string) ($row['name'] ?: $pn);
                         if (isset($row['price']) && is_numeric($row['price']) && (float) $row['price'] > 0) {
@@ -383,7 +418,8 @@ class RadioScheduleService
                         }
                         $catalogue[$pn]['description'] = self::cleanRadioLineDescription(
                             (string) ($row['description'] ?? ''),
-                            $pn
+                            $pn,
+                            $db
                         );
                     }
                 }
@@ -449,10 +485,10 @@ class RadioScheduleService
         $catalogue = self::getCatalogueProducts($db);
 
         $spotDur = $spotDuration ?? ($inputData['spot_duration_c'] ?? ($inputData['spot_length'] ?? '30 sec'));
-        $durationMultiplier = self::getDurationMultiplier($spotDur);
+        $durationMultiplier = self::getDurationMultiplier($spotDur, $db);
 
         $appliedPkg = $appliedPackage ?? ($inputData['applied_package_c'] ?? '');
-        $pkgDefinitions = self::getPackageDefinitions();
+        $pkgDefinitions = self::getPackageDefinitions($db);
         $isPackage = !empty($appliedPkg) && isset($pkgDefinitions[$appliedPkg]);
         $pkgDef = $isPackage ? $pkgDefinitions[$appliedPkg] : null;
 
@@ -1105,26 +1141,33 @@ class RadioScheduleService
     /**
      * Get duration multiplier for rate card calculations.
      */
-    public static function getDurationMultiplier(?string $duration): float
+    public static function getDurationMultiplier(?string $duration, mixed $db = null): float
     {
         $d = trim((string) ($duration ?? ''));
-        if (preg_match('/(\d+)/', $d, $m)) {
-            $key = $m[1] . ' sec';
-            if (isset(self::DURATION_MULTIPLIERS[$key])) {
-                return self::DURATION_MULTIPLIERS[$key];
+        $multipliers = self::DURATION_MULTIPLIERS;
+        if (class_exists('RadioCRM\RadioStationConfigService')) {
+            $conf = RadioStationConfigService::getSettings($db);
+            if (!empty($conf['duration_multipliers']) && is_array($conf['duration_multipliers'])) {
+                $multipliers = array_merge($multipliers, $conf['duration_multipliers']);
             }
         }
-        return self::DURATION_MULTIPLIERS[$d] ?? 1.00;
+        if (preg_match('/(\d+)/', $d, $m)) {
+            $key = $m[1] . ' sec';
+            if (isset($multipliers[$key])) {
+                return (float) $multipliers[$key];
+            }
+        }
+        return (float) ($multipliers[$d] ?? 1.00);
     }
 
     /**
-     * Get definitive radio rate card package definitions (Options 1 to 4).
+     * Get definitive radio rate card package definitions (Options 1 to 4 and any custom packages).
      *
-     * @return array<string, array{key:string, name:string, type:string, total_spots:int, rate:float, description:string, prime_slots:array<string, int>}>
+     * @return array<string, array{key:string, name:string, type:string, total_spots:int, rate:float, description:string, prime_slots?:array<string, int>}>
      */
-    public static function getPackageDefinitions(): array
+    public static function getPackageDefinitions(mixed $db = null): array
     {
-        return [
+        $defaults = [
             'option_1' => [
                 'key' => 'option_1',
                 'name' => 'Option 1: 50 Prime Time Recorded Ads',
@@ -1186,6 +1229,22 @@ class RadioScheduleService
                 ],
             ],
         ];
+
+        if (class_exists('RadioCRM\RadioStationConfigService')) {
+            $conf = RadioStationConfigService::getSettings($db);
+            if (!empty($conf['package_presets']) && is_array($conf['package_presets'])) {
+                $presets = $conf['package_presets'];
+                foreach ($presets as $k => &$p) {
+                    if (empty($p['prime_slots']) && isset($defaults[$k]['prime_slots'])) {
+                        $p['prime_slots'] = $defaults[$k]['prime_slots'];
+                    }
+                }
+                unset($p);
+                return $presets;
+            }
+        }
+
+        return $defaults;
     }
 
     /**

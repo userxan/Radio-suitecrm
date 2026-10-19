@@ -127,6 +127,97 @@ assertCheck(
     "name={$pRow['name']}, price={$pRow['price']}"
 );
 
+// Test 3.3: Product Code Editing & Renaming (orig_part_number -> new part_number)
+$editCodeSlots = $customSlots;
+$editCodeSlots['MORNING-BUZZ']['orig_part_number'] = 'MORNING-BUZZ';
+$editCodeSlots['MORNING-BUZZ']['part_number'] = 'MB-FLAGSHIP';
+$editCodeSlots['MORNING-BUZZ']['rate'] = 425.00;
+RadioStationConfigService::updateProductsCatalogue($editCodeSlots, $db);
+
+$renamedRes = $db->query("SELECT id, name, part_number, price FROM aos_products WHERE part_number = 'MB-FLAGSHIP' AND deleted = 0 LIMIT 1");
+$renamedRow = $renamedRes ? $db->fetchByAssoc($renamedRes) : null;
+assertCheck(
+    $renamedRow !== null &&
+    $renamedRow['part_number'] === 'MB-FLAGSHIP' &&
+    abs((float)$renamedRow['price'] - 425.00) < 0.01,
+    'W3.3: Product code editing successfully updates catalogue part_number and rate',
+    "part_number=" . ($renamedRow['part_number'] ?? 'none') . ", price=" . ($renamedRow['price'] ?? 0)
+);
+
+// Revert part number back so subsequent tests remain consistent
+$editCodeSlots['MORNING-BUZZ']['orig_part_number'] = 'MB-FLAGSHIP';
+$editCodeSlots['MORNING-BUZZ']['part_number'] = 'MORNING-BUZZ';
+$editCodeSlots['MORNING-BUZZ']['rate'] = 399.00;
+RadioStationConfigService::updateProductsCatalogue($editCodeSlots, $db);
+
+// Test 3.4: Versatile Rate Card: Adding extra custom show slots beyond default 8
+$extraSlots = $customSlots;
+$extraSlots['WEEKEND-CHART'] = [
+    'part_number' => 'WKND-CHART',
+    'title' => 'Weekend Top 30 Chart Show',
+    'hours' => '10:00 - 14:00',
+    'rate' => 380.00,
+    'weekend_rate' => 410.00,
+    'description' => 'Flagship Saturday music countdown.',
+];
+$extraSlots['SPONSORSHIP-01'] = [
+    'part_number' => 'SPON-NEWS',
+    'title' => 'News Bulletin Sponsorship',
+    'hours' => 'Hourly',
+    'rate' => 500.00,
+    'weekend_rate' => 450.00,
+    'description' => '10s opener and closer sponsorship tags.',
+];
+RadioStationConfigService::saveSettings(['slots' => $extraSlots], $db);
+
+$catProds = RadioScheduleService::getCatalogueProducts($db);
+assertCheck(
+    isset($catProds['WKND-CHART']) &&
+    isset($catProds['SPON-NEWS']) &&
+    abs((float)$catProds['WKND-CHART']['price'] - 380.00) < 0.01 &&
+    abs((float)$catProds['SPON-NEWS']['price'] - 500.00) < 0.01,
+    'W3.4: Versatile rate card supports adding 9th+ custom slots and pulls them into catalogue',
+    "WKND-CHART rate=" . ($catProds['WKND-CHART']['price'] ?? 0) . ", SPON-NEWS rate=" . ($catProds['SPON-NEWS']['price'] ?? 0)
+);
+
+// Test 3.5: Package Presets Customization
+$customPackages = [
+    'option_1' => [
+        'key' => 'option_1',
+        'name' => 'Option 1: 50 Prime Recorded Ads (Special Promo)',
+        'type' => 'weekly',
+        'total_spots' => 50,
+        'rate' => 5499.00,
+        'description' => 'Promo rate for Option 1',
+    ],
+];
+RadioStationConfigService::saveSettings(['package_presets' => $customPackages], $db);
+$loadedPackages = RadioScheduleService::getPackageDefinitions($db);
+assertCheck(
+    isset($loadedPackages['option_1']) &&
+    abs((float)$loadedPackages['option_1']['rate'] - 5499.00) < 0.01 &&
+    strpos($loadedPackages['option_1']['name'], 'Special Promo') !== false,
+    'W3.5: Package presets customizable and dynamically adopted in RadioScheduleService',
+    "Option 1 rate=" . ($loadedPackages['option_1']['rate'] ?? 0) . ", name=" . ($loadedPackages['option_1']['name'] ?? '')
+);
+
+// Test 3.6: Duration Multipliers Customization
+RadioStationConfigService::saveSettings([
+    'duration_multipliers' => [
+        '15 sec' => 0.60,
+        '30 sec' => 1.00,
+        '45 sec' => 1.50,
+        '60 sec' => 1.90,
+    ],
+], $db);
+$dur15 = RadioScheduleService::getDurationMultiplier('15 sec', $db);
+$dur60 = RadioScheduleService::getDurationMultiplier('60 sec', $db);
+assertCheck(
+    abs($dur15 - 0.60) < 0.001 && abs($dur60 - 1.90) < 0.001,
+    'W3.6: Duration multipliers customizable in station settings and reflected in calculation',
+    "15s={$dur15}, 60s={$dur60}"
+);
+
 // -------------------------------------------------------------
 // Test 4: Dynamic Integration with Capacity and Playout Services
 // -------------------------------------------------------------

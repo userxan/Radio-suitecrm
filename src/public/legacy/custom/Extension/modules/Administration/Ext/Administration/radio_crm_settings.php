@@ -6,7 +6,7 @@ $admin_option_defs['Administration']['radio_station_wizard'] = [
     'LBL_RADIO_STATION_SETUP_TITLE',
     'LBL_RADIO_STATION_SETUP_DESC',
     './index.php?module=Administration&action=radio_station_wizard',
-    'admin-radio-settings',
+    'admin-aos-settings',
 ];
 
 $admin_group_header[] = [

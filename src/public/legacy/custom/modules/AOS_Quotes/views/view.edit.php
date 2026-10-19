@@ -22,9 +22,10 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
 
         $slotsForTpl = [];
         foreach (RadioScheduleService::SLOTS as $slotKey => $slot) {
-            $pn = $slot['part_number'];
-            $rate = $catalogue[$pn]['price'] ?? $slot['default_rate'];
-            $label = $confSlots[$pn]['title'] ?? $slot['label'];
+            $confSlot = $confSlots[$slotKey] ?? ($confSlots[$slot['part_number']] ?? null);
+            $pn = !empty($confSlot['part_number']) ? $confSlot['part_number'] : $slot['part_number'];
+            $rate = $catalogue[$pn]['price'] ?? ($confSlot['rate'] ?? $slot['default_rate']);
+            $label = !empty($confSlot['title']) ? $confSlot['title'] : $slot['label'];
 
             $slotDefRate = (float) $slot['default_rate'];
             $customScale = ($slotDefRate > 0 && abs($rate - $slotDefRate) > 0.001)
@@ -35,7 +36,9 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
             $wkndRates = [];
             foreach (array_keys($slot['hours']) as $hourKey) {
                 $wkRates[] = round(RadioScheduleService::getRateCardHourlyPrice('mon', $hourKey) * $customScale, 2);
-                $wkndRates[] = round(RadioScheduleService::getRateCardHourlyPrice('sat', $hourKey) * $customScale, 2);
+                $wkndRates[] = isset($confSlot['weekend_rate']) && is_numeric($confSlot['weekend_rate'])
+                    ? round((float) $confSlot['weekend_rate'] * ($cellBaseRate = RadioScheduleService::getRateCardHourlyPrice('sat', $hourKey) / 350.0 > 0 ? 1.0 : 1.0), 2)
+                    : round(RadioScheduleService::getRateCardHourlyPrice('sat', $hourKey) * $customScale, 2);
             }
             $minWk = min($wkRates);
             $maxWk = max($wkRates);
@@ -55,16 +58,18 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
                 'weekend_rate' => $minWknd,
                 'weekend_rate_label' => $wkndLabel,
                 'hours' => $slot['hours'],
-                'programme_time' => $confSlots[$pn]['hours'] ?? ($slot['programme_time'] ?? ''),
+                'programme_time' => $confSlot['hours'] ?? ($slot['programme_time'] ?? ''),
             ];
         }
 
         $cellRates = [];
         foreach (RadioScheduleService::getAllScheduleFields() as $fieldName => $meta) {
             $slotKey = $meta['slot_key'];
+            $confSlot = $confSlots[$slotKey] ?? ($confSlots[RadioScheduleService::SLOTS[$slotKey]['part_number']] ?? null);
+            $pn = !empty($confSlot['part_number']) ? $confSlot['part_number'] : RadioScheduleService::SLOTS[$slotKey]['part_number'];
             $slotDefRate = (float) (RadioScheduleService::SLOTS[$slotKey]['default_rate'] ?? 350.00);
-            $catPrice = isset($catalogue[RadioScheduleService::SLOTS[$slotKey]['part_number']]['price'])
-                ? (float) $catalogue[RadioScheduleService::SLOTS[$slotKey]['part_number']]['price']
+            $catPrice = isset($catalogue[$pn]['price'])
+                ? (float) $catalogue[$pn]['price']
                 : $slotDefRate;
             $customScale = ($slotDefRate > 0 && abs($catPrice - $slotDefRate) > 0.001)
                 ? ($catPrice / $slotDefRate)
@@ -106,6 +111,8 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
             $appliedPackage
         );
 
+        $packages = RadioScheduleService::getPackageDefinitions($GLOBALS['db'] ?? null);
+
         $tplVars = [
             'RADIO_SLOTS' => $slotsForTpl,
             'RADIO_DAYS' => RadioScheduleService::DAYS,
@@ -118,7 +125,9 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
             'RADIO_INDUSTRY_CATEGORY' => $_REQUEST['industry_category_c'] ?? ($this->bean->industry_category_c ?? 'other'),
             'RADIO_SPOT_DURATION' => $_REQUEST['spot_duration_c'] ?? ($this->bean->spot_duration_c ?? '30 sec'),
             'RADIO_APPLIED_PACKAGE' => $_REQUEST['applied_package_c'] ?? ($this->bean->applied_package_c ?? ''),
-            'RADIO_PACKAGES' => RadioScheduleService::getPackageDefinitions(),
+            'RADIO_PACKAGES' => $packages,
+            'RADIO_PACKAGES_JSON' => json_encode($packages, JSON_UNESCAPED_SLASHES),
+            'RADIO_CURRENCY' => $stConfig['currency_symbol'] ?? 'R',
             'RADIO_STATION_CONFIGURED' => RadioStationConfigService::isConfigured($GLOBALS['db'] ?? null),
             'RADIO_STATION_NAME' => $stConfig['station_name'] ?? 'Community Radio FM',
         ];
