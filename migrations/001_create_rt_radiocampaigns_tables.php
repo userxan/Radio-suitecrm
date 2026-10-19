@@ -52,6 +52,8 @@ $db->query("CREATE TABLE IF NOT EXISTS rt_radiocampaigns (
     myriad_cart_number VARCHAR(255) DEFAULT NULL,
     quote_reference VARCHAR(255) DEFAULT NULL,
     linked_quote_id CHAR(36) DEFAULT NULL,
+    filename VARCHAR(255) DEFAULT NULL,
+    file_mime_type VARCHAR(100) DEFAULT NULL,
     INDEX idx_rt_rc_del_name (deleted, name),
     INDEX idx_rt_rc_linked_quote (linked_quote_id, deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
@@ -65,6 +67,8 @@ $requiredCols = [
     'myriad_cart_number' => "VARCHAR(255) DEFAULT NULL",
     'quote_reference' => "VARCHAR(255) DEFAULT NULL",
     'linked_quote_id' => "CHAR(36) DEFAULT NULL",
+    'filename' => "VARCHAR(255) DEFAULT NULL",
+    'file_mime_type' => "VARCHAR(100) DEFAULT NULL",
 ];
 
 foreach ($requiredCols as $col => $def) {

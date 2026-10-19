@@ -811,19 +811,149 @@ class RadioScheduleService
             $writtenLogs[] = $logPath;
         }
 
-        return [
+        // Export attached MP3 / audio file if present on the campaign
+        $audioInfo = null;
+        if (!empty($campaignData['audio_file']) && is_array($campaignData['audio_file'])) {
+            $audioInfo = $campaignData['audio_file'];
+        } elseif (!empty($campaignData['id'])) {
+            $audioInfo = self::findCampaignAudioFile(
+                $GLOBALS['db'] ?? null,
+                (string) $campaignData['id'],
+                (string) ($campaignData['filename'] ?? '')
+            );
+        }
+
+        $exportedAudioPath = null;
+        $exportedAudioFilename = null;
+        if (is_array($audioInfo)
+            && !empty($audioInfo['source_path'])
+            && is_file((string) $audioInfo['source_path'])
+            && is_readable((string) $audioInfo['source_path'])
+        ) {
+            $audioDir = rtrim($exportRoot, '/') . '/myriad_audio';
+            if (is_dir($audioDir) || @mkdir($audioDir, 0775, true)) {
+                $origName = trim((string) ($audioInfo['original_name'] ?? 'advert.mp3'));
+                $ext = strtolower((string) pathinfo($origName, PATHINFO_EXTENSION));
+                if ($ext === '') {
+                    $ext = 'mp3';
+                }
+                $baseOrig = (string) pathinfo($origName, PATHINFO_FILENAME);
+                $safeOrigBase = self::safeFilenameSegment($baseOrig !== '' ? $baseOrig : 'advert');
+                $safeCart = self::safeFilenameSegment($cartNumber);
+
+                $exportedAudioFilename = "CART_{$safeCart}_{$safeOrigBase}.{$ext}";
+                $audioDest = $audioDir . '/' . $exportedAudioFilename;
+                $tmpAudio = $audioDest . '.tmp.' . uniqid('', true);
+                if (@copy((string) $audioInfo['source_path'], $tmpAudio) && @rename($tmpAudio, $audioDest)) {
+                    @chmod($audioDest, 0664);
+                    $exportedAudioPath = $audioDest;
+                } else {
+                    @unlink($tmpAudio);
+                }
+            }
+        }
+
+        $msg = sprintf(
+            'Exported %d scheduled plays across %d active day(s) to Myriad CSV (%s) and daily .log files.',
+            count($csvRows),
+            count($writtenLogs),
+            $csvFilename
+        );
+        if ($exportedAudioFilename !== null) {
+            $msg .= sprintf(' Audio file exported as %s.', $exportedAudioFilename);
+        }
+
+        $result = [
             'success' => true,
-            'message' => sprintf(
-                'Exported %d scheduled plays across %d active day(s) to Myriad CSV (%s) and daily .log files.',
-                count($csvRows),
-                count($writtenLogs),
-                $csvFilename
-            ),
+            'message' => $msg,
             'csv_path' => $csvPath,
             'csv_filename' => $csvFilename,
             'daily_logs' => $writtenLogs,
             'total_plays' => count($csvRows),
             'active_days' => count($writtenLogs),
         ];
+        if ($exportedAudioPath !== null) {
+            $result['audio_export_path'] = $exportedAudioPath;
+            $result['audio_filename'] = $exportedAudioFilename;
+        }
+        return $result;
+    }
+
+    /**
+     * Locate an uploaded MP3 / audio file for an RT_RadioCampaigns record in either
+     * SuiteCRM 8 private_documents_media_objects or legacy upload/ storage.
+     *
+     * @return array{source_path:string, original_name:string, mime_type:string}|null
+     */
+    public static function findCampaignAudioFile(
+        mixed $db,
+        string $campaignId,
+        string $fallbackFilename = ''
+    ): ?array {
+        $campaignId = trim($campaignId);
+        if ($campaignId === '') {
+            return null;
+        }
+
+        if ($db === null && isset($GLOBALS['db']) && is_object($GLOBALS['db'])) {
+            $db = $GLOBALS['db'];
+        }
+
+        // 1. Check SuiteCRM 8 private_documents_media_objects table
+        if (is_object($db) && method_exists($db, 'query')) {
+            $tblCheck = $db->query("SHOW TABLES LIKE 'private_documents_media_objects'", false);
+            if ($tblCheck && $db->fetchByAssoc($tblCheck)) {
+                $cIdEsc = $db->quote($campaignId);
+                $res = $db->query(
+                    "SELECT id, file_path, original_name, mime_type, date_entered
+                     FROM private_documents_media_objects
+                     WHERE parent_type = 'RT_RadioCampaigns'
+                       AND parent_id = '{$cIdEsc}'
+                       AND deleted = 0
+                     ORDER BY date_entered DESC
+                     LIMIT 1",
+                    false
+                );
+                $row = $res ? $db->fetchByAssoc($res) : null;
+                if ($row && !empty($row['file_path'])) {
+                    $filePath = basename((string) $row['file_path']);
+                    $candidates = [];
+                    if (!empty($row['date_entered']) && preg_match('/^(\d{4})-(\d{2})/', (string) $row['date_entered'], $m)) {
+                        $candidates[] = "/var/www/html/media/documents/{$m[1]}/{$m[2]}/{$filePath}";
+                    }
+                    $candidates[] = "/var/www/html/media/documents/{$filePath}";
+                    $globMatches = glob("/var/www/html/media/documents/*/*/{$filePath}") ?: [];
+                    foreach ($globMatches as $gm) {
+                        $candidates[] = $gm;
+                    }
+                    foreach ($candidates as $cand) {
+                        if (is_file($cand) && is_readable($cand)) {
+                            return [
+                                'source_path' => $cand,
+                                'original_name' => (string) ($row['original_name'] ?: ($fallbackFilename ?: 'advert.mp3')),
+                                'mime_type' => (string) ($row['mime_type'] ?: 'audio/mpeg'),
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Check legacy upload directory (/var/www/html/public/legacy/upload/<campaignId>)
+        $legacyCandidates = [
+            "/var/www/html/public/legacy/upload/{$campaignId}",
+            "upload/{$campaignId}",
+        ];
+        foreach ($legacyCandidates as $cand) {
+            if (is_file($cand) && is_readable($cand)) {
+                return [
+                    'source_path' => realpath($cand) ?: $cand,
+                    'original_name' => $fallbackFilename !== '' ? $fallbackFilename : "campaign_{$campaignId}.mp3",
+                    'mime_type' => 'audio/mpeg',
+                ];
+            }
+        }
+
+        return null;
     }
 }

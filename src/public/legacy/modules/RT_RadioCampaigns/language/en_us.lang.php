@@ -41,6 +41,10 @@ $mod_strings = [
     'LBL_MYRIAD_CART_NUMBER' => 'Myriad Cart Number',
     'LBL_QUOTE_REFERENCE' => 'Quote Reference',
     'LBL_LINKED_QUOTE_ID' => 'Source Quote ID',
+    'LBL_AUDIO_FILE' => 'Advert Audio File (MP3)',
+    'LBL_FILENAME' => 'Advert Audio File (MP3)',
+    'LBL_FILE_MIME_TYPE' => 'Audio MIME Type',
+    'LBL_FILE_URL' => 'Audio File URL',
     'LBL_EXPORT_TO_MYRIAD' => 'Export to Myriad',
     'LBL_RT_RADIOCAMPAIGNS_AOS_QUOTES_FROM_AOS_QUOTES_TITLE' => 'Quotes',
 ];

@@ -74,6 +74,7 @@ $campaignData = [
     'myriad_cart_number' => (string) ($campaign->myriad_cart_number ?? ''),
     'quote_reference' => (string) ($campaign->quote_reference ?: ($quote->number ?? '')),
     'linked_quote_id' => (string) $quote->id,
+    'filename' => (string) ($campaign->filename ?? ''),
 ];
 
 $exportResult = RadioScheduleService::exportCampaignToMyriad($campaignData, $quoteScheduleData);

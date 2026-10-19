@@ -164,6 +164,75 @@ checkUi(
     $moduleRegistered && $hasRcColumns && $hasRcExportActionInDetail
 );
 
+// 5. Verify RT_RadioCampaigns MP3 audio upload field (vardefs + EditView + DetailView) and Myriad MP3 audio export
+$rcBean = BeanFactory::newBean('RT_RadioCampaigns');
+$rcFieldDefs = $rcBean->field_defs ?? [];
+$hasAudioVardef = isset($rcFieldDefs['file'])
+    && ($rcFieldDefs['file']['type'] ?? '') === 'file'
+    && ($rcFieldDefs['file']['metadata']['storage_type'] ?? '') === 'private-documents'
+    && isset($rcFieldDefs['filename']);
+
+$rcEditDefs = [];
+include $legacyDir . '/modules/RT_RadioCampaigns/metadata/editviewdefs.php';
+$editPanelsJson = json_encode($viewdefs['RT_RadioCampaigns']['EditView']['panels'] ?? []);
+$detailPanelsJson = json_encode($viewdefs['RT_RadioCampaigns']['DetailView']['panels'] ?? []);
+$hasAudioInViews = strpos($editPanelsJson, '"file"') !== false
+    && strpos($detailPanelsJson, '"file"') !== false;
+
+// Simulate an uploaded MP3 in private_documents_media_objects for the test campaign and verify exportCampaignToMyriad copies it to /srv/myriad_exports/myriad_audio/
+$cRes = $db->query("SELECT id, name, start_date, end_date, spot_length, myriad_cart_number, quote_reference, linked_quote_id FROM rt_radiocampaigns WHERE linked_quote_id = '" . $db->quote($testQuoteId) . "' AND deleted = 0 LIMIT 1", false);
+$cRow = $cRes ? $db->fetchByAssoc($cRes) : null;
+$audioExportedOk = false;
+$exportedAudioFile = '';
+
+if ($cRow && !empty($cRow['id'])) {
+    $testCampId = (string) $cRow['id'];
+    $ymDir = '/var/www/html/media/documents/' . date('Y/m');
+    if (!is_dir($ymDir)) {
+        @mkdir($ymDir, 0775, true);
+    }
+    $fakeMediaUuid = '01a15099-mp30-7000-8000-' . substr(md5($testCampId), 0, 12);
+    $fakeMp3Path = $ymDir . '/' . $fakeMediaUuid;
+    // Write a valid minimal MP3 ID3v2 header + frame
+    file_put_contents($fakeMp3Path, "ID3\x03\x00\x00\x00\x00\x00\x0aTIT2\x00\x00\x00\x02\x00\x00\x00A\xff\xfb\x90\x64" . str_repeat("\x00", 128));
+
+    $mediaRowId = '1f1cb299-mp30-6000-9000-' . substr(md5($testCampId), 0, 12);
+    $nowStr = gmdate('Y-m-d H:i:s');
+    $db->query("DELETE FROM private_documents_media_objects WHERE id = '{$mediaRowId}'", false);
+    $db->query(
+        "INSERT INTO private_documents_media_objects
+            (id, name, date_entered, date_modified, deleted, file_path, size, mime_type, original_name, parent_type, parent_id, parent_field, temporary)
+         VALUES
+            ('{$mediaRowId}', 'PUKfm_Promo_Spot.mp3', '{$nowStr}', '{$nowStr}', 0, '{$fakeMediaUuid}', 164, 'audio/mpeg', 'PUKfm_Promo_Spot.mp3', 'RT_RadioCampaigns', '" . $db->quote($testCampId) . "', 'file', 0)",
+        false
+    );
+
+    $qCstmRes = $db->query("SELECT * FROM aos_quotes_cstm WHERE id_c = '" . $db->quote($testQuoteId) . "'", false);
+    $qCstmRow = ($qCstmRes ? $db->fetchByAssoc($qCstmRes) : null) ?: [];
+    $expRes = RadioScheduleService::exportCampaignToMyriad($cRow, $qCstmRow, '/srv/myriad_exports');
+    $exportedAudioFile = (string) ($expRes['audio_export_path'] ?? '');
+    $audioExportedOk = !empty($expRes['success'])
+        && $exportedAudioFile !== ''
+        && is_file($exportedAudioFile)
+        && filesize($exportedAudioFile) > 0;
+
+    // Clean up test artifacts created by UI-5
+    if (!empty($expRes['csv_path']) && is_file($expRes['csv_path'])) {
+        @unlink($expRes['csv_path']);
+    }
+    foreach ($expRes['daily_logs'] ?? [] as $dl) {
+        if (is_file($dl)) {
+            @unlink($dl);
+        }
+    }
+}
+
+checkUi(
+    'UI-5: RT_RadioCampaigns exposes MP3 audio upload field (file/private-documents) and exports MP3 to /srv/myriad_exports/myriad_audio/',
+    $hasAudioVardef && $hasAudioInViews && $audioExportedOk,
+    'vardef=' . ($hasAudioVardef ? 'yes' : 'no') . ', views=' . ($hasAudioInViews ? 'yes' : 'no') . ', audioExport=' . basename($exportedAudioFile)
+);
+
 echo "======================================================================\n";
 if ($failures > 0) {
     echo "UI / Container Verification FAILED ({$failures} failed)\n";

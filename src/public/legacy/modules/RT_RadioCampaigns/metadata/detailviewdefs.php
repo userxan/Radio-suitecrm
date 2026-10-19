@@ -12,6 +12,9 @@ $viewdefs[$module_name]['DetailView'] = [
                 'EDIT',
                 'DUPLICATE',
                 'DELETE',
+                [
+                    'customCode' => '<input type="button" class="button" id="export_to_myriad_btn" value="{$MOD.LBL_EXPORT_TO_MYRIAD}" onclick="window.location.href=\'index.php?entryPoint=export_radio_campaign_to_myriad&record={$fields.id.value}\';" />',
+                ],
             ],
         ],
         'maxColumns' => '2',
@@ -57,8 +60,12 @@ $viewdefs[$module_name]['DetailView'] = [
                 'myriad_cart_number',
             ],
             [
+                'file',
                 'quote_reference',
+            ],
+            [
                 'linked_quote_id',
+                '',
             ],
             [
                 'description',

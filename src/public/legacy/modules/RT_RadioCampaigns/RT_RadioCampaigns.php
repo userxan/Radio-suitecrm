@@ -39,10 +39,22 @@ class RT_RadioCampaigns extends Basic
     public $myriad_cart_number;
     public $quote_reference;
     public $linked_quote_id;
+    public $filename;
+    public $file_mime_type;
+    public $file_url;
+    public $file;
 
     public function __construct()
     {
         parent::__construct();
+    }
+
+    public function save($check_notify = false)
+    {
+        if (is_string($this->file) && $this->file !== '' && empty($this->filename)) {
+            $this->filename = $this->file;
+        }
+        return parent::save($check_notify);
     }
 
     public function bean_implements($interface)

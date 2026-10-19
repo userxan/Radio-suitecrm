@@ -209,6 +209,7 @@ class ExportToMyriadAction extends LegacyHandler implements ProcessHandlerInterf
                 'myriad_cart_number' => $cartNumber,
                 'quote_reference' => (string) ($campaign->quote_reference ?: ($quote->number ?? '')),
                 'linked_quote_id' => (string) $quote->id,
+                'filename' => (string) ($campaign->filename ?? ''),
             ];
 
             $exportResult = RadioScheduleService::exportCampaignToMyriad(
@@ -238,6 +239,8 @@ class ExportToMyriadAction extends LegacyHandler implements ProcessHandlerInterf
                 'daily_logs' => $exportResult['daily_logs'] ?? [],
                 'total_plays' => $exportResult['total_plays'] ?? 0,
                 'active_days' => $exportResult['active_days'] ?? 0,
+                'audio_export_path' => $exportResult['audio_export_path'] ?? '',
+                'audio_filename' => $exportResult['audio_filename'] ?? '',
             ]);
         } finally {
             $this->close();

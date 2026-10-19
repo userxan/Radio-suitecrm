@@ -7,6 +7,9 @@ if (!defined('sugarEntry') || !sugarEntry) {
 $module_name = 'RT_RadioCampaigns';
 $viewdefs[$module_name]['EditView'] = [
     'templateMeta' => [
+        'form' => [
+            'enctype' => 'multipart/form-data',
+        ],
         'maxColumns' => '2',
         'widths' => [
             ['label' => '10', 'field' => '30'],
@@ -33,8 +36,12 @@ $viewdefs[$module_name]['EditView'] = [
                 'myriad_cart_number',
             ],
             [
+                'file',
                 'quote_reference',
+            ],
+            [
                 'linked_quote_id',
+                '',
             ],
             [
                 'description',
