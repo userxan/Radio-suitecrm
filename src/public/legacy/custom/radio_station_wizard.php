@@ -27,10 +27,20 @@ $isEmbedded = (!empty($_REQUEST['module']) && $_REQUEST['module'] === 'Administr
 $notice = '';
 $noticeType = 'success';
 
+$subAction = $_POST['subaction'] ?? ($_POST['wizard_action'] ?? ($_GET['subaction'] ?? ($_GET['wizard_action'] ?? '')));
+if ($subAction === '') {
+    if (isset($_GET['action']) && $_GET['action'] === 'export_json') {
+        $subAction = 'export_json';
+    }
+    if (isset($_POST['action']) && in_array($_POST['action'], ['save_wizard', 'import_json'], true)) {
+        $subAction = $_POST['action'];
+    }
+}
+
 // -------------------------------------------------------------
 // 1. Handle JSON Profile Export
 // -------------------------------------------------------------
-if (isset($_GET['action']) && $_GET['action'] === 'export_json') {
+if ($subAction === 'export_json') {
     $json = RadioStationConfigService::exportProfileJson($db);
     header('Content-Type: application/json');
     header('Content-Disposition: attachment; filename="station_profile.json"');
@@ -41,7 +51,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_json') {
 // -------------------------------------------------------------
 // 2. Handle JSON Profile Import
 // -------------------------------------------------------------
-if (isset($_POST['action']) && $_POST['action'] === 'import_json') {
+if ($subAction === 'import_json') {
     if (!empty($_FILES['profile_json']['tmp_name']) && is_uploaded_file($_FILES['profile_json']['tmp_name'])) {
         $raw = (string) file_get_contents($_FILES['profile_json']['tmp_name']);
         if (RadioStationConfigService::importProfileJson($raw, $db)) {
@@ -57,7 +67,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'import_json') {
 // -------------------------------------------------------------
 // 3. Handle Form Save
 // -------------------------------------------------------------
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'save_wizard')) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($subAction === 'save_wizard')) {
     $settingsData = [
         'station_name' => trim((string) ($_POST['station_name'] ?? 'Community Radio FM')),
         'station_callsign' => trim((string) ($_POST['station_callsign'] ?? 'RADIO')),
@@ -595,7 +605,11 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
         </div>
 
         <form method="POST" action="<?= $isEmbedded ? 'index.php?module=Administration&action=radio_station_wizard' : 'index.php?entryPoint=radio_station_wizard' ?>" enctype="multipart/form-data" id="radioWizardForm">
-            <input type="hidden" name="action" value="save_wizard">
+            <?php if ($isEmbedded): ?>
+                <input type="hidden" name="module" value="Administration">
+                <input type="hidden" name="action" value="radio_station_wizard">
+            <?php endif; ?>
+            <input type="hidden" name="subaction" value="save_wizard">
             <input type="hidden" name="existing_logo_url" value="<?= $logoUrl ?>">
 
             <div class="wizard-content">
@@ -937,7 +951,7 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:20px; max-width:600px;">
                         <h4 style="margin-top:0; color:#334155;">Export Configuration</h4>
                         <p style="font-size:13px; color:#64748b;">Download an authoritative JSON snapshot containing all show dayparts, rate card prices, packages, and station information.</p>
-                        <a href="<?= $isEmbedded ? 'index.php?module=Administration&action=radio_station_wizard&action=export_json' : 'index.php?entryPoint=radio_station_wizard&action=export_json' ?>" class="btn-tool" style="font-size:13.5px; padding:9px 18px;">
+                        <a href="<?= $isEmbedded ? 'index.php?module=Administration&action=radio_station_wizard&subaction=export_json' : 'index.php?entryPoint=radio_station_wizard&subaction=export_json' ?>" class="btn-tool" style="font-size:13.5px; padding:9px 18px;">
                             📥 Export Station Profile (JSON)
                         </a>
 
@@ -955,7 +969,7 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
             <!-- Wizard Footer Action Bar -->
             <div class="wizard-footer">
                 <div style="display:flex; gap:10px;">
-                    <a href="<?= $isEmbedded ? 'index.php?module=Administration&action=radio_station_wizard&action=export_json' : 'index.php?entryPoint=radio_station_wizard&action=export_json' ?>" class="btn-tool" title="Export profile JSON">
+                    <a href="<?= $isEmbedded ? 'index.php?module=Administration&action=radio_station_wizard&subaction=export_json' : 'index.php?entryPoint=radio_station_wizard&subaction=export_json' ?>" class="btn-tool" title="Export profile JSON">
                         📥 Export JSON
                     </a>
                     <button type="button" class="btn-tool" onclick="document.getElementById('radioImportFileInput').click()">
@@ -970,7 +984,11 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
 
         <!-- Hidden form for JSON profile upload -->
         <form method="POST" action="<?= $isEmbedded ? 'index.php?module=Administration&action=radio_station_wizard' : 'index.php?entryPoint=radio_station_wizard' ?>" enctype="multipart/form-data" id="radioImportForm" style="display:none;">
-            <input type="hidden" name="action" value="import_json">
+            <?php if ($isEmbedded): ?>
+                <input type="hidden" name="module" value="Administration">
+                <input type="hidden" name="action" value="radio_station_wizard">
+            <?php endif; ?>
+            <input type="hidden" name="subaction" value="import_json">
             <input type="file" id="radioImportFileInput" name="profile_json" accept=".json,application/json" onchange="document.getElementById('radioImportForm').submit()">
         </form>
     </div>
