@@ -108,10 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($subAction === 'save_wizard')) {
     }
 
     // Process show slot titles, product codes, hours, and rates
-    $postedSlots = $_POST['slots'] ?? [];
-    if (is_array($postedSlots)) {
+    if (isset($_POST['slots']) && is_array($_POST['slots'])) {
         $newSlots = [];
-        foreach ($postedSlots as $idx => $slotInput) {
+        foreach ($_POST['slots'] as $idx => $slotInput) {
             $title = trim((string) ($slotInput['title'] ?? ''));
             $partNumber = trim((string) ($slotInput['part_number'] ?? ''));
             $origPartNumber = trim((string) ($slotInput['orig_part_number'] ?? $partNumber));
@@ -138,14 +137,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($subAction === 'save_wizard')) {
                 'description' => $desc,
             ];
         }
-        $settingsData['slots'] = $newSlots;
+        if (!empty($newSlots)) {
+            $settingsData['slots'] = $newSlots;
+        }
     }
 
     // Process package presets
-    $postedPackages = $_POST['packages'] ?? [];
-    if (is_array($postedPackages)) {
+    if (isset($_POST['packages']) && is_array($_POST['packages'])) {
         $newPackages = [];
-        foreach ($postedPackages as $key => $pkgInput) {
+        foreach ($_POST['packages'] as $key => $pkgInput) {
             $name = trim((string) ($pkgInput['name'] ?? ''));
             if ($name === '') {
                 continue;
@@ -165,24 +165,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($subAction === 'save_wizard')) {
                 'description' => $pkgDesc,
             ];
         }
-        $settingsData['package_presets'] = $newPackages;
+        if (!empty($newPackages)) {
+            $settingsData['package_presets'] = $newPackages;
+        }
     }
 
     // Process duration multipliers
-    $postedMultipliers = $_POST['duration_multipliers'] ?? [];
-    if (is_array($postedMultipliers) && !empty($postedMultipliers)) {
+    if (isset($_POST['duration_multipliers']) && is_array($_POST['duration_multipliers']) && !empty($_POST['duration_multipliers'])) {
         $newMultipliers = [];
-        foreach ($postedMultipliers as $durKey => $mVal) {
+        foreach ($_POST['duration_multipliers'] as $durKey => $mVal) {
             $newMultipliers[$durKey] = (float) $mVal;
         }
-        $settingsData['duration_multipliers'] = $newMultipliers;
+        if (!empty($newMultipliers)) {
+            $settingsData['duration_multipliers'] = $newMultipliers;
+        }
     }
 
     // Process category discounts
-    $postedCats = $_POST['categories'] ?? [];
-    if (is_array($postedCats) && !empty($postedCats)) {
+    if (isset($_POST['categories']) && is_array($_POST['categories']) && !empty($_POST['categories'])) {
         $newCats = [];
-        foreach ($postedCats as $catKey => $cInput) {
+        foreach ($_POST['categories'] as $catKey => $cInput) {
             $catName = trim((string) ($cInput['name'] ?? ''));
             if ($catName === '') {
                 continue;
@@ -192,7 +194,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($subAction === 'save_wizard')) {
                 'discount' => (float) ($cInput['discount'] ?? 0.0),
             ];
         }
-        $settingsData['category_discounts'] = $newCats;
+        if (!empty($newCats)) {
+            $settingsData['category_discounts'] = $newCats;
+        }
     }
 
     if (RadioStationConfigService::saveSettings($settingsData, $db)) {
@@ -206,10 +210,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($subAction === 'save_wizard')) {
 
 // Fetch current active settings
 $cfg = RadioStationConfigService::getSettings($db);
-$slots = $cfg['slots'] ?? RadioStationConfigService::DEFAULT_SLOTS;
-$packages = $cfg['package_presets'] ?? (RadioStationConfigService::DEFAULT_SETTINGS['package_presets'] ?? []);
-$durationMultipliers = $cfg['duration_multipliers'] ?? (RadioStationConfigService::DEFAULT_SETTINGS['duration_multipliers'] ?? []);
-$categories = $cfg['category_discounts'] ?? (RadioStationConfigService::DEFAULT_SETTINGS['category_discounts'] ?? []);
+$slots = !empty($cfg['slots']) ? $cfg['slots'] : RadioStationConfigService::DEFAULT_SLOTS;
+$packages = !empty($cfg['package_presets']) ? $cfg['package_presets'] : (RadioStationConfigService::DEFAULT_SETTINGS['package_presets'] ?? []);
+$durationMultipliers = !empty($cfg['duration_multipliers']) ? $cfg['duration_multipliers'] : (RadioStationConfigService::DEFAULT_SETTINGS['duration_multipliers'] ?? []);
+$categories = !empty($cfg['category_discounts']) ? $cfg['category_discounts'] : (RadioStationConfigService::DEFAULT_SETTINGS['category_discounts'] ?? []);
 
 $stationName = htmlspecialchars((string) ($cfg['station_name'] ?? 'Community Radio FM'), ENT_QUOTES);
 $stationCallsign = htmlspecialchars((string) ($cfg['station_callsign'] ?? 'RADIO'), ENT_QUOTES);

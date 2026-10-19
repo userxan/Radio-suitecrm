@@ -208,17 +208,28 @@ class RadioStationConfigService
             }
         }
 
-        if (isset($settings['slots']) && is_array($settings['slots'])) {
-            foreach ($settings['slots'] as $code => &$slot) {
-                if (empty($slot['part_number'])) {
-                    $slot['part_number'] = $code;
-                }
-                if (!isset($slot['weekend_rate'])) {
-                    $slot['weekend_rate'] = (float) ($slot['rate'] ?? 0.0);
-                }
-            }
-            unset($slot);
+        if (empty($settings['slots']) || !is_array($settings['slots'])) {
+            $settings['slots'] = self::DEFAULT_SLOTS;
         }
+        if (empty($settings['package_presets']) || !is_array($settings['package_presets'])) {
+            $settings['package_presets'] = self::DEFAULT_SETTINGS['package_presets'];
+        }
+        if (empty($settings['duration_multipliers']) || !is_array($settings['duration_multipliers'])) {
+            $settings['duration_multipliers'] = self::DEFAULT_SETTINGS['duration_multipliers'];
+        }
+        if (empty($settings['category_discounts']) || !is_array($settings['category_discounts'])) {
+            $settings['category_discounts'] = self::DEFAULT_SETTINGS['category_discounts'];
+        }
+
+        foreach ($settings['slots'] as $code => &$slot) {
+            if (empty($slot['part_number'])) {
+                $slot['part_number'] = $code;
+            }
+            if (!isset($slot['weekend_rate'])) {
+                $slot['weekend_rate'] = (float) ($slot['rate'] ?? 0.0);
+            }
+        }
+        unset($slot);
 
         return $settings;
     }
@@ -265,6 +276,9 @@ class RadioStationConfigService
             if (!in_array($k, $allowedKeys, true)) {
                 continue;
             }
+            if (in_array($k, ['slots', 'package_presets', 'duration_multipliers', 'category_discounts'], true) && is_array($v) && empty($v)) {
+                continue;
+            }
 
             $encoded = is_array($v) || is_bool($v) ? json_encode($v) : (string) $v;
             $kEsc = $db->quote($k);
@@ -277,8 +291,8 @@ class RadioStationConfigService
             );
         }
 
-        // If slots are provided, synchronize them into aos_products
-        if (isset($data['slots']) && is_array($data['slots'])) {
+        // If slots are provided and non-empty, synchronize them into aos_products
+        if (isset($data['slots']) && is_array($data['slots']) && !empty($data['slots'])) {
             self::updateProductsCatalogue($data['slots'], $db);
         }
 
