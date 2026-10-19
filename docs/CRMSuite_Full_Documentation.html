@@ -1,0 +1,405 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>CRMSuite Full Documentation</title><style>body{font-family:Segoe UI,Arial,sans-serif;max-width:960px;margin:24px auto;padding:0 20px;line-height:1.6;color:#1e293b;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #cbd5e1;padding:8px;text-align:left;}th{background:#f1f5f9;}</style></head><body><h1>CRMSuite — Radio Station Advertising, Traffic &amp; Playout Management Platform</h1>
+<p><strong>Complete Technical, Administrator &amp; User Documentation (Full Build Reference)</strong></p>
+<p><strong>Platform Base</strong>: SuiteCRM 8.10.1 (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">PHP 8.3</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">MariaDB 10.11</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Apache 2.4</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Symfony 5.4</code> + <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Angular 18</code>)</p>
+<hr>
+<h2>Table of Contents</h2>
+<ul>
+<li>[Executive Summary &amp; System Capabilities](#1-executive-summary--system-capabilities)</li>
+<li>[System Architecture &amp; Directory Structure](#2-system-architecture--directory-structure)</li>
+<li>[End-to-End Broadcast Sales, Traffic &amp; Playout Workflow](#3-end-to-end-broadcast-sales-traffic--playout-workflow)</li>
+<li>[Module 1: Station Setup &amp; Rate Card Onboarding Wizard](#4-module-1-station-setup--rate-card-onboarding-wizard)</li>
+<li>[4.1 Tab 1 — Station Branding, Legal Identity &amp; Financial Defaults](#41-tab-1--station-branding-legal-identity--financial-defaults)</li>
+<li>[4.2 Tab 2 — Dynamic Show Schedule &amp; Weekday/Weekend Rate Card Slots](#42-tab-2--dynamic-show-schedule--weekdayweekend-rate-card-slots)</li>
+<li>[4.3 Tab 3 — Package Deals &amp; Quick-Select Presets](#43-tab-3--package-deals--quick-select-presets)</li>
+<li>[4.4 Tab 4 — Ad Durations, Multipliers &amp; Catalogue Extras](#44-tab-4--ad-durations-multipliers--catalogue-extras)</li>
+<li>[4.5 Tab 5 — Traffic, ICASA &amp; Myriad Playout Rules](#45-tab-5--traffic-icasa--myriad-playout-rules)</li>
+<li>[4.6 Tab 6 — Backup &amp; Portable JSON Station Profile Import/Export](#46-tab-6--backup--portable-json-station-profile-importexport)</li>
+<li>[Module 2: Dynamic Rate Card &amp; Pricing Engine (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RadioScheduleService</code>)](#5-module-2-dynamic-rate-card--pricing-engine-radioscheduleservice)</li>
+<li>[5.1 Weekday (Mon–Fri) vs. Weekend (Sat–Sun) Rate Calculation](#51-weekday-monfri-vs-weekend-satsun-rate-calculation)</li>
+<li>[5.2 Ad Duration Scaling Multipliers (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">15s</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">30s</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">45s</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">60s</code>)](#52-ad-duration-scaling-multipliers-15s-30s-45s-60s)</li>
+<li>[5.3 Exact Package Preset Target Pre-VAT Pricing &amp; Proration](#53-exact-package-preset-target-pre-vat-pricing--proration)</li>
+<li>[5.4 Calendar Weekday Occurrence Math](#54-calendar-weekday-occurrence-math)</li>
+<li>[Module 3: Weekly Advert Schedule Matrix &amp; Quote Builder (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">AOS_Quotes</code>)](#6-module-3-weekly-advert-schedule-matrix--quote-builder-aos_quotes)</li>
+<li>[6.1 168-Cell Weekly Flighting Grid (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">24 Hours × 7 Days</code>)](#61-168-cell-weekly-flighting-grid-24-hours--7-days)</li>
+<li>[6.2 One-Click Package Presets Bar](#62-one-click-package-presets-bar)</li>
+<li>[6.3 Auto-Distribute Quick-Fill Scheduler (By Spot Count or Budget)](#63-auto-distribute-quick-fill-scheduler-by-spot-count-or-budget)</li>
+<li>[6.4 Production &amp; Value-Add Extras Bundler](#64-production--value-add-extras-bundler)</li>
+<li>[6.5 Real-Time Inventory Availability &amp; Hourly Clutter Warnings](#65-real-time-inventory-availability--hourly-clutter-warnings)</li>
+<li>[6.6 Server-Side Quote Line-Item Synchronization (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RadioQuoteScheduleProducts</code>)](#66-server-side-quote-line-item-synchronization-radioquotescheduleproducts)</li>
+<li>[Module 4: Radio Campaigns (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RT_RadioCampaigns</code>)](#7-module-4-radio-campaigns-rt_radiocampaigns)</li>
+<li>[7.1 Idempotent Quote-to-Campaign Conversion](#71-idempotent-quote-to-campaign-conversion)</li>
+<li>[7.2 Campaign Status Lifecycle &amp; Custom Fields](#72-campaign-status-lifecycle--custom-fields)</li>
+<li>[Module 5: Myriad Playout Automation Export Engine](#8-module-5-myriad-playout-automation-export-engine)</li>
+<li>[8.1 Pre-Flight Validation Rules](#81-pre-flight-validation-rules)</li>
+<li>[8.2 Intra-Hour Even Spot Spacing Formula](#82-intra-hour-even-spot-spacing-formula)</li>
+<li>[8.3 Master 12-Column CSV &amp; Daily <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">.log</code> Output Formats](#83-master-12-column-csv--daily-log-output-formats)</li>
+<li>[8.4 SuiteCRM 8 Symfony Action vs. Legacy EntryPoint](#84-suitecrm-8-symfony-action-vs-legacy-entrypoint)</li>
+<li>[Module 6: Playout As-Run Log Reconciliation &amp; Make-Good Rescheduler](#9-module-6-playout-as-run-log-reconciliation--make-good-rescheduler)</li>
+<li>[9.1 Automated As-Run Log Matching](#91-automated-as-run-log-matching)</li>
+<li>[9.2 Interactive Make-Good Compensatory Spot Rescheduler](#92-interactive-make-good-compensatory-spot-rescheduler)</li>
+<li>[Module 7: Studio Presenter Live-Read &amp; Sponsorship Run-Sheets](#10-module-7-studio-presenter-live-read--sponsorship-run-sheets)</li>
+<li>[Module 8: Client Approval Portal, Creative Upload &amp; Email Dispatch](#11-module-8-client-approval-portal-creative-upload--email-dispatch)</li>
+<li>[Module 9: Certified Broadcast Affidavits &amp; One-Click Invoice Conversion](#12-module-9-certified-broadcast-affidavits--one-click-invoice-conversion)</li>
+<li>[Module 10: Executive Revenue, Renewal &amp; ICASA Compliance Dashboard](#13-module-10-executive-revenue-renewal--icasa-compliance-dashboard)</li>
+<li>[Database Schema, Custom Tables &amp; Relationships](#14-database-schema-custom-tables--relationships)</li>
+<li>[Complete EntryPoints, Admin Actions &amp; CLI Scripts Reference](#15-complete-entrypoints-admin-actions--cli-scripts-reference)</li>
+<li>[Deployment, Backup/Restore &amp; Automated Test Suites](#16-deployment-backuprestore--automated-test-suites)</li>
+</ul>
+<hr>
+<h2>1. Executive Summary &amp; System Capabilities</h2>
+<p><strong>CRMSuite (Radio CRM)</strong> is a full-lifecycle broadcast sales, traffic scheduling, playout automation, and regulatory compliance platform built on <strong>SuiteCRM 8.10.1</strong>. It bridges the gap between commercial radio advertising sales and studio playout engineering (<strong>Broadcast Radio Myriad</strong>).</p>
+<h3>Core Problems Solved</h3>
+<ul>
+<li><strong>Complex Broadcast Pricing</strong>: Radio stations charge different rates for <strong>Weekdays (Mon–Fri)</strong> vs. <strong>Weekends (Sat–Sun)</strong> across distinct show dayparts (Breakfast, Mid-Morning, Lunch, Afternoon Drive, Evenings, Late Night), scaled by ad duration (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">15s</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">30s</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">45s</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">60s</code>), or sold as fixed-price monthly/bi-monthly <strong>Package Presets</strong> (e.g., <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">R5,999.00</code> pre-VAT).</li>
+<li><strong>Visual 168-Hour Flighting</strong>: Standard CRM quote line items cannot represent a 24-hour × 7-day broadcast grid. CRMSuite embeds a 168-cell interactive schedule matrix directly inside <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">AOS_Quotes</code>, automatically converting the grid into itemized, VAT-accurate Quote line items and clean client PDFs.</li>
+<li><strong>ICASA Commercial Cap &amp; Inventory Protection</strong>: Prevents over-bookingprime-time hours beyond the station&#039;s regulatory commercial minutes cap (e.g., 10 minutes / 20 spots per hour) with real-time amber/red heatmap warnings during quote creation.</li>
+<li><strong>Zero-Touch Studio Playout Export</strong>: Eliminates manual traffic re-entry into Myriad Playout by exporting frame-accurate 12-column Master CSVs and daily <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">.log</code> files directly to <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">/srv/myriad_exports/</code>.</li>
+<li><strong>Closed-Loop Proof of Performance</strong>: Ingests Myriad As-Run logs to verify every spot aired, provides a 1-click <strong>Make-Good Rescheduler</strong> for any missed spots, prints daily <strong>Studio Presenter Live-Read Run-Sheets</strong>, issues <strong>Certified Broadcast Affidavits</strong>, and converts fulfilled campaigns into <strong>SuiteCRM Invoices (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">AOS_Invoices</code>)</strong>.</li>
+</ul>
+<hr>
+<h2>2. System Architecture &amp; Directory Structure</h2>
+<pre style="background:#0f172a;color:#f8fafc;padding:12px;border-radius:6px;"><code>/opt/suitecrm/ (or /home/ubuntu/suitecrm/)
+├── Dockerfile                          # Ubuntu 24.04 + Apache 2.4 + PHP 8.3 container definition
+├── docker-compose.yml                  # Orchestrates radio_crm_web + radio_crm_mariadb
+├── install_radio_crm.sh                # Master installer, migration runner &amp; verification script
+├── INSTALL.md                          # Multi-server &amp; multi-station deployment guide
+├── README.md                           # Quick-start &amp; architecture overview
+├── MANIFEST.sha256                     # SHA-256 integrity manifest of all repository files
+├── docs/
+│   └── CRMSuite_Full_Documentation.md  # Complete technical &amp; user manual
+├── migrations/
+│   ├── 001_create_rt_radiocampaigns_tables.php
+│   ├── 002_create_aos_quotes_schedule_columns.php
+│   ├── 003_seed_radio_catalogue_products.php
+│   ├── 004_professional_quote_pdf_template.php
+│   ├── 005_radio_crm_market_enhancements.php
+│   ├── 006_radio_station_settings_table.php
+│   └── 007_quick_repair_and_rebuild.php
+├── scripts/
+│   ├── preflight.sh                    # Checks Docker, MariaDB, Apache &amp; filesystem permissions
+│   ├── backup.sh                       # Full DB + custom file snapshot &amp; restore script generator
+│   ├── deploy.sh                       # Syncs src/ to /var/www/html, runs migrations &amp; clears cache
+│   ├── smoke_test.sh                   # Executes all 57 automated acceptance &amp; verification tests
+│   ├── setup_station.php               # CLI utility for station profile inspection &amp; JSON import/export
+│   ├── reconcile_myriad_logs.php       # CLI &amp; library engine for Myriad As-Run log reconciliation
+│   └── generate_icasa_report.php       # CLI generator for monthly ICASA compliance CSVs
+├── src/
+│   ├── extensions/defaultExt/
+│   │   ├── config/modules/RT_RadioCampaigns/recordview/actions/export-to-myriad.php
+│   │   └── modules/RT_RadioCampaigns/Process/Service/RecordActions/ExportToMyriadAction.php
+│   └── public/legacy/
+│       ├── custom/
+│       │   ├── convert_quote_to_radio_campaign.php
+│       │   ├── convert_campaign_to_invoice.php
+│       │   ├── export_radio_campaign_to_myriad.php
+│       │   ├── generate_broadcast_affidavit.php
+│       │   ├── generate_presenter_liveread_sheet.php
+│       │   ├── radio_campaign_client_review.php
+│       │   ├── radio_crm_documentation.php
+│       │   ├── radio_schedule_ajax_sync.php
+│       │   ├── radio_station_dashboard.php
+│       │   ├── radio_station_wizard.php
+│       │   ├── reconcile_radio_campaign_logs.php
+│       │   ├── send_radio_client_email.php
+│       │   ├── include/RadioCRM/
+│       │   │   ├── RadioScheduleService.php
+│       │   │   └── RadioStationConfigService.php
+│       │   ├── modules/Administration/
+│       │   │   ├── radio_documentation.php
+│       │   │   ├── radio_liveread_sheet.php
+│       │   │   ├── radio_station_dashboard.php
+│       │   │   └── radio_station_wizard.php
+│       │   └── modules/AOS_Quotes/
+│       │       ├── RadioQuoteScheduleProducts.php
+│       │       ├── views/view.edit.php
+│       │       ├── views/view.detail.php
+│       │       └── tpls/weekly_advert_schedule.tpl
+│       └── modules/RT_RadioCampaigns/
+└── tests/
+    ├── run_acceptance_tests.php        # 22 core end-to-end acceptance tests
+    ├── run_ui_http_tests.php           # 5 DOM hierarchy &amp; Symfony service container tests
+    ├── test_radio_enhancements.php     # 16 market enhancement &amp; compliance tests
+    └── test_station_wizard.php         # 14 Station Setup Wizard &amp; dynamic rate card tests
+</code></pre>
+<hr>
+<h2>3. End-to-End Broadcast Sales, Traffic &amp; Playout Workflow</h2>
+<pre style="background:#0f172a;color:#f8fafc;padding:12px;border-radius:6px;"><code>flowchart TD
+    A[&quot;1. Station Setup Wizard\n(Configure Branding, Shows, Weekday/Weekend Rates, Presets, Extras)&quot;] --&gt; B[&quot;2. Build Quote in AOS_Quotes\n(Select Dates, Duration, 168-Hour Grid, Presets, Quick-Fill, Extras)&quot;]
+    B --&gt; C[&quot;3. Real-Time Inventory Check\n(Amber/Red Clutter Heatmap + Exact Pre-VAT &amp; 15% VAT Line Sync)&quot;]
+    C --&gt; D[&quot;4. Client Schedule Review Portal\n(Email Portal Link -&gt; Client Uploads Audio/Script &amp; Digitally Approves)&quot;]
+    D --&gt; E[&quot;5. Convert Quote to Radio Campaign\n(1:1 Upsert into RT_RadioCampaigns + Assign Myriad Cart #)&quot;]
+    E --&gt; F[&quot;6a. Export to Myriad Playout\n(Writes 12-Col Master CSV + Daily .log Files to /srv/myriad_exports/)&quot;]
+    E --&gt; G[&quot;6b. Studio Presenter Live-Read Sheet\n(Prints Daily Hour-by-Hour Announcer Scripts &amp; Checkboxes)&quot;]
+    F --&gt; H[&quot;7. As-Run Log Reconciliation &amp; Make-Goods\n(Ingest Myriad Logs -&gt; Flag Missed Spots -&gt; Schedule Make-Good Dates)&quot;]
+    H --&gt; I[&quot;8a. Certified Broadcast Affidavit\n(Official Signed Proof of Performance)&quot;]
+    H --&gt; J[&quot;8b. One-Click Invoice Conversion\n(Creates Finalized AOS_Invoices Record)&quot;]
+    H --&gt; K[&quot;8c. Executive Revenue &amp; ICASA Dashboard\n(Track Revenue by Show, Expiring Renewals &amp; Hourly Ad Caps)&quot;]
+</code></pre>
+<hr>
+<h2>4. Module 1: Station Setup &amp; Rate Card Onboarding Wizard</h2>
+<p><strong>URL</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?module=Administration&amp;action=radio_station_wizard</code></p>
+<p><strong>Source File</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/radio_station_wizard.php</code></p>
+<p><strong>Service Layer</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/include/RadioCRM/RadioStationConfigService.php</code></p>
+<p>The Station Setup Wizard provides a 6-tab management console for all station settings. Every change saved in the wizard is persisted in the <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">radio_station_settings</code> MariaDB table and automatically synchronized with the <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">aos_products</code> product catalogue.</p>
+<h3>4.1 Tab 1 — Station Branding, Legal Identity &amp; Financial Defaults</h3>
+<ul>
+<li><strong>Station Identity</strong>: Station Name, Frequency (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">e.g., 93.6 FM</code>), Callsign, Slogan/Tagline, Broadcast Language, Geographic Region, and License Type (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Community</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Commercial</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Campus</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Public</code>).</li>
+<li><strong>Logo Upload</strong>: Upload a PNG, JPG, SVG, or WebP station logo (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">upload/station_logo.*</code>) which automatically appears on Quotes, Client Review Portals, Broadcast Affidavits, and Executive Dashboards.</li>
+<li><strong>Contact &amp; Legal Signatory</strong>: Physical Address, Phone, Sales Email, Website, Station Manager Name &amp; Title (used on Broadcast Affidavits), and Traffic Manager contact details.</li>
+<li><strong>Financial, Tax &amp; Banking Details</strong>: Currency Symbol (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">R</code>), Currency Code (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">ZAR</code>), VAT/Tax Rate (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">15.0%</code>), VAT Registration Number, Quote Validity Days (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">14</code>), Payment Terms, Bank Name, Account Name, Account Number, Branch Code, and Payment Reference instructions.</li>
+</ul>
+<h3>4.2 Tab 2 — Dynamic Show Schedule &amp; Weekday/Weekend Rate Card Slots</h3>
+<ul>
+<li><strong>Dynamic Add/Remove</strong>: Click <strong>+ Add Show / Timeband</strong> to add new broadcast timebands or <strong>Remove</strong> to delete unused rows.</li>
+<li><strong>Configurable Fields per Show</strong>:</li>
+<li><strong>Product Code (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">part_number</code>)</strong>: Editable SKU synced to <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">aos_products</code> (e.g., <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RAD-SLOT-1</code>).</li>
+<li><strong>Show / Timeband Name</strong>: Display name shown in the Quote schedule matrix and client PDFs (e.g., <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Breakfast Show</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Afternoon Drive</code>).</li>
+<li><strong>Active Hours Spec</strong>: Supports contiguous ranges (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">6-8</code> for <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">06:00–09:00</code>) or comma-separated overnight ranges (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">0-5,21-23</code> for <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">21:00–06:00</code>).</li>
+<li><strong>Weekday 30s Rate (Mon–Fri)</strong>: Base price for a 30-second commercial on Monday through Friday.</li>
+<li><strong>Weekend 30s Rate (Sat–Sun)</strong>: Base price for a 30-second commercial on Saturday and Sunday.</li>
+<li><strong>Hours Label / Description</strong>: Human-readable timeband label (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">06:00-09:00</code>).</li>
+</ul>
+<h3>4.3 Tab 3 — Package Deals &amp; Quick-Select Presets</h3>
+<ul>
+<li>Configure unlimited 1-click <strong>Package Presets</strong> displayed on the Quote schedule screen.</li>
+<li>Each package defines:</li>
+<li><strong>Package Name</strong> (e.g., <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Preset 1: 30 Sec Ads — 1 Month (60 Spots)</code>)</li>
+<li><strong>Package Type / Duration &amp; Campaign Weeks</strong></li>
+<li><strong>Total Spots</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">60</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">120</code>, etc.)</li>
+<li><strong>Target Pre-VAT Package Price</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">R 5,999.00</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">R 10,800.00</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">R 9,100.00</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">R 16,250.00</code>)</li>
+<li><strong>Slot Distribution Profile</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Prime Drive</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Daytime Mix</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">All-Day Rotation</code>, or custom hour/day matrix)</li>
+</ul>
+<h3>4.4 Tab 4 — Ad Durations, Multipliers &amp; Catalogue Extras</h3>
+<ul>
+<li><strong>Duration Multipliers</strong>: Editable scaling factors relative to the 30-second base rate:</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">15s</code> = <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">0.50</code> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">50%</code>)</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">30s</code> = <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">1.00</code> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">100%</code>)</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">45s</code> = <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">1.50</code> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">150%</code>)</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">60s</code> = <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">2.00</code> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">200%</code>)</li>
+<li><strong>Production &amp; Sponsorship Extras</strong>: Editable catalogue of non-spot items (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RAD-PROD-VOICE</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RAD-PROD-JINGLE</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RAD-LIVE-READ</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RAD-SPON-TAG</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RAD-OB-BROADCAST</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RAD-VOX-POP</code>, etc.) with custom product codes, names, categories, and unit prices synced directly to <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">aos_products</code>.</li>
+</ul>
+<h3>4.5 Tab 5 — Traffic, ICASA &amp; Myriad Playout Rules</h3>
+<ul>
+<li><strong>ICASA Commercial Cap</strong>: Maximum commercial minutes per hour (default <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">10</code> minutes) and maximum spots per hour (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">20</code>).</li>
+<li><strong>Myriad Cart Number Range</strong>: Enforces valid audio cart IDs (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">1000</code> to <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">99999</code>) before allowing Myriad export.</li>
+<li><strong>Playout Export Directory</strong>: Default <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">/srv/myriad_exports</code>.</li>
+<li><strong>Compliance &amp; Legal Footers</strong>: Custom Quote Terms, Broadcast Affidavit Legal Declaration, and ICASA License Number.</li>
+</ul>
+<h3>4.6 Tab 6 — Backup &amp; Portable JSON Station Profile Import/Export</h3>
+<ul>
+<li>Export the entire station configuration to a single <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">.json</code> file or import a station profile JSON via web upload or CLI (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">php scripts/setup_station.php import station_profile.json</code>).</li>
+</ul>
+<hr>
+<h2>5. Module 2: Dynamic Rate Card &amp; Pricing Engine (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RadioScheduleService</code>)</h2>
+<p><strong>Source File</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/include/RadioCRM/RadioScheduleService.php</code></p>
+<h3>5.1 Weekday (Mon–Fri) vs. Weekend (Sat–Sun) Rate Calculation</h3>
+<p>Every hour (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">00</code>–<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">23</code>) maps to a configured Show Slot. When calculating a Quote&#039;s schedule:</p>
+<ul>
+<li>Spots scheduled in <strong>Monday–Friday</strong> columns (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">slot_HH00_monday_c</code> … <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">slot_HH00_friday_c</code>) are priced using the show&#039;s <strong>Weekday 30s Rate</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">rate</code>).</li>
+<li>Spots scheduled in <strong>Saturday–Sunday</strong> columns (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">slot_HH00_saturday_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">slot_HH00_sunday_c</code>) are priced using the show&#039;s <strong>Weekend 30s Rate</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">weekend_rate</code>).</li>
+</ul>
+<h3>5.2 Ad Duration Scaling Multipliers (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">15s</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">30s</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">45s</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">60s</code>)</h3>
+<p>For any selected advert duration $D \in \{15, 30, 45, 60\}$ with multiplier $M_D$:</p>
+<p>$$\text{Unit Price}_{\text{weekday}} = \text{round}(\text{Rate}_{\text{weekday}, 30s} \times M_D, 2)$$</p>
+<p>$$\text{Unit Price}_{\text{weekend}} = \text{round}(\text{Rate}_{\text{weekend}, 30s} \times M_D, 2)$$</p>
+<h3>5.3 Exact Package Preset Target Pre-VAT Pricing &amp; Proration</h3>
+<p>When a sales user selects a Package Preset (such as <strong>Preset 1</strong> with a target pre-VAT price of <strong>R 5,999.00</strong> for 60 spots across 4 weeks):</p>
+<ul>
+<li>The standard rate-card value of those 60 spots is calculated first (e.g., <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">60 spots = R 12,400.00</code> rate-card value).</li>
+<li>The target package price (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">5999.00</code>) is stored in <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">aos_quotes_cstm.package_override_price_c</code>.</li>
+<li>Both the live UI calculator and <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RadioQuoteScheduleProducts::syncQuoteLineItems()</code> prorate each line item&#039;s unit price and discount so that:</li>
+<li>The <strong>Standard Rate-Card Value</strong> and <strong>Package Discount Savings</strong> are clearly shown on the Quote.</li>
+<li>The <strong>Pre-VAT Subtotal (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">subtotal_amount</code>)</strong> equals <strong>exactly <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">R 5,999.00</code></strong> (down to the cent, with final-line rounding adjustment if needed).</li>
+<li><strong>15% VAT (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">tax_amount</code>)</strong> = <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">R 899.85</code>, and <strong>Grand Total (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">total_amount</code>)</strong> = <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">R 6,898.85</code>.</li>
+<li>If the user manually alters any spot cell in the grid, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">package_override_price_c</code> resets to <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">0</code> so custom schedules are priced at standard rate-card rates.</li>
+</ul>
+<h3>5.4 Calendar Weekday Occurrence Math</h3>
+<p><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RadioScheduleService::countWeekdayOccurrences($startDate, $endDate)</code> iterates inclusive calendar dates from <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">campaign_start_date_c</code> to <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">campaign_end_date_c</code> in UTC (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">12:00:00</code>) to avoid DST/timezone drift, returning the exact count of Mondays, Tuesdays, Wednesdays, Thursdays, Fridays, Saturdays, and Sundays in the campaign window.</p>
+<hr>
+<h2>6. Module 3: Weekly Advert Schedule Matrix &amp; Quote Builder (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">AOS_Quotes</code>)</h2>
+<p><strong>Source Files</strong>:</p>
+<ul>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/modules/AOS_Quotes/views/view.edit.php</code></li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/modules/AOS_Quotes/tpls/weekly_advert_schedule.tpl</code></li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/modules/AOS_Quotes/RadioQuoteScheduleProducts.php</code></li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/radio_schedule_ajax_sync.php</code></li>
+</ul>
+<h3>6.1 168-Cell Weekly Flighting Grid (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">24 Hours × 7 Days</code>)</h3>
+<ul>
+<li>Renders inside <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">&lt;form name=&quot;EditView&quot;&gt;</code> on <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">AOS_Quotes</code>.</li>
+<li>Displays all 24 hourly bands (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">00:00 - 01:00</code> through <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">23:00 - 24:00</code>) grouped and color-coded by their Show Slot, showing both the <strong>Mon–Fri Rate</strong> and <strong>Sat–Sun Rate</strong> in the row header.</li>
+</ul>
+<h3>6.2 One-Click Package Presets Bar</h3>
+<ul>
+<li>Displays one-click buttons for all configured Package Presets (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Preset 1: R5,999</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Preset 2: R10,800</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Preset 3: R9,100</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Preset 4: R16,250</code>, plus any custom presets added in the Wizard).</li>
+<li>Clicking a preset automatically sets the Advert Duration, adjusts the Campaign End Date to match the package&#039;s exact week count (e.g., 28 days = 4 full weeks), fills the hourly spot cells, locks in the exact pre-VAT package price, and updates the live Quote summary.</li>
+</ul>
+<h3>6.3 Auto-Distribute Quick-Fill Scheduler (By Spot Count or Budget)</h3>
+<ul>
+<li>Sales reps can enter either a <strong>Target Total Spots</strong> count or a <strong>Target Pre-VAT Budget (R)</strong>, select a <strong>Day Filter</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Mon–Fri</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Sat–Sun</code>, or <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">All Week</code>) and <strong>Timeband Filter</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Prime Time Only</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Daytime 06:00–18:00</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">All Day 06:00–21:00</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Evenings</code>), and click <strong>Auto-Fill Grid</strong>.</li>
+<li>The scheduler calculates the exact number of spots that fit within the budget/target and distributes them evenly across the matching show hours.</li>
+</ul>
+<h3>6.4 Production &amp; Value-Add Extras Bundler</h3>
+<ul>
+<li>Provides a 1-click checklist of all configured <strong>Production &amp; Value-Add Extras</strong> (e.g., <em>Presenter Live Read</em>, <em>Outside Broadcast OB Van</em>, <em>Vox Pop</em>, <em>Commercial Production</em>, <em>Jingle Creation</em>) with quantity inputs.</li>
+<li>Checked extras are automatically added to the Quote&#039;s line items and preserved across schedule edits.</li>
+</ul>
+<h3>6.5 Real-Time Inventory Availability &amp; Hourly Clutter Warnings</h3>
+<ul>
+<li>Queries <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?entryPoint=radio_schedule_ajax_sync&amp;check_inventory=1</code> whenever campaign dates or spots change.</li>
+<li>Checks all active/approved Quotes and Campaigns overlapping the selected date range and highlights any hour cell approaching (≥80%, Amber) or exceeding (100%, Red) the station&#039;s ICASA commercial minutes cap.</li>
+</ul>
+<h3>6.6 Server-Side Quote Line-Item Synchronization (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RadioQuoteScheduleProducts</code>)</h3>
+<ul>
+<li>Triggered on <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">before_save</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">after_save</code>, and <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">after_retrieve</code> of <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">AOS_Quotes</code>.</li>
+<li>Automatically creates/updates <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">aos_products_quotes</code> line items for each active Show Slot (splitting Weekday and Weekend spots into separate line items when their rates differ), preserves non-schedule Extras line items, and updates <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">subtotal_amount</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">tax_amount</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">discount_amount</code>, and <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">total_amount</code>.</li>
+</ul>
+<hr>
+<h2>7. Module 4: Radio Campaigns (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RT_RadioCampaigns</code>)</h2>
+<p><strong>Source Files</strong>:</p>
+<ul>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/modules/RT_RadioCampaigns/RT_RadioCampaigns.php</code></li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/modules/RT_RadioCampaigns/vardefs.php</code></li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/convert_quote_to_radio_campaign.php</code></li>
+</ul>
+<h3>7.1 Idempotent Quote-to-Campaign Conversion</h3>
+<ul>
+<li>Clicking <strong>Convert to Radio Campaign</strong> on <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">AOS_Quotes</code> DetailView (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?entryPoint=convert_quote_to_radio_campaign&amp;quote_id=&lt;ID&gt;</code>) performs an idempotent 1:1 upsert:</li>
+<li>If the Quote is already linked to an existing <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RT_RadioCampaigns</code> record via <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">rt_radiocampaigns_aos_quotes_c</code>, it updates that campaign&#039;s dates, duration, and spot count rather than creating a duplicate.</li>
+<li>Otherwise, it creates a new <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RT_RadioCampaigns</code> record and links it to the Quote.</li>
+</ul>
+<h3>7.2 Campaign Status Lifecycle &amp; Custom Fields</h3>
+<ul>
+<li><strong>Status Values</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">draft</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">approved</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">exported_to_myriad</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">in_flight</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">completed</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">cancelled</code>.</li>
+<li><strong>Reconciliation &amp; Make-Good Fields</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">reconciliation_status_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">spots_played_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">spots_missed_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">last_reconciled_at_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">reconciliation_notes_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">makegood_dates_c</code>.</li>
+<li><strong>Client Portal &amp; Creative Fields</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">client_approval_status_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">client_approved_by_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">client_approved_at_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">client_feedback_notes_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">creative_file_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">creative_notes_c</code>.</li>
+</ul>
+<hr>
+<h2>8. Module 5: Myriad Playout Automation Export Engine</h2>
+<p><strong>Source Files</strong>:</p>
+<ul>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/extensions/defaultExt/modules/RT_RadioCampaigns/Process/Service/RecordActions/ExportToMyriadAction.php</code></li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/export_radio_campaign_to_myriad.php</code></li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/include/RadioCRM/RadioScheduleService.php</code></li>
+</ul>
+<h3>8.1 Pre-Flight Validation Rules</h3>
+<p>Before writing any files, the exporter verifies:</p>
+<ul>
+<li>Current user has <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">export</code> / <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">edit</code> ACL access on <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RT_RadioCampaigns</code>.</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">myriad_cart_number</code> is non-empty and within the configured station cart range (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">1000–99999</code>).</li>
+<li>A valid linked <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">AOS_Quotes</code> record exists with <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">campaign_start_date_c &lt;= campaign_end_date_c</code> and <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">total_spots &gt; 0</code>.</li>
+</ul>
+<h3>8.2 Intra-Hour Even Spot Spacing Formula</h3>
+<p>When $N$ spots are scheduled in hour $H$, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">RadioScheduleService::expandDailyHourPlays()</code> spaces them evenly across the 60-minute hour using $\text{step} = \lfloor 60 / (N + 1) \rfloor$:</p>
+<ul>
+<li><strong>1 play in hour</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">HH:30:00</code></li>
+<li><strong>2 plays in hour</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">HH:20:00</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">HH:40:00</code></li>
+<li><strong>3 plays in hour</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">HH:15:00</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">HH:30:00</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">HH:45:00</code></li>
+<li><strong>4 plays in hour</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">HH:12:00</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">HH:24:00</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">HH:36:00</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">HH:48:00</code></li>
+</ul>
+<h3>8.3 Master 12-Column CSV &amp; Daily <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">.log</code> Output Formats</h3>
+<p>Written atomically to <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">/srv/myriad_exports/</code>:</p>
+<ul>
+<li><strong>Master 12-Column CSV</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">radio_campaign_&lt;SafeName&gt;_&lt;YYYYMMDD_HHMMSS&gt;.csv</code>):</li>
+</ul>
+<pre style="background:#0f172a;color:#f8fafc;padding:12px;border-radius:6px;"><code>   PlayDate,PlayTime,CartNumber,CampaignName,QuoteNumber,AccountName,ShowSlot,ShowHours,DayOfWeek,PlayIndexInHour,PlaysInHour,DurationSeconds
+</code></pre>
+<ul>
+<li><strong>Daily Myriad <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">.log</code> Files</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">/srv/myriad_exports/myriad_daily_logs/Radio_Adverts_&lt;YYYYMMDD&gt;_&lt;Campaign&gt;_&lt;Timestamp&gt;.log</code>):</li>
+<p>Formatted for direct ingestion by studio Myriad playout workstations.</p>
+</ul>
+<hr>
+<h2>9. Module 6: Playout As-Run Log Reconciliation &amp; Make-Good Rescheduler</h2>
+<p><strong>URL</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?entryPoint=radio_campaign_reconcile_logs&amp;campaign_id=&lt;ID&gt;</code></p>
+<p><strong>Source Files</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/reconcile_radio_campaign_logs.php</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">scripts/reconcile_myriad_logs.php</code></p>
+<h3>9.1 Automated As-Run Log Matching</h3>
+<ul>
+<li>Parses Myriad As-Run CSV files (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">Date, Time, CartNumber, Title, DurationPlayed</code>) and matches each played cart against the campaign&#039;s scheduled plays.</li>
+<li>Updates <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">spots_played_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">spots_missed_c</code>, and sets <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">reconciliation_status_c</code> to <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">reconciled</code> (100% aired) or <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">discrepancy</code> (missed spots detected).</li>
+</ul>
+<h3>9.2 Interactive Make-Good Compensatory Spot Rescheduler</h3>
+<ul>
+<li>When missed spots exist, the reconciliation view automatically analyses the station&#039;s inventory and recommends open hours in the same show daypart that are below the ICASA commercial cap.</li>
+<li>Traffic managers can select compensatory <strong>Make-Good Dates (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">YYYY-MM-DD</code>)</strong> and click <strong>Schedule Make-Good Date</strong>, which appends the date to <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">makegood_dates_c</code>, optionally extends <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">campaign_end_date</code>, and includes those compensatory plays on the next Myriad export.</li>
+</ul>
+<hr>
+<h2>10. Module 7: Studio Presenter Live-Read &amp; Sponsorship Run-Sheets</h2>
+<p><strong>URL</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?module=Administration&amp;action=radio_liveread_sheet</code></p>
+<p><strong>Source File</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/generate_presenter_liveread_sheet.php</code></p>
+<ul>
+<li>Generates a print-ready <strong>Daily Studio Announcer &amp; Live-Read Run-Sheet</strong> for any selected broadcast date (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">YYYY-MM-DD</code>) and optional Show Slot filter.</li>
+<li>Groups all scheduled live reads, sponsorship tags, outside broadcasts, and commercial spots hour-by-hour (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">00:00</code> to <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">23:00</code>).</li>
+<li>Displays the client&#039;s exact <strong>Live-Read Script / Copy Instructions</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">creative_notes_c</code>), Cart Number, Duration, interactive on-air check-off boxes (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">[ ] Aired / Read on Air</code>), and a <strong>Studio Presenter &amp; Producer Sign-Off</strong> block.</li>
+</ul>
+<hr>
+<h2>11. Module 8: Client Approval Portal, Creative Upload &amp; Email Dispatch</h2>
+<p><strong>URL</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?entryPoint=radio_campaign_client_review&amp;campaign_id=&lt;ID&gt;&amp;token=&lt;HMAC&gt;</code></p>
+<p><strong>Source Files</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/radio_campaign_client_review.php</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/send_radio_client_email.php</code></p>
+<ul>
+<li><strong>One-Click Email Dispatch</strong>: Internal sales/traffic staff can send the tokenized Client Review Portal link directly to the client&#039;s email address from the top bar of the portal page.</li>
+<li><strong>Client Audio &amp; Script Upload</strong>: Clients can upload their broadcast audio file (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">.mp3</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">.wav</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">.ogg</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">.m4a</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">.aac</code>) and paste their live-read script or pronunciation notes directly into the portal.</li>
+<li><strong>Digital Sign-Off</strong>: Clients can click <strong>Approve Schedule for Broadcast</strong> (capturing their name, timestamp, and PO reference) or <strong>Request Changes</strong>.</li>
+</ul>
+<hr>
+<h2>12. Module 9: Certified Broadcast Affidavits &amp; One-Click Invoice Conversion</h2>
+<ul>
+<li><strong>Broadcast Affidavit Generator</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?entryPoint=generate_broadcast_affidavit&amp;campaign_id=&lt;ID&gt;</code>):</li>
+<p>Produces a formal, printable <strong>Certificate of Broadcast Performance</strong> with station logo, campaign flighting summary, reconciled vs. scheduled spot counts, show daypart breakdown, legal affidavit declaration, and the Station Manager&#039;s signature block.</p>
+<li><strong>Campaign-to-Invoice Converter</strong> (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?entryPoint=convert_campaign_to_invoice&amp;campaign_id=&lt;ID&gt;</code>):</li>
+<p>Converts a campaign and its linked Quote into a SuiteCRM <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">AOS_Invoices</code> record with one click, preserving all Weekday/Weekend spot line items, production extras, VAT calculations, and station banking details.</p>
+</ul>
+<hr>
+<h2>13. Module 10: Executive Revenue, Renewal &amp; ICASA Compliance Dashboard</h2>
+<p><strong>URL</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?module=Administration&amp;action=radio_station_dashboard</code></p>
+<p><strong>Source File</strong>: <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">src/public/legacy/custom/radio_station_dashboard.php</code></p>
+<ul>
+<li><strong>Revenue by Show Slot</strong>: Visualizes contracted revenue, spot counts, and percentage share across every configured radio show.</li>
+<li><strong>24-Hour ICASA Commercial Load Monitor</strong>: Displays peak commercial minutes per hour against the station&#039;s regulatory cap (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">10 mins/hr</code>), plus one-click monthly <strong>ICASA Compliance CSV Export</strong>.</li>
+<li><strong>Expiring Campaign Renewal Alerts</strong>: Lists campaigns ending within the next 14 days so sales reps can proactively pitch renewals.</li>
+<li><strong>Studio Production Pipeline</strong>: Tracks pending vs. approved client audio/scripts and Myriad export readiness.</li>
+</ul>
+<hr>
+<h2>14. Database Schema, Custom Tables &amp; Relationships</h2>
+<table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;margin:12px 0;"><thead><tr style="background:#f1f5f9;"><th>Table Name</th><th>Purpose</th><th>Key Columns</th></tr></thead><tbody><tr><td><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">radio_station_settings</code></td><td>Stores global JSON station configuration</td><td><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">id</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">setting_key</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">setting_value</code> (JSON), <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">updated_at</code></td></tr><tr><td><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">aos_quotes_cstm</code></td><td>Stores Quote campaign dates, package price override &amp; 168 schedule cells</td><td><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">id_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">campaign_start_date_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">campaign_end_date_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">advert_duration_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">total_spots_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">package_override_price_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">slot_0000_monday_c</code> … <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">slot_2300_sunday_c</code></td></tr><tr><td><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">rt_radiocampaigns</code></td><td>Core Radio Campaigns table</td><td><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">id</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">name</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">status</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">myriad_cart_number</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">campaign_start_date</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">campaign_end_date</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">advert_duration</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">total_spots</code></td></tr><tr><td><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">rt_radiocampaigns_cstm</code></td><td>Campaign reconciliation, approval, creative &amp; make-good fields</td><td><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">id_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">reconciliation_status_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">spots_played_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">spots_missed_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">makegood_dates_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">client_approval_status_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">creative_file_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">creative_notes_c</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">invoice_id_c</code></td></tr><tr><td><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">rt_radiocampaigns_aos_quotes_c</code></td><td>1:1 / 1:M relationship join table between Campaigns and Quotes</td><td><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">id</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">rt_radiocampaigns_aos_quotesrt_radiocampaigns_ida</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">rt_radiocampaigns_aos_quotesaos_quotes_idb</code>, <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">deleted</code></td></tr></tbody></table>
+<hr>
+<h2>15. Complete EntryPoints, Admin Actions &amp; CLI Scripts Reference</h2>
+<h3>SuiteCRM Administration Actions (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">module=Administration&amp;action=...</code>)</h3>
+<ul>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?module=Administration&amp;action=radio_station_wizard</code> — Station Setup &amp; Rate Card Wizard</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?module=Administration&amp;action=radio_station_dashboard</code> — Station Revenue, Renewal &amp; ICASA Dashboard</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?module=Administration&amp;action=radio_liveread_sheet</code> — Studio Presenter Live-Read &amp; Run-Sheet Generator</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?module=Administration&amp;action=radio_documentation</code> — Full Documentation &amp; OneDrive Cloud Upload Hub</li>
+</ul>
+<h3>Custom EntryPoints (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?entryPoint=...</code>)</h3>
+<ul>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">radio_schedule_ajax_sync</code> — Live AJAX pricing, weekday/weekend line preview &amp; hourly inventory clutter check</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">convert_quote_to_radio_campaign</code> — Idempotent Quote $\rightarrow$ Radio Campaign converter</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">export_radio_campaign_to_myriad</code> — Legacy Myriad CSV + <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">.log</code> exporter</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">radio_campaign_reconcile_logs</code> — Myriad As-Run log uploader &amp; Make-Good rescheduler</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">generate_broadcast_affidavit</code> — Printable Certificate of Broadcast Performance</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">convert_campaign_to_invoice</code> — One-click Campaign $\rightarrow$ <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">AOS_Invoices</code> billing converter</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">radio_campaign_client_review</code> — External Client Schedule Review &amp; Creative Upload Portal</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">send_radio_client_email</code> — HTML Email dispatcher for Client Portal links</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">generate_presenter_liveread_sheet</code> — Daily Studio Presenter Run-Sheet printable view</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">radio_crm_documentation</code> — Documentation viewer, Word/HTML/MD downloader &amp; OneDrive uploader</li>
+</ul>
+<hr>
+<h2>16. Deployment, Backup/Restore &amp; Automated Test Suites</h2>
+<h3>Deployment &amp; Verification Commands</h3>
+<pre style="background:#0f172a;color:#f8fafc;padding:12px;border-radius:6px;"><code># Full deployment (file sync, permissions, migrations, cache clear)
+sudo ./scripts/deploy.sh
+
+# Full 57-test automated verification suite
+sudo ./scripts/smoke_test.sh
+
+# Create a full backup snapshot (MariaDB dump + custom files + self-restore script)
+sudo ./scripts/backup.sh manual_backup
+</code></pre>
+<h3>Automated Test Suites (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">tests/</code>)</h3>
+<ul>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">tests/run_acceptance_tests.php</code> (<strong>22/22 Tests</strong>): Validates all 168 schedule columns, weekday occurrence math, weekday vs. weekend pricing, Preset 1 (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">R5,999.00</code> pre-VAT) exact proration, Quote-to-Campaign idempotency, Myriad CSV/log export, and ACL enforcement.</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">tests/run_ui_http_tests.php</code> (<strong>5/5 Tests</strong>): Validates <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">&lt;form name=&quot;EditView&quot;&gt;</code> DOM hierarchy and Symfony <code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">record-radio-campaign-export-to-myriad</code> service wiring.</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">tests/test_radio_enhancements.php</code> (<strong>16/16 Tests</strong>): Validates As-Run reconciliation, Make-Good rescheduling, Broadcast Affidavits, ICASA reports, Invoice conversion, Presenter Live-Read sheets, and Client Email dispatch.</li>
+<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">tests/test_station_wizard.php</code> (<strong>14/14 Tests</strong>): Validates dynamic show slots, editable product codes, weekend rates, package presets, catalogue extras, and JSON profile import/export.</li>
+</ul>
+</body></html>
