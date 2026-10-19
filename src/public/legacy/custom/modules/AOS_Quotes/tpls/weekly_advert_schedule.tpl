@@ -85,53 +85,14 @@
             </div>
         </div>
 
-        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #d8dee4;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #d8dee4;">
             <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                <button type="button"
-                        id="radio_toggle_avails"
-                        class="button"
-                        style="height: 34px; padding: 0 14px; background: #0969da; color: #ffffff; border: 1px solid #0969da; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 5px;">
-                    📊 Inventory Heatmap
-                </button>
-                <button type="button"
-                        id="radio_fill_prime"
-                        class="button"
-                        title="Fill 1 spot/day Mon–Fri in Breakfast (07:00) & Afternoon Drive (16:00)"
-                        style="height: 34px; padding: 0 12px; background: #5E2B83; color: #ffffff; border: 1px solid #5E2B83; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
-                    ⚡ Mon–Fri Prime
-                </button>
-                <button type="button"
-                        id="radio_fill_daytime"
-                        class="button"
-                        title="Fill 1 spot/day Mon–Fri across Breakfast, Midmorning, Midday & Drive"
-                        style="height: 34px; padding: 0 12px; background: #1B8FA3; color: #ffffff; border: 1px solid #1B8FA3; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
-                    ☀️ Mon–Fri All Day
-                </button>
-                <button type="button"
-                        id="radio_fill_weekend"
-                        class="button"
-                        title="Fill 2 spots/day Sat–Sun across Weekend Prime slots"
-                        style="height: 34px; padding: 0 12px; background: #9a6700; color: #ffffff; border: 1px solid #9a6700; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
-                    🎉 Weekend Blitz
-                </button>
-                <button type="button"
-                        id="radio_copy_mon_weekdays"
-                        class="button"
-                        title="Copy Monday's 24-hour spot quantities across Tuesday, Wednesday, Thursday & Friday"
-                        style="height: 34px; padding: 0 12px; background: #24292f; color: #ffffff; border: 1px solid #24292f; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
-                    📋 Copy Mon → Tue–Fri
-                </button>
                 <button type="button"
                         id="radio_clear_all_spots"
                         class="button"
                         style="height: 34px; padding: 0 14px; background: #cf222e; color: #ffffff; border: 1px solid #cf222e; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center;">
                     Clear All Spots
                 </button>
-            </div>
-            <div id="radio_heatmap_legend" style="display: flex; gap: 10px; align-items: center; font-size: 11.5px; color: #57606a;">
-                <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#dafbe1; border:1px solid #1a7f37; border-radius:2px; display:inline-block;"></span> Open</span>
-                <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#fff8c5; border:1px solid #9a6700; border-radius:2px; display:inline-block;"></span> &ge;70% Full</span>
-                <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#ffebe9; border:1px solid #cf222e; border-radius:2px; display:inline-block;"></span> Sold Out</span>
             </div>
         </div>
     </div>
@@ -874,75 +835,6 @@ window.RADIO_EXTRAS_CATALOGUE = {$RADIO_EXTRAS_JSON|default:'{}'};
         }
     }
 
-    var availsActive = false;
-    function toggleStationAvails() {
-        var startInput = document.getElementById('campaign_start_date_c');
-        var endInput = document.getElementById('campaign_end_date_c');
-        var startVal = startInput ? startInput.value : '';
-        var endVal = endInput ? endInput.value : '';
-        var btn = document.getElementById('radio_toggle_avails');
-
-        if (availsActive) {
-            availsActive = false;
-            if (btn) btn.style.background = '#0969da';
-            var inputs = getScheduleInputs();
-            for (var k = 0; k < inputs.length; k++) {
-                inputs[k].style.background = '#ffffff';
-                inputs[k].removeAttribute('title');
-            }
-            return;
-        }
-
-        if (!startVal || !endVal) {
-            alert('Please select both Campaign Start Date and End Date to view station avails.');
-            return;
-        }
-
-        var formEl = document.getElementById('EditView');
-        var recordId = formEl && formEl.elements['record'] ? formEl.elements['record'].value : '';
-        var state = computeLocalTotals();
-
-        fetch('index.php?entryPoint=radio_schedule_ajax_sync', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({
-                action: 'check_avails',
-                quote_id: recordId,
-                campaign_start_date_c: startVal,
-                campaign_end_date_c: endVal,
-                cells: state.cells
-            })
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-            if (data && data.success && data.capacity && data.capacity.capacity_matrix) {
-                availsActive = true;
-                if (btn) btn.style.background = '#1a7f37';
-                var matrix = data.capacity.capacity_matrix;
-                for (var f in matrix) {
-                    var cellEl = document.getElementById(f);
-                    if (cellEl && matrix[f]) {
-                        var item = matrix[f];
-                        var status = item.status;
-                        if (status === 'full') {
-                            cellEl.style.background = '#ffebe9';
-                        } else if (status === 'filling') {
-                            cellEl.style.background = '#fff8c5';
-                        } else {
-                            cellEl.style.background = '#dafbe1';
-                        }
-                        cellEl.title = item.day + ' ' + item.label + ' — Booked: ' + item.booked +
-                            '/20 spots (' + item.remaining + ' remaining)';
-                    }
-                }
-            }
-        });
-    }
-
     function applyPackagePreset(pkgKey) {
         if (!pkgKey) {
             scheduleRecalcAndSync(true);
@@ -990,73 +882,6 @@ window.RADIO_EXTRAS_CATALOGUE = {$RADIO_EXTRAS_JSON|default:'{}'};
                 scheduleRecalcAndSync(true);
             }
         });
-    }
-
-    function applyQuickFillPattern(pattern) {
-        var pkgEl = document.getElementById('applied_package_c');
-        if (pkgEl) pkgEl.value = '';
-
-        var allInputs = getScheduleInputs();
-        if (pattern === 'copy_mon') {
-            var monValues = {};
-            for (var i = 0; i < allInputs.length; i++) {
-                if (allInputs[i].getAttribute('data-day') === 'mon') {
-                    var slot = allInputs[i].getAttribute('data-slot');
-                    var hour = allInputs[i].getAttribute('data-hour');
-                    monValues[slot + '__' + hour] = allInputs[i].value || '0';
-                }
-            }
-            var targetDays = { tue: true, wed: true, thu: true, fri: true };
-            for (var j = 0; j < allInputs.length; j++) {
-                var d = allInputs[j].getAttribute('data-day');
-                if (targetDays[d]) {
-                    var key = allInputs[j].getAttribute('data-slot') + '__' + allInputs[j].getAttribute('data-hour');
-                    if (monValues[key] !== undefined) {
-                        allInputs[j].value = monValues[key];
-                    }
-                }
-            }
-            scheduleRecalcAndSync(true);
-            return;
-        }
-
-        for (var k = 0; k < allInputs.length; k++) {
-            allInputs[k].value = '0';
-        }
-
-        var cellsToFill = {};
-        var weekdays = ['mon', 'tue', 'wed', 'thu', 'fri'];
-        if (pattern === 'prime') {
-            for (var w = 0; w < weekdays.length; w++) {
-                cellsToFill[weekdays[w] + '_morning_buzz_0700_0800_c'] = 1;
-                cellsToFill[weekdays[w] + '_cruise_control_1600_1700_c'] = 1;
-            }
-        } else if (pattern === 'daytime') {
-            for (var dIdx = 0; dIdx < weekdays.length; dIdx++) {
-                var day = weekdays[dIdx];
-                cellsToFill[day + '_morning_buzz_0700_0800_c'] = 1;
-                cellsToFill[day + '_midmorning_banter_1000_1100_c'] = 1;
-                cellsToFill[day + '_midday_pulse_1200_1300_c'] = 1;
-                cellsToFill[day + '_cruise_control_1600_1700_c'] = 1;
-            }
-        } else if (pattern === 'weekend') {
-            var wknds = ['sat', 'sun'];
-            for (var s = 0; s < wknds.length; s++) {
-                var wd = wknds[s];
-                cellsToFill[wd + '_morning_buzz_0800_0900_c'] = 2;
-                cellsToFill[wd + '_midmorning_banter_1000_1100_c'] = 2;
-                cellsToFill[wd + '_midday_pulse_1200_1300_c'] = 2;
-                cellsToFill[wd + '_cruise_control_1500_1600_c'] = 2;
-            }
-        }
-
-        for (var fieldId in cellsToFill) {
-            var el = document.getElementById(fieldId);
-            if (el) {
-                el.value = String(cellsToFill[fieldId]);
-            }
-        }
-        scheduleRecalcAndSync(true);
     }
 
     function addRateCardExtraToQuote() {
@@ -1176,46 +1001,6 @@ window.RADIO_EXTRAS_CATALOGUE = {$RADIO_EXTRAS_JSON|default:'{}'};
         var pkgSelect = document.getElementById('applied_package_c');
         if (pkgSelect) {
             pkgSelect.addEventListener('change', function() { applyPackagePreset(pkgSelect.value); });
-        }
-
-        var availsBtn = document.getElementById('radio_toggle_avails');
-        if (availsBtn) {
-            availsBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                toggleStationAvails();
-            });
-        }
-
-        var fillPrimeBtn = document.getElementById('radio_fill_prime');
-        if (fillPrimeBtn) {
-            fillPrimeBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                applyQuickFillPattern('prime');
-            });
-        }
-
-        var fillDayBtn = document.getElementById('radio_fill_daytime');
-        if (fillDayBtn) {
-            fillDayBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                applyQuickFillPattern('daytime');
-            });
-        }
-
-        var fillWkndBtn = document.getElementById('radio_fill_weekend');
-        if (fillWkndBtn) {
-            fillWkndBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                applyQuickFillPattern('weekend');
-            });
-        }
-
-        var copyMonBtn = document.getElementById('radio_copy_mon_weekdays');
-        if (copyMonBtn) {
-            copyMonBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                applyQuickFillPattern('copy_mon');
-            });
         }
 
         var addExtraBtn = document.getElementById('radio_add_extra_btn');

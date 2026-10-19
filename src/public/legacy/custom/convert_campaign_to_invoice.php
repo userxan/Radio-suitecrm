@@ -124,16 +124,16 @@ if ($invRow) {
         false
     );
 
-    // Add line item
+    // Add line item with part_number for ICASA & Invoice slot reporting
     $lineId = RadioQuoteScheduleProducts::generateUuid();
     $prodName = $stName . ' Commercial Broadcast - ' . $spotDur;
     $db->query(
         "INSERT INTO aos_products_quotes (
-            id, name, date_entered, date_modified, modified_user_id, created_by,
+            id, name, part_number, date_entered, date_modified, modified_user_id, created_by,
             description, deleted, assigned_user_id, parent_type, parent_id,
             product_qty, product_unit_price, product_total_price, vat, vat_amt
         ) VALUES (
-            '{$lineId}', '" . $db->quote($prodName) . "', '{$nowUtc}', '{$nowUtc}', '1', '1',
+            '{$lineId}', '" . $db->quote($prodName) . "', 'MORNING-BUZZ', '{$nowUtc}', '{$nowUtc}', '1', '1',
             '{$descEsc}', 0, '1', 'AOS_Invoices', '{$invId}',
             {$totalSpots}, {$unitPrice}, {$subtotal}, '15.0', {$vatAmt}
         )",

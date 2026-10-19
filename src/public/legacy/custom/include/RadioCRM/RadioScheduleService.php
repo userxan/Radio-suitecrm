@@ -1920,17 +1920,31 @@ HTML;
         $startDate = sprintf('%04d-%02d-01 00:00:00', $year, $month);
         $lastDay = (int) date('t', strtotime("{$year}-{$month}-01"));
         $endDate = sprintf('%04d-%02d-%02d 23:59:59', $year, $month, $lastDay);
+        $monthStartYmd = sprintf('%04d-%02d-01', $year, $month);
+        $monthEndYmd = sprintf('%04d-%02d-%02d', $year, $month, $lastDay);
 
         $startEsc = $db->quote($startDate);
         $endEsc = $db->quote($endDate);
+        $mStartEsc = $db->quote($monthStartYmd);
+        $mEndEsc = $db->quote($monthEndYmd);
 
-        $sql = "SELECT p.actual_time, p.spot_length, p.cart_number, c.name AS campaign_name, c.industry_category
+        // Strictly restrict ICASA reporting to campaigns that have an active Invoice (aos_invoices), never Quotes
+        $sql = "SELECT p.actual_time, p.spot_length, p.cart_number, c.id AS campaign_id, c.name AS campaign_name, c.industry_category,
+                       (SELECT inv.id FROM aos_invoices inv
+                        WHERE inv.deleted = 0
+                          AND inv.name LIKE CONCAT('%', c.name, '%')
+                        ORDER BY inv.date_entered DESC LIMIT 1) AS invoice_id
                 FROM rt_radiocampaign_plays p
-                JOIN rt_radiocampaigns c ON c.id = p.campaign_id
+                JOIN rt_radiocampaigns c ON c.id = p.campaign_id AND c.deleted = 0
                 WHERE p.actual_time >= '{$startEsc}'
                   AND p.actual_time <= '{$endEsc}'
                   AND p.status = 'Aired'
                   AND p.deleted = 0
+                  AND EXISTS (
+                      SELECT 1 FROM aos_invoices inv
+                      WHERE inv.deleted = 0
+                        AND inv.name LIKE CONCAT('%', c.name, '%')
+                  )
                 ORDER BY p.actual_time ASC";
         $res = $db->query($sql, false);
 
@@ -1944,11 +1958,15 @@ HTML;
             'evening_night' => 0,
         ];
 
-        $csvRows = ["Actual Timestamp,Cart Number,Duration (Sec),Campaign,Industry Category"];
+        $csvRows = ["Actual Timestamp,Cart Number,Duration (Sec),Campaign / Invoice,Industry Category"];
+        $invoicedIdsWithPlays = [];
 
         if ($res) {
             while ($row = $db->fetchByAssoc($res)) {
                 $totalPlays++;
+                if (!empty($row['invoice_id'])) {
+                    $invoicedIdsWithPlays[(string) $row['invoice_id']] = true;
+                }
                 $durInfo = self::formatSpotLength((string) $row['spot_length']);
                 $secs = (int) $durInfo['seconds'];
                 $totalSeconds += $secs;
@@ -1978,6 +1996,56 @@ HTML;
             }
         }
 
+        // Also include direct AOS_Invoices line items (parent_type = 'AOS_Invoices') for invoices without reconciled play rows
+        $invLinesSql = "SELECT inv.id AS invoice_id, inv.name AS invoice_name, inv.invoice_date, inv.date_entered,
+                               pq.part_number, pq.name AS line_name, pq.product_qty
+                        FROM aos_invoices inv
+                        JOIN aos_products_quotes pq ON pq.parent_id = inv.id AND pq.parent_type = 'AOS_Invoices' AND pq.deleted = 0
+                        WHERE inv.deleted = 0
+                          AND (
+                              (inv.invoice_date IS NOT NULL AND inv.invoice_date >= '{$mStartEsc}' AND inv.invoice_date <= '{$mEndEsc}')
+                              OR (inv.date_entered >= '{$startEsc}' AND inv.date_entered <= '{$endEsc}')
+                          )";
+        $invLinesRes = $db->query($invLinesSql, false);
+        if ($invLinesRes) {
+            while ($iRow = $db->fetchByAssoc($invLinesRes)) {
+                $invId = (string) ($iRow['invoice_id'] ?? '');
+                if (isset($invoicedIdsWithPlays[$invId])) {
+                    continue;
+                }
+                $qty = max(0, (int) round((float) ($iRow['product_qty'] ?? 0)));
+                if ($qty <= 0) {
+                    continue;
+                }
+                $secs = 30;
+                if (preg_match('/(\d+)\s*sec/i', (string) ($iRow['line_name'] ?? ''), $dm)) {
+                    $secs = (int) $dm[1];
+                }
+                $totalPlays += $qty;
+                $totalSeconds += ($qty * $secs);
+                $byCategory['invoiced'] = ($byCategory['invoiced'] ?? 0) + $qty;
+
+                $pn = strtoupper(trim((string) ($iRow['part_number'] ?? '')));
+                if (str_contains($pn, 'MORNING-BUZZ')) {
+                    $byDaypart['morning_buzz'] += $qty;
+                } elseif (str_contains($pn, 'MIDMORNING') || str_contains($pn, 'MIDDAY')) {
+                    $byDaypart['daytime'] += $qty;
+                } elseif (str_contains($pn, 'CRUISE-CONTROL')) {
+                    $byDaypart['cruise_control'] += $qty;
+                } else {
+                    $byDaypart['evening_night'] += $qty;
+                }
+
+                $ts = (string) ($iRow['invoice_date'] ?: substr((string) $iRow['date_entered'], 0, 10));
+                $csvRows[] = sprintf(
+                    '"%s","INVOICED",%d,"%s","invoiced"',
+                    $ts,
+                    $qty * $secs,
+                    str_replace('"', '""', (string) $iRow['invoice_name'])
+                );
+            }
+        }
+
         $totalMinutes = round($totalSeconds / 60, 2);
         $totalBroadcastHours = 24 * $lastDay;
         $avgMinutesPerHour = $totalBroadcastHours > 0 ? round($totalMinutes / $totalBroadcastHours, 2) : 0.0;
@@ -1985,6 +2053,7 @@ HTML;
 
         return [
             'success' => true,
+            'data_source' => 'AOS_Invoices',
             'year' => $year,
             'month' => $month,
             'days_in_month' => $lastDay,
@@ -2547,11 +2616,11 @@ HTML;
     }
 
     /**
-     * Compute comprehensive Station Manager Dashboard metrics:
-     * - Revenue & spots booked by Show Slot
+     * Compute comprehensive Station Manager Dashboard metrics strictly from Invoices (AOS_Invoices):
+     * - Revenue & spots invoiced by Show Slot
      * - Expiring campaigns (next 14 days)
      * - Production & copy pipeline breakdown
-     * - ICASA compliance report summary
+     * - ICASA compliance report summary (sourced strictly from Invoices)
      *
      * @return array<string, mixed>
      */
@@ -2582,27 +2651,28 @@ HTML;
         $totalBookedSpots = 0;
 
         if (is_object($db) && method_exists($db, 'query')) {
+            // Strictly query AOS_Invoices line items (parent_type = 'AOS_Invoices'), never AOS_Quotes
             $lineRes = $db->query(
                 "SELECT pq.part_number, pq.name, SUM(pq.product_qty) AS total_qty, SUM(pq.product_total_price) AS total_net
                  FROM aos_products_quotes pq
-                 JOIN aos_quotes q ON q.id = pq.parent_id AND q.deleted = 0
-                 WHERE pq.deleted = 0 AND pq.parent_type = 'AOS_Quotes'
+                 JOIN aos_invoices inv ON inv.id = pq.parent_id AND inv.deleted = 0
+                 WHERE pq.deleted = 0 AND pq.parent_type = 'AOS_Invoices'
                  GROUP BY pq.part_number, pq.name",
                 false
             );
             if ($lineRes) {
                 while ($r = $db->fetchByAssoc($lineRes)) {
                     $pn = trim((string) ($r['part_number'] ?? ''));
+                    if ($pn === '') {
+                        $pn = 'INVOICED-BROADCAST';
+                    }
                     $qty = (int) round((float) ($r['total_qty'] ?? 0));
                     $net = round((float) ($r['total_net'] ?? 0.0), 2);
-                    if ($pn === '') {
-                        continue;
-                    }
                     if (!isset($revenueBySlot[$pn])) {
                         $revenueBySlot[$pn] = [
                             'part_number' => $pn,
                             'title' => (string) ($r['name'] ?: $pn),
-                            'hours' => 'Rate Card Extra / Custom',
+                            'hours' => 'Invoiced Broadcast / Extra',
                             'booked_spots' => 0,
                             'booked_revenue' => 0.0,
                         ];
@@ -2630,10 +2700,8 @@ HTML;
             $cRes = $db->query(
                 "SELECT c.id, c.name, c.start_date, c.end_date, c.number_of_spots, c.status,
                         c.production_status, c.reconciliation_status, c.reconciled_spots, c.missed_spots,
-                        c.myriad_cart_number, a.name AS account_name
+                        c.myriad_cart_number
                  FROM rt_radiocampaigns c
-                 LEFT JOIN aos_quotes q ON q.id = c.linked_quote_id AND q.deleted = 0
-                 LEFT JOIN accounts a ON a.id = q.billing_account_id
                  WHERE c.deleted = 0
                  ORDER BY c.end_date ASC",
                 false
@@ -2667,6 +2735,7 @@ HTML;
         return [
             'station_name' => $stConfig['station_name'] ?? 'Community Radio FM',
             'currency_symbol' => $stConfig['currency_symbol'] ?? 'R',
+            'data_source' => 'AOS_Invoices',
             'total_booked_revenue' => $totalBookedRevenue,
             'total_booked_spots' => $totalBookedSpots,
             'active_campaigns_count' => $activeCampaignCount,

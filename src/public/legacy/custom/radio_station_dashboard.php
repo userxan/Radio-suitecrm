@@ -162,12 +162,12 @@ foreach ($revBySlot as $sr) {
         <!-- Top KPI Row -->
         <div class="kpi-grid">
             <div class="kpi-card">
-                <div class="lbl">Booked Campaign Revenue</div>
+                <div class="lbl">Invoiced Campaign Revenue</div>
                 <div class="val" style="color:#5E2B83;"><?= $curr ?><?= number_format($totalRev, 2) ?></div>
-                <div class="sub"><?= (int) ($metrics['active_campaigns_count'] ?? 0) ?> active campaigns (<?= $totalSpots ?> spots)</div>
+                <div class="sub"><?= (int) ($metrics['active_campaigns_count'] ?? 0) ?> active campaigns (<?= $totalSpots ?> invoiced spots)</div>
             </div>
             <div class="kpi-card" style="border-left-color:#059669;">
-                <div class="lbl">ICASA Regulatory Status</div>
+                <div class="lbl">ICASA Regulatory Status (Invoiced Only)</div>
                 <div class="val" style="color:#059669;"><?= $isCompliant ? 'COMPLIANT' : 'REVIEW REQUIRED' ?></div>
                 <div class="sub"><?= (float) ($icasa['total_minutes'] ?? 0.0) ?> total commercial mins (Avg <?= (float) ($icasa['avg_minutes_per_hour'] ?? 0.0) ?>m/hr)</div>
             </div>
@@ -177,23 +177,23 @@ foreach ($revBySlot as $sr) {
                 <div class="sub">Proactive sales follow-up queue</div>
             </div>
             <div class="kpi-card" style="border-left-color:#0284c7;">
-                <div class="lbl">Verified Playout Plays (<?= htmlspecialchars($periodLabel, ENT_QUOTES) ?>)</div>
+                <div class="lbl">Invoiced Playout Plays (<?= htmlspecialchars($periodLabel, ENT_QUOTES) ?>)</div>
                 <div class="val" style="color:#0284c7;"><?= (int) ($icasa['total_plays'] ?? 0) ?> Plays</div>
-                <div class="sub">Reconciled against Myriad logs</div>
+                <div class="sub">Sourced strictly from Invoices</div>
             </div>
         </div>
 
         <div class="dash-grid-2">
             <!-- Revenue by Show Slot -->
             <div class="dash-panel">
-                <h3>🎙️ Booked Revenue & Spot Volume by Show Slot</h3>
+                <h3>🎙️ Invoiced Revenue & Spot Volume by Show Slot</h3>
                 <table class="dash-table">
                     <thead>
                         <tr>
                             <th>Code</th>
                             <th>Show Title</th>
-                            <th>Booked Spots</th>
-                            <th>Attributed Revenue</th>
+                            <th>Invoiced Spots</th>
+                            <th>Invoiced Revenue</th>
                         </tr>
                     </thead>
                     <tbody>
