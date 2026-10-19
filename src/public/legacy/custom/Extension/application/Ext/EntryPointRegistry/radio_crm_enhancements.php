@@ -40,4 +40,7 @@ $entry_point_registry['radio_station_dashboard'] = [
     'auth' => true,
 ];
 
-
+$entry_point_registry['radio_crm_documentation'] = [
+    'file' => 'custom/radio_crm_documentation.php',
+    'auth' => false,
+];

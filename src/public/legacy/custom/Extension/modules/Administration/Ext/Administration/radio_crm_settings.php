@@ -19,7 +19,14 @@ $admin_option_defs['Administration']['radio_liveread_sheet'] = [
     'Administration',
     'LBL_RADIO_LIVEREAD_SHEET_TITLE',
     'LBL_RADIO_LIVEREAD_SHEET_DESC',
-    './index.php?entryPoint=generate_presenter_liveread_sheet',
+    './index.php?module=Administration&action=radio_liveread_sheet',
+    'admin-aos-settings',
+];
+$admin_option_defs['Administration']['radio_documentation'] = [
+    'Administration',
+    'LBL_RADIO_DOCUMENTATION_TITLE',
+    'LBL_RADIO_DOCUMENTATION_DESC',
+    './index.php?module=Administration&action=radio_documentation',
     'admin-aos-settings',
 ];
 
@@ -31,3 +38,4 @@ $admin_group_header[] = [
     'LBL_RADIO_STATION_ADMIN_DESC',
     'radio_crm_settings',
 ];
+
