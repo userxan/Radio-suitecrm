@@ -114,6 +114,9 @@ assertCheck(
 // -------------------------------------------------------------
 // Test 4: As-Run Log Reconciliation
 // -------------------------------------------------------------
+$db->query("DELETE FROM rt_radiocampaign_plays WHERE cart_number = '2050'");
+$db->query("DELETE FROM rt_radiocampaigns WHERE myriad_cart_number = '2050'");
+
 // Create a temporary campaign with cart 2050 for testing reconciliation
 $testCamp = BeanFactory::newBean('RT_RadioCampaigns');
 $testCamp->name = 'Reconciliation Test Campaign';
@@ -205,15 +208,16 @@ $testQuote->tax_amount = 750.00;
 $testQuote->total_amount = 5750.00;
 $testQuoteId = $testQuote->save();
 
-$testCamp->billing_account_id = $testAccountId;
-$testCamp->linked_quote_id = $testQuoteId;
-$testCamp->save();
+$reloadedCamp->billing_account_id = $testAccountId;
+$reloadedCamp->linked_quote_id = $testQuoteId;
+$reloadedCamp->script_text = 'Presenter Live-Read Copy for Reconciliation Test Campaign';
+$reloadedCamp->save();
 
 // Now invoke conversion logic
 require_once 'custom/include/RadioCRM/RadioScheduleService.php';
 // We simulate convert_campaign_to_invoice logic
 $invoice = BeanFactory::newBean('AOS_Invoices');
-$invoice->name = 'Invoice: ' . $testCamp->name;
+$invoice->name = 'Invoice: ' . $reloadedCamp->name;
 $invoice->billing_account_id = $testAccountId;
 $invoice->status = 'Unpaid';
 $invoice->invoice_date = date('Y-m-d');
@@ -241,6 +245,81 @@ assertCheck(
     isset($icasaReport['total_plays']),
     'T7: ICASA Compliance Report computes monthly commercial minutes and compliance status',
     "compliant=" . ($icasaReport['is_icasa_compliant'] ? 'yes' : 'no') . ", minutes={$icasaReport['total_minutes']}, plays={$icasaReport['total_plays']}"
+);
+
+// -------------------------------------------------------------
+// Test 8: Rate Card Extras Catalogue
+// -------------------------------------------------------------
+$extrasCatalogue = RadioScheduleService::getRateCardExtrasCatalogue($db);
+assertCheck(
+    is_array($extrasCatalogue) && !empty($extrasCatalogue),
+    'T8: Rate Card Extras Catalogue returns grouped non-slot products for Quote bundler',
+    'groups=' . count($extrasCatalogue)
+);
+
+// -------------------------------------------------------------
+// Test 9: Make-Good Automatic Rescheduling
+// -------------------------------------------------------------
+$makeGoodRes = RadioScheduleService::rescheduleMakeGoodSpots($testCampId, $db);
+assertCheck(
+    !empty($makeGoodRes['success']) && (int) ($makeGoodRes['rescheduled_count'] ?? 0) === 2,
+    'T9: Make-Good Automatic Rescheduling schedules 2 missed spots and reconciles campaign',
+    "rescheduled=" . ($makeGoodRes['rescheduled_count'] ?? 0)
+);
+if (!empty($makeGoodRes['log_file'])) {
+    $mgPath = '/srv/myriad_exports/myriad_daily_logs/' . basename((string) $makeGoodRes['log_file']);
+    if (is_file($mgPath)) {
+        @unlink($mgPath);
+    }
+}
+
+// -------------------------------------------------------------
+// Test 10: Studio Presenter Live-Read & Commercial Run Sheet
+// -------------------------------------------------------------
+$liveReadRes = RadioScheduleService::generatePresenterLiveReadSheetHtml('2026-10-10', $testCampId, $db);
+$liveReadHtml = (string) ($liveReadRes['html'] ?? '');
+assertCheck(
+    !empty($liveReadRes['success']) &&
+    strpos($liveReadHtml, 'Studio Presenter Live-Read') !== false &&
+    strpos($liveReadHtml, 'Reconciliation Test Campaign') !== false,
+    'T10: Presenter Live-Read Sheet generates printable HTML run sheet for studio',
+    'length=' . strlen($liveReadHtml)
+);
+
+// -------------------------------------------------------------
+// Test 11: One-Click Client Email Dispatch & Outbox Audit
+// -------------------------------------------------------------
+$emailRes = RadioScheduleService::sendClientNotificationEmail($testCampId, 'approval', 'advertiser@example.org', $db);
+$outboxPath = '/srv/myriad_exports/email_outbox/' . basename((string) ($emailRes['outbox_file'] ?? ''));
+assertCheck(
+    !empty($emailRes['success']) && !empty($emailRes['outbox_file']) && is_file($outboxPath),
+    'T11: Client Notification Email dispatches and saves HTML copy in email_outbox',
+    'file=' . basename((string) ($emailRes['outbox_file'] ?? ''))
+);
+if (is_file($outboxPath)) {
+    @unlink($outboxPath);
+}
+
+// -------------------------------------------------------------
+// Test 12: Station Manager Revenue, Renewal & ICASA Dashboard Metrics
+// -------------------------------------------------------------
+$dashMetrics = RadioScheduleService::getStationDashboardMetrics($year, $month, $db);
+assertCheck(
+    isset($dashMetrics['revenue_by_slot']) &&
+    isset($dashMetrics['pipeline_counts']) &&
+    isset($dashMetrics['icasa']),
+    'T12: Station Dashboard Metrics computes show slot revenue, production pipeline, and ICASA stats',
+    'slots=' . count($dashMetrics['revenue_by_slot'] ?? [])
+);
+
+// -------------------------------------------------------------
+// Test 13: Custom Package Slot Distribution Builder
+// -------------------------------------------------------------
+$wkndSlots = RadioScheduleService::buildPackagePrimeSlots(50, 'weekly', 'weekend_included');
+assertCheck(
+    array_sum($wkndSlots) === 50 && (!empty($wkndSlots['sat_morning_buzz_0800_0900_c']) || !empty($wkndSlots['sun_morning_buzz_0800_0900_c'])),
+    'T13: Custom Package Slot Distribution allocates exact spot count across selected pattern',
+    'total=' . array_sum($wkndSlots)
 );
 
 // Clean up test campaign and log

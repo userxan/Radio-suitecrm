@@ -25,3 +25,19 @@ $entry_point_registry['radio_station_wizard'] = [
     'auth' => true,
 ];
 
+$entry_point_registry['generate_presenter_liveread_sheet'] = [
+    'file' => 'custom/generate_presenter_liveread_sheet.php',
+    'auth' => false,
+];
+
+$entry_point_registry['send_radio_client_email'] = [
+    'file' => 'custom/send_radio_client_email.php',
+    'auth' => true,
+];
+
+$entry_point_registry['radio_station_dashboard'] = [
+    'file' => 'custom/radio_station_dashboard.php',
+    'auth' => true,
+];
+
+

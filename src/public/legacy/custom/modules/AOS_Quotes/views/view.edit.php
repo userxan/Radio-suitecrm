@@ -112,6 +112,7 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
         );
 
         $packages = RadioScheduleService::getPackageDefinitions($GLOBALS['db'] ?? null);
+        $extrasCatalogue = RadioScheduleService::getRateCardExtrasCatalogue($GLOBALS['db'] ?? null);
 
         $tplVars = [
             'RADIO_SLOTS' => $slotsForTpl,
@@ -127,6 +128,8 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
             'RADIO_APPLIED_PACKAGE' => $_REQUEST['applied_package_c'] ?? ($this->bean->applied_package_c ?? ''),
             'RADIO_PACKAGES' => $packages,
             'RADIO_PACKAGES_JSON' => json_encode($packages, JSON_UNESCAPED_SLASHES),
+            'RADIO_EXTRAS_CATALOGUE' => $extrasCatalogue,
+            'RADIO_EXTRAS_JSON' => json_encode($extrasCatalogue, JSON_UNESCAPED_SLASHES),
             'RADIO_CURRENCY' => $stConfig['currency_symbol'] ?? 'R',
             'RADIO_STATION_CONFIGURED' => RadioStationConfigService::isConfigured($GLOBALS['db'] ?? null),
             'RADIO_STATION_NAME' => $stConfig['station_name'] ?? 'Community Radio FM',

@@ -19,6 +19,12 @@ $viewdefs[$module_name]['DetailView'] = [
                     'customCode' => '<input type="button" class="button" id="reconcile_logs_btn" value="{$MOD.LBL_RECONCILE_LOGS}" onclick="window.location.href=\'index.php?entryPoint=radio_campaign_reconcile_logs&record={$fields.id.value}\';" />',
                 ],
                 [
+                    'customCode' => '<input type="button" class="button" id="schedule_makegood_btn" value="{$MOD.LBL_MAKE_GOOD}" onclick="window.location.href=\'index.php?entryPoint=radio_campaign_reconcile_logs&record={$fields.id.value}&makegood=1\';" />',
+                ],
+                [
+                    'customCode' => '<input type="button" class="button" id="presenter_liveread_btn" value="{$MOD.LBL_LIVEREAD_SHEET}" onclick="window.open(\'index.php?entryPoint=generate_presenter_liveread_sheet&record={$fields.id.value}\', \'_blank\');" />',
+                ],
+                [
                     'customCode' => '<input type="button" class="button" id="broadcast_affidavit_btn" value="{$MOD.LBL_BROADCAST_AFFIDAVIT}" onclick="window.open(\'index.php?entryPoint=generate_broadcast_affidavit&record={$fields.id.value}\', \'_blank\');" />',
                 ],
                 [
@@ -26,6 +32,12 @@ $viewdefs[$module_name]['DetailView'] = [
                 ],
                 [
                     'customCode' => '{if !empty($fields.client_approval_token.value)}<input type="button" class="button" id="client_review_btn" value="Client Review Link" onclick="window.open(\'index.php?entryPoint=radio_campaign_client_review&token={$fields.client_approval_token.value}\', \'_blank\');" />{/if}',
+                ],
+                [
+                    'customCode' => '<input type="button" class="button" id="email_client_review_btn" value="{$MOD.LBL_EMAIL_CLIENT_REVIEW}" onclick="window.location.href=\'index.php?entryPoint=send_radio_client_email&record={$fields.id.value}&type=approval\';" />',
+                ],
+                [
+                    'customCode' => '<input type="button" class="button" id="email_affidavit_btn" value="{$MOD.LBL_EMAIL_AFFIDAVIT}" onclick="window.location.href=\'index.php?entryPoint=send_radio_client_email&record={$fields.id.value}&type=affidavit\';" />',
                 ],
             ],
         ],

@@ -8,6 +8,20 @@ $admin_option_defs['Administration']['radio_station_wizard'] = [
     './index.php?module=Administration&action=radio_station_wizard',
     'admin-aos-settings',
 ];
+$admin_option_defs['Administration']['radio_station_dashboard'] = [
+    'Administration',
+    'LBL_RADIO_STATION_DASHBOARD_TITLE',
+    'LBL_RADIO_STATION_DASHBOARD_DESC',
+    './index.php?module=Administration&action=radio_station_dashboard',
+    'admin-aos-settings',
+];
+$admin_option_defs['Administration']['radio_liveread_sheet'] = [
+    'Administration',
+    'LBL_RADIO_LIVEREAD_SHEET_TITLE',
+    'LBL_RADIO_LIVEREAD_SHEET_DESC',
+    './index.php?entryPoint=generate_presenter_liveread_sheet',
+    'admin-aos-settings',
+];
 
 $admin_group_header[] = [
     'LBL_RADIO_STATION_ADMIN_TITLE',

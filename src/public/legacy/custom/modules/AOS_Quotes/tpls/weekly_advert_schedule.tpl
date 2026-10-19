@@ -86,19 +86,52 @@
         </div>
 
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #d8dee4;">
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
                 <button type="button"
                         id="radio_toggle_avails"
                         class="button"
-                        style="height: 36px; padding: 0 16px; background: #0969da; color: #ffffff; border: 1px solid #0969da; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                    📊 Station Avails
+                        style="height: 34px; padding: 0 14px; background: #0969da; color: #ffffff; border: 1px solid #0969da; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 5px;">
+                    📊 Inventory Heatmap
+                </button>
+                <button type="button"
+                        id="radio_fill_prime"
+                        class="button"
+                        title="Fill 1 spot/day Mon–Fri in Breakfast (07:00) & Afternoon Drive (16:00)"
+                        style="height: 34px; padding: 0 12px; background: #5E2B83; color: #ffffff; border: 1px solid #5E2B83; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                    ⚡ Mon–Fri Prime
+                </button>
+                <button type="button"
+                        id="radio_fill_daytime"
+                        class="button"
+                        title="Fill 1 spot/day Mon–Fri across Breakfast, Midmorning, Midday & Drive"
+                        style="height: 34px; padding: 0 12px; background: #1B8FA3; color: #ffffff; border: 1px solid #1B8FA3; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                    ☀️ Mon–Fri All Day
+                </button>
+                <button type="button"
+                        id="radio_fill_weekend"
+                        class="button"
+                        title="Fill 2 spots/day Sat–Sun across Weekend Prime slots"
+                        style="height: 34px; padding: 0 12px; background: #9a6700; color: #ffffff; border: 1px solid #9a6700; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                    🎉 Weekend Blitz
+                </button>
+                <button type="button"
+                        id="radio_copy_mon_weekdays"
+                        class="button"
+                        title="Copy Monday's 24-hour spot quantities across Tuesday, Wednesday, Thursday & Friday"
+                        style="height: 34px; padding: 0 12px; background: #24292f; color: #ffffff; border: 1px solid #24292f; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                    📋 Copy Mon → Tue–Fri
                 </button>
                 <button type="button"
                         id="radio_clear_all_spots"
                         class="button"
-                        style="height: 36px; padding: 0 16px; background: #cf222e; color: #ffffff; border: 1px solid #cf222e; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center;">
+                        style="height: 34px; padding: 0 14px; background: #cf222e; color: #ffffff; border: 1px solid #cf222e; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center;">
                     Clear All Spots
                 </button>
+            </div>
+            <div id="radio_heatmap_legend" style="display: flex; gap: 10px; align-items: center; font-size: 11.5px; color: #57606a;">
+                <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#dafbe1; border:1px solid #1a7f37; border-radius:2px; display:inline-block;"></span> Open</span>
+                <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#fff8c5; border:1px solid #9a6700; border-radius:2px; display:inline-block;"></span> &ge;70% Full</span>
+                <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#ffebe9; border:1px solid #cf222e; border-radius:2px; display:inline-block;"></span> Sold Out</span>
             </div>
         </div>
     </div>
@@ -192,11 +225,59 @@
             </tbody>
         </table>
     </div>
+
+    {* Multi-Item Rate Card Bundle Selector (Social Media, Live Reads, Interviews & Sponsorships) *}
+    <div id="radio_ratecard_extras_panel" style="margin-top: 16px; background: #f8fafc; border: 1px solid #d0d7de; border-radius: 6px; padding: 14px 16px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+            <div>
+                <h5 style="margin: 0 0 3px 0; font-size: 13.5px; color: #5E2B83; font-weight: 700;">
+                    ➕ Bundle Rate Card Extras (Social Media, Live Reads, Interviews &amp; Outside Broadcasts)
+                </h5>
+                <div style="font-size: 12px; color: #57606a;">
+                    Add non-spot rate card items directly to this Quote's line items alongside your broadcast schedule.
+                </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <select id="radio_extra_item_select"
+                        style="height: 36px; min-width: 320px; padding: 6px 10px; font-size: 13px; border: 1px solid #d0d7de; border-radius: 6px; background: #ffffff; color: #1f2328;">
+                    <option value="">-- Select Rate Card Extra Item --</option>
+                    {foreach from=$RADIO_EXTRAS_CATALOGUE key=catGroup item=catItems}
+                        <optgroup label="{$catGroup|escape:'html'}">
+                            {foreach from=$catItems item=extItem}
+                                <option value="{$extItem.part_number|escape:'html'}"
+                                        data-id="{$extItem.id|escape:'html'}"
+                                        data-name="{$extItem.name|escape:'html'}"
+                                        data-price="{$extItem.price}"
+                                        data-desc="{$extItem.description|escape:'html'}">
+                                    {$extItem.name|escape:'html'} ({$RADIO_CURRENCY|default:'R'}{$extItem.price|string_format:'%.2f'})
+                                </option>
+                            {/foreach}
+                        </optgroup>
+                    {/foreach}
+                </select>
+                <input type="number"
+                       id="radio_extra_item_qty"
+                       min="1"
+                       step="1"
+                       value="1"
+                       title="Quantity"
+                       style="width: 68px; height: 36px; box-sizing: border-box; padding: 6px; text-align: center; font-size: 13px; border: 1px solid #d0d7de; border-radius: 6px;" />
+                <button type="button"
+                        id="radio_add_extra_btn"
+                        class="button"
+                        style="height: 36px; padding: 0 16px; background: #1a7f37; color: #ffffff; border: 1px solid #1a7f37; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                    + Add Extra to Quote
+                </button>
+                <span id="radio_extra_added_msg" style="font-size: 12px; color: #1a7f37; font-weight: 600; display: none;"></span>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- RADIO_SAVE_BUTTON_FIX_START -->
 <script type="text/javascript">
-window.RADIO_CONFIG_PACKAGES = {$RADIO_PACKAGES_JSON};
+window.RADIO_CONFIG_PACKAGES = {$RADIO_PACKAGES_JSON|default:'{}'};
+window.RADIO_EXTRAS_CATALOGUE = {$RADIO_EXTRAS_JSON|default:'{}'};
 </script>
 <script type="text/javascript">
 {literal}
@@ -911,6 +992,148 @@ window.RADIO_CONFIG_PACKAGES = {$RADIO_PACKAGES_JSON};
         });
     }
 
+    function applyQuickFillPattern(pattern) {
+        var pkgEl = document.getElementById('applied_package_c');
+        if (pkgEl) pkgEl.value = '';
+
+        var allInputs = getScheduleInputs();
+        if (pattern === 'copy_mon') {
+            var monValues = {};
+            for (var i = 0; i < allInputs.length; i++) {
+                if (allInputs[i].getAttribute('data-day') === 'mon') {
+                    var slot = allInputs[i].getAttribute('data-slot');
+                    var hour = allInputs[i].getAttribute('data-hour');
+                    monValues[slot + '__' + hour] = allInputs[i].value || '0';
+                }
+            }
+            var targetDays = { tue: true, wed: true, thu: true, fri: true };
+            for (var j = 0; j < allInputs.length; j++) {
+                var d = allInputs[j].getAttribute('data-day');
+                if (targetDays[d]) {
+                    var key = allInputs[j].getAttribute('data-slot') + '__' + allInputs[j].getAttribute('data-hour');
+                    if (monValues[key] !== undefined) {
+                        allInputs[j].value = monValues[key];
+                    }
+                }
+            }
+            scheduleRecalcAndSync(true);
+            return;
+        }
+
+        for (var k = 0; k < allInputs.length; k++) {
+            allInputs[k].value = '0';
+        }
+
+        var cellsToFill = {};
+        var weekdays = ['mon', 'tue', 'wed', 'thu', 'fri'];
+        if (pattern === 'prime') {
+            for (var w = 0; w < weekdays.length; w++) {
+                cellsToFill[weekdays[w] + '_morning_buzz_0700_0800_c'] = 1;
+                cellsToFill[weekdays[w] + '_cruise_control_1600_1700_c'] = 1;
+            }
+        } else if (pattern === 'daytime') {
+            for (var dIdx = 0; dIdx < weekdays.length; dIdx++) {
+                var day = weekdays[dIdx];
+                cellsToFill[day + '_morning_buzz_0700_0800_c'] = 1;
+                cellsToFill[day + '_midmorning_banter_1000_1100_c'] = 1;
+                cellsToFill[day + '_midday_pulse_1200_1300_c'] = 1;
+                cellsToFill[day + '_cruise_control_1600_1700_c'] = 1;
+            }
+        } else if (pattern === 'weekend') {
+            var wknds = ['sat', 'sun'];
+            for (var s = 0; s < wknds.length; s++) {
+                var wd = wknds[s];
+                cellsToFill[wd + '_morning_buzz_0800_0900_c'] = 2;
+                cellsToFill[wd + '_midmorning_banter_1000_1100_c'] = 2;
+                cellsToFill[wd + '_midday_pulse_1200_1300_c'] = 2;
+                cellsToFill[wd + '_cruise_control_1500_1600_c'] = 2;
+            }
+        }
+
+        for (var fieldId in cellsToFill) {
+            var el = document.getElementById(fieldId);
+            if (el) {
+                el.value = String(cellsToFill[fieldId]);
+            }
+        }
+        scheduleRecalcAndSync(true);
+    }
+
+    function addRateCardExtraToQuote() {
+        var sel = document.getElementById('radio_extra_item_select');
+        var qtyEl = document.getElementById('radio_extra_item_qty');
+        var msgEl = document.getElementById('radio_extra_added_msg');
+        if (!sel || !sel.value) {
+            alert('Please select a Rate Card Extra item to add.');
+            return;
+        }
+        var opt = sel.options[sel.selectedIndex];
+        var partNum = sel.value;
+        var prodId = opt.getAttribute('data-id') || '';
+        var prodName = opt.getAttribute('data-name') || partNum;
+        var unitPrice = parseFloat(opt.getAttribute('data-price') || '0') || 0.0;
+        var prodDesc = opt.getAttribute('data-desc') || '';
+        var qty = Math.max(1, parseInt(qtyEl ? qtyEl.value : '1', 10) || 1);
+
+        if (typeof window.insertGroup === 'function' && !document.getElementById('product_group0')) {
+            try { window.insertGroup(); } catch (e) {}
+        }
+        var headEl = document.getElementById('product_group0_head');
+        if (headEl) headEl.style.display = '';
+
+        var targetIdx = undefined;
+        var partInputs = document.querySelectorAll('input[id^="product_part_number"]');
+        for (var i = 0; i < partInputs.length; i++) {
+            var m = partInputs[i].id.match(/^product_part_number(\d+)$/);
+            if (!m) continue;
+            var idx = m[1];
+            var delEl = document.getElementById('product_deleted' + idx);
+            if (delEl && delEl.value === '1') continue;
+            if ((partInputs[i].value || '').trim().toUpperCase() === partNum.toUpperCase()) {
+                targetIdx = idx;
+                break;
+            }
+        }
+
+        if (targetIdx === undefined && typeof window.insertProductLine === 'function') {
+            try {
+                targetIdx = window.insertProductLine('product_group0', '0');
+            } catch (e) {}
+        }
+
+        if (targetIdx !== undefined) {
+            var setF = function(prefix, val) {
+                var el = document.getElementById(prefix + targetIdx);
+                if (el) el.value = val;
+            };
+            var net = Math.round(qty * unitPrice * 100) / 100;
+            var vat = Math.round(net * 0.15 * 100) / 100;
+            setF('product_name', prodName);
+            setF('product_part_number', partNum);
+            if (prodId) setF('product_product_id', prodId);
+            setF('product_product_qty', qty);
+            setF('product_product_list_price', unitPrice.toFixed(2));
+            setF('product_product_unit_price', unitPrice.toFixed(2));
+            setF('product_vat', '15.0');
+            setF('product_vat_amt', vat.toFixed(2));
+            setF('product_product_total_price', net.toFixed(2));
+            setF('product_item_description', prodDesc);
+
+            if (typeof window.calculateLine === 'function') {
+                try { window.calculateLine(targetIdx, 'product_'); } catch (e) {}
+            }
+            if (typeof window.calculateTotal === 'function') {
+                try { window.calculateTotal('group0'); } catch (e) {}
+                try { window.calculateTotal(); } catch (e) {}
+            }
+            if (msgEl) {
+                msgEl.textContent = '✓ Added ' + qty + 'x ' + prodName;
+                msgEl.style.display = 'inline';
+                setTimeout(function() { msgEl.style.display = 'none'; }, 3500);
+            }
+        }
+    }
+
     function initScheduleEvents() {
         var wrapper = document.getElementById('weekly_advert_schedule_wrapper');
         if (!wrapper) return;
@@ -960,6 +1183,46 @@ window.RADIO_CONFIG_PACKAGES = {$RADIO_PACKAGES_JSON};
             availsBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 toggleStationAvails();
+            });
+        }
+
+        var fillPrimeBtn = document.getElementById('radio_fill_prime');
+        if (fillPrimeBtn) {
+            fillPrimeBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                applyQuickFillPattern('prime');
+            });
+        }
+
+        var fillDayBtn = document.getElementById('radio_fill_daytime');
+        if (fillDayBtn) {
+            fillDayBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                applyQuickFillPattern('daytime');
+            });
+        }
+
+        var fillWkndBtn = document.getElementById('radio_fill_weekend');
+        if (fillWkndBtn) {
+            fillWkndBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                applyQuickFillPattern('weekend');
+            });
+        }
+
+        var copyMonBtn = document.getElementById('radio_copy_mon_weekdays');
+        if (copyMonBtn) {
+            copyMonBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                applyQuickFillPattern('copy_mon');
+            });
+        }
+
+        var addExtraBtn = document.getElementById('radio_add_extra_btn');
+        if (addExtraBtn) {
+            addExtraBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addRateCardExtraToQuote();
             });
         }
 

@@ -17,6 +17,20 @@ if (empty($current_user) || empty($current_user->id)) {
 }
 
 $recordId = trim((string) ($_REQUEST['record'] ?? ''));
+$isMakeGood = !empty($_REQUEST['makegood']);
+
+if ($isMakeGood && $recordId !== '') {
+    $mgResult = RadioScheduleService::rescheduleMakeGoodSpots($recordId, $db);
+    if ((isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || (($_REQUEST['format'] ?? '') === 'json')) {
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode($mgResult);
+        return;
+    }
+    $msg = urlencode((string) ($mgResult['message'] ?? 'Make-good rescheduling completed.'));
+    header("Location: index.php?module=RT_RadioCampaigns&action=DetailView&record={$recordId}&recon_msg={$msg}");
+    exit;
+}
+
 $reconDir = '/srv/myriad_reconciliation';
 if (!is_dir($reconDir)) {
     @mkdir($reconDir, 02775, true);

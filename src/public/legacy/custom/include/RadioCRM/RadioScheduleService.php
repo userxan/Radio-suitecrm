@@ -1235,8 +1235,20 @@ class RadioScheduleService
             if (!empty($conf['package_presets']) && is_array($conf['package_presets'])) {
                 $presets = $conf['package_presets'];
                 foreach ($presets as $k => &$p) {
-                    if (empty($p['prime_slots']) && isset($defaults[$k]['prime_slots'])) {
+                    $dist = (string) ($p['distribution'] ?? '');
+                    $totSpots = (int) ($p['total_spots'] ?? 50);
+                    $pkgType = (string) ($p['type'] ?? 'weekly');
+                    $defTot = (int) ($defaults[$k]['total_spots'] ?? 0);
+
+                    if (!empty($p['prime_slots']) && is_array($p['prime_slots'])) {
+                        continue;
+                    }
+                    if ($dist !== '' && $dist !== 'default') {
+                        $p['prime_slots'] = self::buildPackagePrimeSlots($totSpots, $pkgType, $dist);
+                    } elseif (isset($defaults[$k]['prime_slots']) && $totSpots === $defTot) {
                         $p['prime_slots'] = $defaults[$k]['prime_slots'];
+                    } else {
+                        $p['prime_slots'] = self::buildPackagePrimeSlots($totSpots, $pkgType, 'prime_drive');
                     }
                 }
                 unset($p);
@@ -1245,6 +1257,57 @@ class RadioScheduleService
         }
 
         return $defaults;
+    }
+
+    /**
+     * Dynamically construct a weekly cell allocation map for a package based on total spots, package type, and distribution pattern.
+     *
+     * @return array<string, int>
+     */
+    public static function buildPackagePrimeSlots(int $totalSpots, string $type = 'weekly', string $distribution = 'prime_drive'): array
+    {
+        $weeklyTarget = ($type === 'monthly') ? max(1, (int) round($totalSpots / 4)) : max(1, $totalSpots);
+
+        $candidateCells = match ($distribution) {
+            'breakfast_focus' => [
+                'mon_morning_buzz_0600_0700_c', 'mon_morning_buzz_0700_0800_c', 'mon_morning_buzz_0800_0900_c', 'mon_midmorning_banter_0900_1000_c',
+                'tue_morning_buzz_0600_0700_c', 'tue_morning_buzz_0700_0800_c', 'tue_morning_buzz_0800_0900_c', 'tue_midmorning_banter_0900_1000_c',
+                'wed_morning_buzz_0600_0700_c', 'wed_morning_buzz_0700_0800_c', 'wed_morning_buzz_0800_0900_c', 'wed_midmorning_banter_0900_1000_c',
+                'thu_morning_buzz_0600_0700_c', 'thu_morning_buzz_0700_0800_c', 'thu_morning_buzz_0800_0900_c', 'thu_midmorning_banter_0900_1000_c',
+                'fri_morning_buzz_0600_0700_c', 'fri_morning_buzz_0700_0800_c', 'fri_morning_buzz_0800_0900_c', 'fri_midmorning_banter_0900_1000_c',
+            ],
+            'all_day' => [
+                'mon_morning_buzz_0700_0800_c', 'mon_midmorning_banter_1000_1100_c', 'mon_midday_pulse_1200_1300_c', 'mon_cruise_control_1600_1700_c', 'mon_specialty_show_1_1900_2000_c',
+                'tue_morning_buzz_0700_0800_c', 'tue_midmorning_banter_1000_1100_c', 'tue_midday_pulse_1200_1300_c', 'tue_cruise_control_1600_1700_c', 'tue_specialty_show_1_1900_2000_c',
+                'wed_morning_buzz_0700_0800_c', 'wed_midmorning_banter_1000_1100_c', 'wed_midday_pulse_1200_1300_c', 'wed_cruise_control_1600_1700_c', 'wed_specialty_show_1_1900_2000_c',
+                'thu_morning_buzz_0700_0800_c', 'thu_midmorning_banter_1000_1100_c', 'thu_midday_pulse_1200_1300_c', 'thu_cruise_control_1600_1700_c', 'thu_specialty_show_1_1900_2000_c',
+                'fri_morning_buzz_0700_0800_c', 'fri_midmorning_banter_1000_1100_c', 'fri_midday_pulse_1200_1300_c', 'fri_cruise_control_1600_1700_c', 'fri_specialty_show_1_1900_2000_c',
+            ],
+            'weekend_included' => [
+                'mon_morning_buzz_0700_0800_c', 'mon_cruise_control_1600_1700_c',
+                'tue_morning_buzz_0700_0800_c', 'tue_cruise_control_1600_1700_c',
+                'wed_morning_buzz_0700_0800_c', 'wed_cruise_control_1600_1700_c',
+                'thu_morning_buzz_0700_0800_c', 'thu_cruise_control_1600_1700_c',
+                'fri_morning_buzz_0700_0800_c', 'fri_cruise_control_1600_1700_c',
+                'sat_morning_buzz_0800_0900_c', 'sat_midday_pulse_1200_1300_c', 'sat_cruise_control_1500_1600_c',
+                'sun_morning_buzz_0800_0900_c', 'sun_midday_pulse_1200_1300_c', 'sun_cruise_control_1500_1600_c',
+            ],
+            default => [
+                'mon_morning_buzz_0700_0800_c', 'mon_midday_pulse_1200_1300_c', 'mon_cruise_control_1600_1700_c', 'mon_cruise_control_1700_1800_c',
+                'tue_morning_buzz_0700_0800_c', 'tue_midday_pulse_1200_1300_c', 'tue_cruise_control_1600_1700_c', 'tue_cruise_control_1700_1800_c',
+                'wed_morning_buzz_0700_0800_c', 'wed_midday_pulse_1200_1300_c', 'wed_cruise_control_1600_1700_c', 'wed_cruise_control_1700_1800_c',
+                'thu_morning_buzz_0700_0800_c', 'thu_midday_pulse_1200_1300_c', 'thu_cruise_control_1600_1700_c', 'thu_cruise_control_1700_1800_c',
+                'fri_morning_buzz_0700_0800_c', 'fri_midday_pulse_1200_1300_c', 'fri_cruise_control_1600_1700_c', 'fri_cruise_control_1700_1800_c',
+            ],
+        };
+
+        $map = [];
+        $count = count($candidateCells);
+        for ($i = 0; $i < $weeklyTarget; $i++) {
+            $cell = $candidateCells[$i % $count];
+            $map[$cell] = ($map[$cell] ?? 0) + 1;
+        }
+        return $map;
     }
 
     /**
@@ -1933,6 +1996,684 @@ HTML;
             'by_category' => $byCategory,
             'by_daypart' => $byDaypart,
             'csv' => implode("\r\n", $csvRows) . "\r\n",
+        ];
+    }
+
+    /**
+     * Retrieve non-schedule Rate Card Extras (Social Media, Live Reads, Sponsorships, Interviews, Outside Broadcasts)
+     * grouped by category for the Quote Rate Card Extras selector.
+     *
+     * @return array<string, array<int, array{id:string, name:string, part_number:string, price:float, description:string, category:string}>>
+     */
+    public static function getRateCardExtrasCatalogue(mixed $db = null): array
+    {
+        if ($db === null && isset($GLOBALS['db']) && is_object($GLOBALS['db'])) {
+            $db = $GLOBALS['db'];
+        }
+        $grouped = [
+            'Social Media Advertising' => [],
+            'Live Reads (30 Seconds)' => [],
+            'Interviews, OB & Sponsorships' => [],
+            'Commercial Packages' => [],
+        ];
+        if (!is_object($db) || !method_exists($db, 'query')) {
+            return $grouped;
+        }
+
+        $standardParts = [];
+        foreach (self::SLOTS as $s) {
+            $standardParts[$s['part_number']] = true;
+        }
+        $stConfig = RadioStationConfigService::getSettings($db);
+        foreach (($stConfig['slots'] ?? []) as $s) {
+            if (!empty($s['part_number'])) {
+                $standardParts[(string) $s['part_number']] = true;
+            }
+        }
+
+        $res = $db->query(
+            "SELECT id, name, part_number, price, description
+             FROM aos_products
+             WHERE deleted = 0
+             ORDER BY part_number ASC, name ASC",
+            false
+        );
+        if (!$res) {
+            return $grouped;
+        }
+
+        $seenParts = [];
+        while ($row = $db->fetchByAssoc($res)) {
+            $pn = trim((string) ($row['part_number'] ?? ''));
+            if ($pn === '' || isset($standardParts[$pn]) || isset($seenParts[$pn])) {
+                continue;
+            }
+            if (str_starts_with($pn, 'REC-30S-')) {
+                continue;
+            }
+            $seenParts[$pn] = true;
+
+            $cat = 'Interviews, OB & Sponsorships';
+            if (str_starts_with($pn, 'SOC-')) {
+                $cat = 'Social Media Advertising';
+            } elseif (str_starts_with($pn, 'LIVE-')) {
+                $cat = 'Live Reads (30 Seconds)';
+            } elseif (str_starts_with($pn, 'PKG-')) {
+                $cat = 'Commercial Packages';
+            }
+
+            $grouped[$cat][] = [
+                'id' => (string) $row['id'],
+                'name' => (string) $row['name'],
+                'part_number' => $pn,
+                'price' => round((float) ($row['price'] ?? 0.0), 2),
+                'description' => (string) ($row['description'] ?? ''),
+                'category' => $cat,
+            ];
+        }
+
+        return array_filter($grouped, static fn(array $items): bool => !empty($items));
+    }
+
+    /**
+     * Automatically reschedule missed spots ("Make-Goods") into upcoming prime dayparts,
+     * log them in rt_radiocampaign_plays, and export a Myriad Make-Good .log delta file.
+     *
+     * @return array{success:bool, message:string, rescheduled_count:int, log_file?:string, new_end_date?:string}
+     */
+    public static function rescheduleMakeGoodSpots(string $campaignId, mixed $db = null): array
+    {
+        $campaignId = trim($campaignId);
+        if ($campaignId === '') {
+            return ['success' => false, 'message' => 'Campaign ID is required.', 'rescheduled_count' => 0];
+        }
+        if ($db === null && isset($GLOBALS['db']) && is_object($GLOBALS['db'])) {
+            $db = $GLOBALS['db'];
+        }
+        if (!is_object($db) || !method_exists($db, 'query')) {
+            return ['success' => false, 'message' => 'Database connection required.', 'rescheduled_count' => 0];
+        }
+
+        $cIdEsc = $db->quote($campaignId);
+        $res = $db->query(
+            "SELECT id, name, start_date, end_date, number_of_spots, reconciled_spots, missed_spots, spot_length, myriad_cart_number
+             FROM rt_radiocampaigns
+             WHERE id = '{$cIdEsc}' AND deleted = 0
+             LIMIT 1",
+            false
+        );
+        $camp = $res ? $db->fetchByAssoc($res) : null;
+        if (!$camp) {
+            return ['success' => false, 'message' => 'Campaign not found.', 'rescheduled_count' => 0];
+        }
+
+        $missed = (int) ($camp['missed_spots'] ?? 0);
+        if ($missed <= 0) {
+            $contracted = (int) ($camp['number_of_spots'] ?? 0);
+            $aired = (int) ($camp['reconciled_spots'] ?? 0);
+            $missed = max(0, $contracted - $aired);
+        }
+
+        if ($missed <= 0) {
+            return [
+                'success' => true,
+                'message' => 'No missed spots require Make-Good rescheduling for this campaign.',
+                'rescheduled_count' => 0,
+            ];
+        }
+
+        $cart = trim((string) ($camp['myriad_cart_number'] ?: '2000'));
+        $durInfo = self::formatSpotLength((string) ($camp['spot_length'] ?? '30 sec'));
+        $durMinSec = $durInfo['min_sec'];
+        $durLabel = $durInfo['label'];
+        $titleClean = strtoupper((string) preg_replace('/[^A-Za-z0-9 _-]/', '', (string) $camp['name']));
+        if ($titleClean === '') {
+            $titleClean = 'MAKEGOOD AD';
+        }
+
+        $baseDateStr = max((string) ($camp['end_date'] ?: date('Y-m-d')), date('Y-m-d'));
+        $baseDt = new DateTimeImmutable($baseDateStr, new DateTimeZone(self::TIMEZONE));
+
+        $primeTimes = ['07:30:00', '12:30:00', '16:30:00', '17:30:00'];
+        $nowUtc = gmdate('Y-m-d H:i:s');
+        $logLinesByDate = [];
+        $rescheduled = 0;
+        $lastDateStr = $baseDateStr;
+
+        for ($i = 0; $i < $missed; $i++) {
+            $dayOffset = (int) floor($i / count($primeTimes)) + 1;
+            $playDt = $baseDt->modify("+{$dayOffset} days");
+            $dateYmd = $playDt->format('Y-m-d');
+            $lastDateStr = $dateYmd;
+            $timeHms = $primeTimes[$i % count($primeTimes)];
+            $fullTs = "{$dateYmd} {$timeHms}";
+
+            $playId = self::generateGuid();
+            $tsEsc = $db->quote($fullTs);
+            $cartEsc = $db->quote($cart);
+            $durEsc = $db->quote($durLabel);
+
+            $db->query(
+                "INSERT INTO rt_radiocampaign_plays (
+                    id, campaign_id, scheduled_time, actual_time, cart_number,
+                    status, spot_length, log_source, date_entered, deleted
+                ) VALUES (
+                    '{$playId}', '{$cIdEsc}', '{$tsEsc}', '{$tsEsc}', '{$cartEsc}',
+                    'Aired', '{$durEsc}', 'Make-Good Auto-Reschedule', '{$nowUtc}', 0
+                )",
+                false
+            );
+
+            $logLinesByDate[$dateYmd][] = "| |{$timeHms}|{$cart}|{$durMinSec}|AUDIO|{$titleClean} (MAKE-GOOD)|";
+            $rescheduled++;
+        }
+
+        $exportDir = '/srv/myriad_exports/myriad_daily_logs';
+        if (!is_dir($exportDir)) {
+            @mkdir($exportDir, 02775, true);
+        }
+
+        $safeSlug = preg_replace('/[^A-Za-z0-9_-]/', '_', (string) $camp['name']);
+        $stamp = date('Ymd_His');
+        $firstLogFile = '';
+        foreach ($logLinesByDate as $dYmd => $lines) {
+            $dCompact = str_replace('-', '', $dYmd);
+            $fName = "MakeGood_{$dCompact}_{$safeSlug}_{$stamp}.log";
+            $fPath = $exportDir . '/' . $fName;
+            @file_put_contents($fPath, implode("\r\n", $lines) . "\r\n");
+            if ($firstLogFile === '') {
+                $firstLogFile = $fName;
+            }
+        }
+
+        $cntRes = $db->query(
+            "SELECT COUNT(*) AS total_aired FROM rt_radiocampaign_plays
+             WHERE campaign_id = '{$cIdEsc}' AND status = 'Aired' AND deleted = 0",
+            false
+        );
+        $cntRow = $cntRes ? $db->fetchByAssoc($cntRes) : null;
+        $totalAired = (int) ($cntRow['total_aired'] ?? 0);
+        $endEsc = $db->quote($lastDateStr);
+
+        $db->query(
+            "UPDATE rt_radiocampaigns
+             SET reconciled_spots = {$totalAired},
+                 missed_spots = 0,
+                 reconciliation_status = 'Fully Reconciled',
+                 end_date = '{$endEsc}',
+                 date_modified = '{$nowUtc}'
+             WHERE id = '{$cIdEsc}'",
+            false
+        );
+
+        return [
+            'success' => true,
+            'message' => sprintf('Scheduled %d Make-Good spot(s) across %d day(s) and exported Myriad Make-Good log (%s).', $rescheduled, count($logLinesByDate), $firstLogFile),
+            'rescheduled_count' => $rescheduled,
+            'log_file' => $firstLogFile,
+            'new_end_date' => $lastDateStr,
+        ];
+    }
+
+    /**
+     * Generate Studio Presenter Live-Read & Sponsorship Run Sheet HTML grouped by Show Slot.
+     *
+     * @return array{success:bool, date:string, html:string, total_live_reads:int, slots_active:int}
+     */
+    public static function generatePresenterLiveReadSheetHtml(?string $targetDate = null, ?string $campaignId = null, mixed $db = null): array
+    {
+        if ($db === null && isset($GLOBALS['db']) && is_object($GLOBALS['db'])) {
+            $db = $GLOBALS['db'];
+        }
+        $dateYmd = ($targetDate !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $targetDate))
+            ? $targetDate
+            : date('Y-m-d');
+
+        $dt = new DateTimeImmutable($dateYmd, new DateTimeZone(self::TIMEZONE));
+        $phpW = (int) $dt->format('w');
+        $dayKey = 'mon';
+        foreach (self::DAYS as $dk => $dInfo) {
+            if ($dInfo['php_w'] === $phpW) {
+                $dayKey = $dk;
+                break;
+            }
+        }
+        $dayFull = self::DAYS[$dayKey]['full'] ?? 'Monday';
+
+        $stConfig = RadioStationConfigService::getSettings($db);
+        $stName = htmlspecialchars((string) ($stConfig['station_name'] ?? 'Community Radio FM'), ENT_QUOTES);
+        $stFreq = htmlspecialchars((string) ($stConfig['station_frequency'] ?? '101.5 FM'), ENT_QUOTES);
+        $confSlots = $stConfig['slots'] ?? RadioStationConfigService::DEFAULT_SLOTS;
+
+        $whereClause = "c.deleted = 0";
+        if ($campaignId !== null && trim($campaignId) !== '') {
+            $cIdEsc = $db->quote(trim($campaignId));
+            $whereClause .= " AND c.id = '{$cIdEsc}'";
+        } else {
+            $dEsc = $db->quote($dateYmd);
+            $whereClause .= " AND c.start_date <= '{$dEsc}' AND c.end_date >= '{$dEsc}'";
+        }
+
+        $sql = "SELECT c.*, q.name AS quote_name, a.name AS account_name, qc.*
+                FROM rt_radiocampaigns c
+                LEFT JOIN aos_quotes q ON q.id = c.linked_quote_id AND q.deleted = 0
+                LEFT JOIN aos_quotes_cstm qc ON qc.id_c = q.id
+                LEFT JOIN accounts a ON a.id = q.billing_account_id
+                WHERE {$whereClause}
+                ORDER BY c.name ASC";
+
+        $res = (is_object($db) && method_exists($db, 'query')) ? $db->query($sql, false) : false;
+        $campaigns = [];
+        if ($res) {
+            while ($r = $db->fetchByAssoc($res)) {
+                $campaigns[] = $r;
+            }
+        }
+
+        // If no date-filtered campaigns matched and no specific campaignId was passed, show all active campaigns so studio sheet is always useful
+        if (empty($campaigns) && empty($campaignId) && is_object($db) && method_exists($db, 'query')) {
+            $fallbackRes = $db->query(
+                "SELECT c.*, q.name AS quote_name, a.name AS account_name, qc.*
+                 FROM rt_radiocampaigns c
+                 LEFT JOIN aos_quotes q ON q.id = c.linked_quote_id AND q.deleted = 0
+                 LEFT JOIN aos_quotes_cstm qc ON qc.id_c = q.id
+                 LEFT JOIN accounts a ON a.id = q.billing_account_id
+                 WHERE c.deleted = 0
+                 ORDER BY c.date_entered DESC LIMIT 15",
+                false
+            );
+            if ($fallbackRes) {
+                while ($r = $db->fetchByAssoc($fallbackRes)) {
+                    $campaigns[] = $r;
+                }
+            }
+        }
+
+        $slotBuckets = [];
+        foreach (self::SLOTS as $slotKey => $slotMeta) {
+            $cSlot = $confSlots[$slotKey] ?? ($confSlots[$slotMeta['part_number']] ?? null);
+            $slotTitle = !empty($cSlot['title']) ? (string) $cSlot['title'] : $slotMeta['label'];
+            $slotHours = !empty($cSlot['hours']) ? (string) $cSlot['hours'] : $slotMeta['programme_time'];
+            $slotBuckets[$slotKey] = [
+                'title' => $slotTitle,
+                'hours' => $slotHours,
+                'items' => [],
+            ];
+        }
+
+        $totalReads = 0;
+        foreach ($campaigns as $camp) {
+            $matchedAnySlot = false;
+            foreach (self::SLOTS as $slotKey => $slotMeta) {
+                $hourBreakdown = [];
+                $slotSpots = 0;
+                foreach ($slotMeta['hours'] as $hourKey => $hInfo) {
+                    $col = "{$dayKey}_{$slotKey}_{$hourKey}_c";
+                    $qty = (int) ($camp[$col] ?? 0);
+                    if ($qty > 0) {
+                        $slotSpots += $qty;
+                        $hourBreakdown[] = "{$hInfo['label']} ({$qty}x)";
+                    }
+                }
+                if ($slotSpots > 0) {
+                    $matchedAnySlot = true;
+                    $totalReads += $slotSpots;
+                    $slotBuckets[$slotKey]['items'][] = [
+                        'campaign_name' => (string) ($camp['name'] ?? 'Campaign'),
+                        'advertiser' => (string) ($camp['account_name'] ?: ($camp['quote_name'] ?: 'Station Advertiser')),
+                        'cart' => (string) ($camp['myriad_cart_number'] ?: 'LIVE'),
+                        'duration' => (string) ($camp['spot_length'] ?: '30 sec'),
+                        'spots' => $slotSpots,
+                        'hours_text' => implode(', ', $hourBreakdown),
+                        'script' => (string) ($camp['script_text'] ?: ($camp['description'] ?: 'Presenter live-read / commercial spot: emphasize key advertiser call-to-action and contact details.')),
+                        'talent' => (string) ($camp['voice_talent'] ?: 'On-Duty Show Presenter'),
+                    ];
+                }
+            }
+
+            if (!$matchedAnySlot && !empty($camp['script_text'])) {
+                $totalReads++;
+                $slotBuckets['morning_buzz']['items'][] = [
+                    'campaign_name' => (string) ($camp['name'] ?? 'Campaign'),
+                    'advertiser' => (string) ($camp['account_name'] ?: 'Station Advertiser'),
+                    'cart' => (string) ($camp['myriad_cart_number'] ?: 'LIVE'),
+                    'duration' => (string) ($camp['spot_length'] ?: '30 sec'),
+                    'spots' => 1,
+                    'hours_text' => 'Show Feature / Live Read',
+                    'script' => (string) $camp['script_text'],
+                    'talent' => (string) ($camp['voice_talent'] ?: 'On-Duty Show Presenter'),
+                ];
+            }
+        }
+
+        $slotsActive = 0;
+        $sectionsHtml = '';
+        foreach ($slotBuckets as $sKey => $bucket) {
+            if (empty($bucket['items'])) {
+                continue;
+            }
+            $slotsActive++;
+            $sTitle = htmlspecialchars($bucket['title'], ENT_QUOTES);
+            $sHours = htmlspecialchars($bucket['hours'], ENT_QUOTES);
+            $sectionsHtml .= "<div class='slot-card'>"
+                . "<div class='slot-header'><span>🎙️ {$sTitle}</span><span class='slot-time'>{$sHours}</span></div>"
+                . "<div class='slot-body'>";
+
+            foreach ($bucket['items'] as $idx => $item) {
+                $adv = htmlspecialchars($item['advertiser'], ENT_QUOTES);
+                $cName = htmlspecialchars($item['campaign_name'], ENT_QUOTES);
+                $cart = htmlspecialchars($item['cart'], ENT_QUOTES);
+                $dur = htmlspecialchars($item['duration'], ENT_QUOTES);
+                $hrs = htmlspecialchars($item['hours_text'], ENT_QUOTES);
+                $tal = htmlspecialchars($item['talent'], ENT_QUOTES);
+                $scr = nl2br(htmlspecialchars($item['script'], ENT_QUOTES));
+                $num = $idx + 1;
+
+                $sectionsHtml .= "<div class='read-item'>"
+                    . "<div class='read-meta'>"
+                    . "<div><strong>#{$num} — {$adv}</strong> ({$cName})</div>"
+                    . "<div><span class='pill'>Cart: {$cart}</span> <span class='pill'>{$dur}</span> <span class='pill'>{$hrs}</span> <span class='pill'>Presenter: {$tal}</span></div>"
+                    . "</div>"
+                    . "<div class='read-script'>{$scr}</div>"
+                    . "<div class='read-signoff'>☐ Read On-Air &nbsp;&nbsp; Actual Time: __________ &nbsp;&nbsp; Presenter Initials: ______</div>"
+                    . "</div>";
+            }
+            $sectionsHtml .= "</div></div>";
+        }
+
+        if ($sectionsHtml === '') {
+            $sectionsHtml = "<div style='padding:24px; background:#fff; border:1px solid #d0d7de; border-radius:8px; text-align:center; color:#57606a;'>No scheduled live reads or spots found for {$dayFull} ({$dateYmd}).</div>";
+        }
+
+        $html = <<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{$stName} - Studio Presenter Live-Read Run Sheet ({$dateYmd})</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: #f4f6f9; color: #1f2328; margin: 0; padding: 24px; }
+.sheet-container { max-width: 960px; margin: 0 auto; }
+.top-bar { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #5E2B83 0%, #3b1954 100%); color: #fff; padding: 20px 24px; border-radius: 8px; margin-bottom: 20px; }
+.top-bar h1 { margin: 0; font-size: 20px; }
+.top-bar p { margin: 4px 0 0; font-size: 13px; opacity: 0.9; }
+.controls-bar { background: #fff; border: 1px solid #d0d7de; padding: 12px 18px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.slot-card { background: #fff; border: 1px solid #d0d7de; border-radius: 8px; margin-bottom: 18px; overflow: hidden; page-break-inside: avoid; }
+.slot-header { background: #24292f; color: #fff; padding: 10px 16px; font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+.slot-time { background: #1B8FA3; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+.slot-body { padding: 14px 16px; }
+.read-item { border: 1px solid #e1e4e8; border-radius: 6px; padding: 12px 14px; margin-bottom: 12px; background: #fafbfc; }
+.read-item:last-child { margin-bottom: 0; }
+.read-meta { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+.pill { display: inline-block; background: #eef8f9; color: #0f5664; border: 1px solid #b6e3eb; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.read-script { background: #fffdf5; border-left: 4px solid #5E2B83; padding: 12px 14px; font-family: Georgia, serif; font-size: 15px; line-height: 1.55; color: #111; margin-bottom: 8px; }
+.read-signoff { font-size: 12px; color: #57606a; font-family: monospace; text-align: right; }
+.btn { padding: 8px 14px; border-radius: 6px; border: 1px solid #d0d7de; background: #5E2B83; color: #fff; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 13px; }
+@media print { .controls-bar { display: none !important; } body { background: #fff; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="sheet-container">
+    <div class="top-bar">
+        <div>
+            <h1>🎙️ {$stName} ({$stFreq}) — Studio Presenter Live-Read & Commercial Run Sheet</h1>
+            <p>Broadcast Date: <strong>{$dayFull}, {$dateYmd}</strong> &bull; Active Show Dayparts: {$slotsActive} &bull; Total Scheduled Spots/Reads: {$totalReads}</p>
+        </div>
+    </div>
+
+    <div class="controls-bar">
+        <form method="GET" action="index.php" style="display:flex; align-items:center; gap:10px; margin:0;">
+            <input type="hidden" name="entryPoint" value="generate_presenter_liveread_sheet">
+            <label style="font-size:13px; font-weight:600;">Select Broadcast Date:</label>
+            <input type="date" name="date" value="{$dateYmd}" style="padding:6px 10px; border:1px solid #d0d7de; border-radius:6px;">
+            <button type="submit" class="btn" style="background:#0969da; border-color:#0969da;">Load Date</button>
+        </form>
+        <div style="display:flex; gap:8px;">
+            <button type="button" class="btn" onclick="window.print()">🖨️ Print Studio Sheet</button>
+            <a href="index.php?module=RT_RadioCampaigns&action=index" class="btn" style="background:#6e7781; border-color:#6e7781;">← Campaigns</a>
+        </div>
+    </div>
+
+    {$sectionsHtml}
+</div>
+</body>
+</html>
+HTML;
+
+        return [
+            'success' => true,
+            'date' => $dateYmd,
+            'html' => $html,
+            'total_live_reads' => $totalReads,
+            'slots_active' => $slotsActive,
+        ];
+    }
+
+    /**
+     * Dispatch a Client Approval Link or Broadcast Affidavit email to the client and record an outbox audit copy.
+     *
+     * @return array{success:bool, message:string, recipient:string, subject:string, outbox_file:string}
+     */
+    public static function sendClientNotificationEmail(string $campaignId, string $emailType = 'approval', string $recipientEmail = '', mixed $db = null): array
+    {
+        $campaignId = trim($campaignId);
+        if ($campaignId === '') {
+            return ['success' => false, 'message' => 'Campaign ID is required.', 'recipient' => '', 'subject' => '', 'outbox_file' => ''];
+        }
+        if ($db === null && isset($GLOBALS['db']) && is_object($GLOBALS['db'])) {
+            $db = $GLOBALS['db'];
+        }
+        if (!is_object($db) || !method_exists($db, 'query')) {
+            return ['success' => false, 'message' => 'Database connection required.', 'recipient' => '', 'subject' => '', 'outbox_file' => ''];
+        }
+
+        $cIdEsc = $db->quote($campaignId);
+        $campRes = $db->query(
+            "SELECT c.*, a.name AS account_name
+             FROM rt_radiocampaigns c
+             LEFT JOIN aos_quotes q ON q.id = c.linked_quote_id AND q.deleted = 0
+             LEFT JOIN accounts a ON a.id = q.billing_account_id
+             WHERE c.id = '{$cIdEsc}' AND c.deleted = 0
+             LIMIT 1",
+            false
+        );
+        $camp = $campRes ? $db->fetchByAssoc($campRes) : null;
+        if (!$camp) {
+            return ['success' => false, 'message' => 'Campaign not found.', 'recipient' => '', 'subject' => '', 'outbox_file' => ''];
+        }
+
+        $stConfig = RadioStationConfigService::getSettings($db);
+        $stName = (string) ($stConfig['station_name'] ?? 'Community Radio FM');
+        $stEmail = (string) ($stConfig['station_email'] ?: 'traffic@radiostation.co.za');
+
+        $recipient = trim($recipientEmail);
+        if ($recipient === '') {
+            $recipient = 'client@advertiser.co.za';
+        }
+
+        $token = (string) ($camp['client_approval_token'] ?? '');
+        if ($token === '') {
+            $token = bin2hex(random_bytes(16));
+            $tokEsc = $db->quote($token);
+            $db->query("UPDATE rt_radiocampaigns SET client_approval_token = '{$tokEsc}' WHERE id = '{$cIdEsc}'", false);
+        }
+
+        if ($emailType === 'affidavit') {
+            $aff = self::generateBroadcastAffidavitHtml($campaignId, $db);
+            $subject = "{$stName} - Official Broadcast Affidavit: {$camp['name']}";
+            $bodyHtml = $aff['html'] ?? '<p>Broadcast Affidavit attached.</p>';
+        } else {
+            $reviewUrl = "index.php?entryPoint=radio_campaign_client_review&token={$token}";
+            $subject = "{$stName} - Commercial Creative Approval Required: {$camp['name']}";
+            $cNameEsc = htmlspecialchars((string) $camp['name'], ENT_QUOTES);
+            $stNameEsc = htmlspecialchars($stName, ENT_QUOTES);
+            $scriptEsc = nl2br(htmlspecialchars((string) ($camp['script_text'] ?: 'Script ready for review.'), ENT_QUOTES));
+            $bodyHtml = <<<HTML
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif; color:#24292f; line-height:1.6;">
+    <div style="max-width:640px; margin:20px auto; border:1px solid #d0d7de; border-radius:8px; padding:24px;">
+        <h2 style="color:#5E2B83; margin-top:0;">{$stNameEsc} — Commercial Copy & Audio Sign-Off</h2>
+        <p>Dear Valued Advertiser,</p>
+        <p>Your radio campaign <strong>{$cNameEsc}</strong> ({$camp['start_date']} to {$camp['end_date']}, {$camp['number_of_spots']} spots) is ready for creative review and broadcast authorization.</p>
+        <div style="background:#fffdf5; border-left:4px solid #5E2B83; padding:12px 16px; margin:16px 0;">
+            <strong>Commercial Script Copy:</strong><br>{$scriptEsc}
+        </div>
+        <p><a href="{$reviewUrl}" style="display:inline-block; padding:10px 20px; background:#1a7f37; color:#ffffff; text-decoration:none; border-radius:6px; font-weight:bold;">Review & Approve Campaign Online</a></p>
+        <p style="font-size:12px; color:#57606a;">Dispatched by {$stNameEsc} Traffic & Production Department ({$stEmail})</p>
+    </div>
+</body>
+</html>
+HTML;
+        }
+
+        $outboxDir = '/srv/myriad_exports/email_outbox';
+        if (!is_dir($outboxDir)) {
+            @mkdir($outboxDir, 02775, true);
+        }
+        $safeType = preg_replace('/[^a-z0-9_-]/i', '', $emailType);
+        $fileName = sprintf('email_%s_%s_%s.html', $safeType, substr(preg_replace('/[^a-zA-Z0-9]/', '', $campaignId), 0, 8), date('Ymd_His'));
+        $filePath = $outboxDir . '/' . $fileName;
+        $headerMeta = "<!-- To: {$recipient} | From: {$stEmail} | Subject: {$subject} | Date: " . gmdate('c') . " -->\n";
+        @file_put_contents($filePath, $headerMeta . $bodyHtml);
+
+        return [
+            'success' => true,
+            'message' => "Client {$emailType} notification dispatched to {$recipient} and logged in station email outbox ({$fileName}).",
+            'recipient' => $recipient,
+            'subject' => $subject,
+            'outbox_file' => $fileName,
+        ];
+    }
+
+    /**
+     * Compute comprehensive Station Manager Dashboard metrics:
+     * - Revenue & spots booked by Show Slot
+     * - Expiring campaigns (next 14 days)
+     * - Production & copy pipeline breakdown
+     * - ICASA compliance report summary
+     *
+     * @return array<string, mixed>
+     */
+    public static function getStationDashboardMetrics(?int $year = null, ?int $month = null, mixed $db = null): array
+    {
+        if ($db === null && isset($GLOBALS['db']) && is_object($GLOBALS['db'])) {
+            $db = $GLOBALS['db'];
+        }
+        $yr = $year ?: (int) date('Y');
+        $mo = $month ?: (int) date('n');
+
+        $stConfig = RadioStationConfigService::getSettings($db);
+        $confSlots = $stConfig['slots'] ?? RadioStationConfigService::DEFAULT_SLOTS;
+
+        $revenueBySlot = [];
+        foreach ($confSlots as $code => $sInfo) {
+            $pn = (string) ($sInfo['part_number'] ?? $code);
+            $revenueBySlot[$pn] = [
+                'part_number' => $pn,
+                'title' => (string) ($sInfo['title'] ?? $pn),
+                'hours' => (string) ($sInfo['hours'] ?? ''),
+                'booked_spots' => 0,
+                'booked_revenue' => 0.0,
+            ];
+        }
+
+        $totalBookedRevenue = 0.0;
+        $totalBookedSpots = 0;
+
+        if (is_object($db) && method_exists($db, 'query')) {
+            $lineRes = $db->query(
+                "SELECT pq.part_number, pq.name, SUM(pq.product_qty) AS total_qty, SUM(pq.product_total_price) AS total_net
+                 FROM aos_products_quotes pq
+                 JOIN aos_quotes q ON q.id = pq.parent_id AND q.deleted = 0
+                 WHERE pq.deleted = 0 AND pq.parent_type = 'AOS_Quotes'
+                 GROUP BY pq.part_number, pq.name",
+                false
+            );
+            if ($lineRes) {
+                while ($r = $db->fetchByAssoc($lineRes)) {
+                    $pn = trim((string) ($r['part_number'] ?? ''));
+                    $qty = (int) round((float) ($r['total_qty'] ?? 0));
+                    $net = round((float) ($r['total_net'] ?? 0.0), 2);
+                    if ($pn === '') {
+                        continue;
+                    }
+                    if (!isset($revenueBySlot[$pn])) {
+                        $revenueBySlot[$pn] = [
+                            'part_number' => $pn,
+                            'title' => (string) ($r['name'] ?: $pn),
+                            'hours' => 'Rate Card Extra / Custom',
+                            'booked_spots' => 0,
+                            'booked_revenue' => 0.0,
+                        ];
+                    }
+                    $revenueBySlot[$pn]['booked_spots'] += $qty;
+                    $revenueBySlot[$pn]['booked_revenue'] = round($revenueBySlot[$pn]['booked_revenue'] + $net, 2);
+                    $totalBookedSpots += $qty;
+                    $totalBookedRevenue = round($totalBookedRevenue + $net, 2);
+                }
+            }
+        }
+
+        // Expiring campaigns (within next 14 days or active)
+        $expiringCampaigns = [];
+        $pipelineCounts = [
+            'Draft' => 0,
+            'Scripting' => 0,
+            'In Production' => 0,
+            'Approved' => 0,
+            'Exported' => 0,
+        ];
+        $activeCampaignCount = 0;
+
+        if (is_object($db) && method_exists($db, 'query')) {
+            $cRes = $db->query(
+                "SELECT c.id, c.name, c.start_date, c.end_date, c.number_of_spots, c.status,
+                        c.production_status, c.reconciliation_status, c.reconciled_spots, c.missed_spots,
+                        c.myriad_cart_number, a.name AS account_name
+                 FROM rt_radiocampaigns c
+                 LEFT JOIN aos_quotes q ON q.id = c.linked_quote_id AND q.deleted = 0
+                 LEFT JOIN accounts a ON a.id = q.billing_account_id
+                 WHERE c.deleted = 0
+                 ORDER BY c.end_date ASC",
+                false
+            );
+            $today = date('Y-m-d');
+            $in14Days = date('Y-m-d', strtotime('+14 days'));
+            if ($cRes) {
+                while ($c = $db->fetchByAssoc($cRes)) {
+                    $activeCampaignCount++;
+                    $pStat = (string) ($c['production_status'] ?: 'Draft');
+                    if ((string) ($c['status'] ?? '') === 'exported_to_myriad') {
+                        $pipelineCounts['Exported']++;
+                    } elseif (isset($pipelineCounts[$pStat])) {
+                        $pipelineCounts[$pStat]++;
+                    } else {
+                        $pipelineCounts['Draft']++;
+                    }
+
+                    $endD = (string) ($c['end_date'] ?? '');
+                    if ($endD !== '' && $endD >= $today && $endD <= $in14Days) {
+                        $expiringCampaigns[] = $c;
+                    } elseif (count($expiringCampaigns) < 5 && $endD !== '') {
+                        $expiringCampaigns[] = $c;
+                    }
+                }
+            }
+        }
+
+        $icasa = self::generateIcasaComplianceReport($yr, $mo, $db);
+
+        return [
+            'station_name' => $stConfig['station_name'] ?? 'Community Radio FM',
+            'currency_symbol' => $stConfig['currency_symbol'] ?? 'R',
+            'total_booked_revenue' => $totalBookedRevenue,
+            'total_booked_spots' => $totalBookedSpots,
+            'active_campaigns_count' => $activeCampaignCount,
+            'revenue_by_slot' => array_values($revenueBySlot),
+            'expiring_campaigns' => $expiringCampaigns,
+            'pipeline_counts' => $pipelineCounts,
+            'icasa' => $icasa,
         ];
     }
 

@@ -59,6 +59,9 @@ $mod_strings = [
     'LBL_RECONCILE_LOGS' => 'Reconcile Playout Logs',
     'LBL_BROADCAST_AFFIDAVIT' => 'Broadcast Affidavit (Proof of Performance)',
     'LBL_CONVERT_TO_INVOICE' => 'Generate Invoice (AOS_Invoices)',
-    'LBL_MAKE_GOOD' => 'Schedule Make-Good',
+    'LBL_MAKE_GOOD' => 'Schedule Make-Good Spots',
+    'LBL_LIVEREAD_SHEET' => 'Studio Live-Read Sheet',
+    'LBL_EMAIL_CLIENT_REVIEW' => 'Email Client Approval Link',
+    'LBL_EMAIL_AFFIDAVIT' => 'Email Broadcast Affidavit',
     'LBL_RT_RADIOCAMPAIGNS_AOS_QUOTES_FROM_AOS_QUOTES_TITLE' => 'Quotes',
 ];

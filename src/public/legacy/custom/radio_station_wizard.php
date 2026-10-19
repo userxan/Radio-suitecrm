@@ -65,6 +65,20 @@ if ($subAction === 'import_json') {
 }
 
 // -------------------------------------------------------------
+// 2b. Handle Reset Slots & Packages to Defaults
+// -------------------------------------------------------------
+if ($subAction === 'reset_defaults') {
+    $currentCfg = RadioStationConfigService::getSettings($db);
+    $currentCfg['slots'] = RadioStationConfigService::DEFAULT_SLOTS;
+    $currentCfg['package_presets'] = RadioStationConfigService::DEFAULT_SETTINGS['package_presets'];
+    $currentCfg['duration_multipliers'] = RadioStationConfigService::DEFAULT_SETTINGS['duration_multipliers'];
+    if (RadioStationConfigService::saveSettings($currentCfg, $db)) {
+        $notice = '✓ Show slots, rate card prices, and package presets have been reset to default rate card values.';
+        $noticeType = 'success';
+    }
+}
+
+// -------------------------------------------------------------
 // 3. Handle Form Save
 // -------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($subAction === 'save_wizard')) {
@@ -153,6 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($subAction === 'save_wizard')) {
             $type = trim((string) ($pkgInput['type'] ?? 'weekly'));
             $spots = (int) ($pkgInput['total_spots'] ?? 0);
             $pkgRate = (float) ($pkgInput['rate'] ?? 0.0);
+            $pkgDist = trim((string) ($pkgInput['distribution'] ?? 'prime_drive'));
             $pkgDesc = trim((string) ($pkgInput['description'] ?? ''));
             $pkgKey = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $key));
 
@@ -162,6 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($subAction === 'save_wizard')) {
                 'type' => $type,
                 'total_spots' => $spots,
                 'rate' => $pkgRate,
+                'distribution' => $pkgDist,
                 'description' => $pkgDesc,
             ];
         }
@@ -595,7 +611,15 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
                 <h1>📻 Radio Station Setup & Rate Card Manager</h1>
                 <p class="subtitle">Customize station branding, legal identity, show lineup, editable product codes, rate cards, and package presets.</p>
             </div>
-            <a href="index.php?module=Administration&action=index" class="btn-back">← Back to Admin</a>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                <button type="button" class="btn-back" style="border:1px solid rgba(255,255,255,0.4); cursor:pointer;" onclick="openRadioPreviewModal()">
+                    👁️ Preview Quote & Rate Card
+                </button>
+                <a href="<?= $isEmbedded ? 'index.php?module=Administration&action=radio_station_dashboard' : 'index.php?entryPoint=radio_station_dashboard' ?>" class="btn-back">
+                    📊 Revenue & ICASA Dashboard
+                </a>
+                <a href="index.php?module=Administration&action=index" class="btn-back">← Back to Admin</a>
+            </div>
         </div>
 
         <!-- Navigation Tabs -->
@@ -613,7 +637,7 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
                 <input type="hidden" name="module" value="Administration">
                 <input type="hidden" name="action" value="radio_station_wizard">
             <?php endif; ?>
-            <input type="hidden" name="subaction" value="save_wizard">
+            <input type="hidden" name="subaction" id="radioSubactionInput" value="save_wizard">
             <input type="hidden" name="existing_logo_url" value="<?= $logoUrl ?>">
 
             <div class="wizard-content">
@@ -717,9 +741,14 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
                                 You can add additional slots or edit existing ones. Changes immediately synchronize into the <strong>Product Catalogue</strong> and <strong>Quotes</strong>.
                             </p>
                         </div>
-                        <button type="button" class="btn-add-row" onclick="addSlotRow()">
-                            + Add Show Slot
-                        </button>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="btn-tool" onclick="triggerResetDefaults()">
+                                🔄 Reset Slots & Packages
+                            </button>
+                            <button type="button" class="btn-add-row" onclick="addSlotRow()">
+                                + Add Show Slot
+                            </button>
+                        </div>
                     </div>
 
                     <div class="table-container">
@@ -791,9 +820,9 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
                 <div id="tab-packages" class="tab-panel">
                     <div class="table-actions-bar">
                         <div>
-                            <h3 class="section-header" style="margin-bottom:2px;">Commercial Package Presets</h3>
+                            <h3 class="section-header" style="margin-bottom:2px;">Commercial Package Presets & Custom Slot Distribution</h3>
                             <p class="section-desc" style="margin-bottom:0;">
-                                Configure bulk package options (e.g. Options 1–4). These presets appear in the Quote dropdown and automatically calculate package lump-sum pricing and spot allocations.
+                                Configure bulk package options (e.g. Options 1–4) and choose which daypart pattern each package auto-populates on the Weekly Schedule Grid.
                             </p>
                         </div>
                         <button type="button" class="btn-add-row" onclick="addPackageRow()">
@@ -805,12 +834,13 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
                         <table class="data-table" id="packagesTable">
                             <thead>
                                 <tr>
-                                    <th width="15%">Package Key</th>
-                                    <th width="28%">Package Display Name *</th>
-                                    <th width="14%">Cycle Type</th>
-                                    <th width="12%">Total Spots</th>
-                                    <th width="15%">Package Rate (Excl. VAT) *</th>
-                                    <th width="10%">Action</th>
+                                    <th width="12%">Package Key</th>
+                                    <th width="25%">Package Display Name *</th>
+                                    <th width="11%">Cycle Type</th>
+                                    <th width="10%">Total Spots</th>
+                                    <th width="20%">Slot Distribution Pattern</th>
+                                    <th width="14%">Package Rate (Excl. VAT) *</th>
+                                    <th width="8%">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="packagesTableBody">
@@ -822,6 +852,7 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
                                         $nameEsc = htmlspecialchars((string) ($pkg['name'] ?? ''), ENT_QUOTES);
                                         $type = (string) ($pkg['type'] ?? 'weekly');
                                         $spots = (int) ($pkg['total_spots'] ?? 0);
+                                        $dist = (string) ($pkg['distribution'] ?? 'prime_drive');
                                         $pRate = (float) ($pkg['rate'] ?? 0.0);
                                         $pRowId = "pkg_row_{$pIdx}";
                                     ?>
@@ -840,12 +871,20 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
                                             </select>
                                         </td>
                                         <td>
-                                            <input type="number" name="packages[<?= $keyEsc ?>][total_spots]" value="<?= $spots ?>" min="1" style="width:100px;">
+                                            <input type="number" name="packages[<?= $keyEsc ?>][total_spots]" value="<?= $spots ?>" min="1" style="width:85px;">
+                                        </td>
+                                        <td>
+                                            <select name="packages[<?= $keyEsc ?>][distribution]" style="width:100%;">
+                                                <option value="prime_drive" <?= $dist === 'prime_drive' ? 'selected' : '' ?>>⚡ Prime Drive (Breakfast + Lunch + Drive)</option>
+                                                <option value="breakfast_focus" <?= $dist === 'breakfast_focus' ? 'selected' : '' ?>>☕ Morning Focus (Breakfast + Midmorning)</option>
+                                                <option value="all_day" <?= $dist === 'all_day' ? 'selected' : '' ?>>☀️ All Day Mon–Fri (06:00–18:00)</option>
+                                                <option value="weekend_included" <?= $dist === 'weekend_included' ? 'selected' : '' ?>>🎉 Full Week + Weekend Prime (Mon–Sun)</option>
+                                            </select>
                                         </td>
                                         <td>
                                             <div style="display:flex; align-items:center; gap:4px;">
                                                 <span><?= $currencySymbol ?></span>
-                                                <input type="number" step="0.01" name="packages[<?= $keyEsc ?>][rate]" value="<?= number_format($pRate, 2, '.', '') ?>" style="width:120px; font-weight:600;" required>
+                                                <input type="number" step="0.01" name="packages[<?= $keyEsc ?>][rate]" value="<?= number_format($pRate, 2, '.', '') ?>" style="width:110px; font-weight:600;" required>
                                             </div>
                                         </td>
                                         <td style="text-align:center;">
@@ -952,7 +991,7 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
                     <h3 class="section-header">Station Profile Backup & Migration</h3>
                     <p class="section-desc">Export your station's complete configuration, branding, catalogue, and rules to JSON, or restore from a previously exported profile.</p>
 
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:20px; max-width:600px;">
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:20px; max-width:650px;">
                         <h4 style="margin-top:0; color:#334155;">Export Configuration</h4>
                         <p style="font-size:13px; color:#64748b;">Download an authoritative JSON snapshot containing all show dayparts, rate card prices, packages, and station information.</p>
                         <a href="<?= $isEmbedded ? 'index.php?module=Administration&action=radio_station_wizard&subaction=export_json' : 'index.php?entryPoint=radio_station_wizard&subaction=export_json' ?>" class="btn-tool" style="font-size:13.5px; padding:9px 18px;">
@@ -966,18 +1005,32 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
                         <button type="button" class="btn-tool" onclick="document.getElementById('radioImportFileInput').click()" style="font-size:13.5px; padding:9px 18px;">
                             📤 Import Station Profile (JSON)
                         </button>
+
+                        <hr style="margin:20px 0; border:0; border-top:1px solid #e2e8f0;">
+
+                        <h4 style="color:#334155; margin-bottom:8px;">Restore Rate Card Slots & Packages to Default</h4>
+                        <p style="font-size:13px; color:#64748b;">Reset show slots, weekday/weekend rates, and package options to standard rate card defaults while preserving your station's branding.</p>
+                        <button type="button" class="btn-tool" onclick="triggerResetDefaults()" style="font-size:13.5px; padding:9px 18px; border-color:#f59e0b; color:#92400e; background:#fffbeb;">
+                            🔄 Reset Slots & Packages to Defaults
+                        </button>
                     </div>
                 </div>
             </div>
 
             <!-- Wizard Footer Action Bar -->
             <div class="wizard-footer">
-                <div style="display:flex; gap:10px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     <a href="<?= $isEmbedded ? 'index.php?module=Administration&action=radio_station_wizard&subaction=export_json' : 'index.php?entryPoint=radio_station_wizard&subaction=export_json' ?>" class="btn-tool" title="Export profile JSON">
                         📥 Export JSON
                     </a>
                     <button type="button" class="btn-tool" onclick="document.getElementById('radioImportFileInput').click()">
                         📤 Import JSON
+                    </button>
+                    <button type="button" class="btn-tool" onclick="openRadioPreviewModal()">
+                        👁️ Live Quote & Rate Card Preview
+                    </button>
+                    <button type="button" class="btn-tool" onclick="triggerResetDefaults()">
+                        🔄 Reset Slots & Packages
                     </button>
                 </div>
                 <button type="submit" class="btn-save-main">
@@ -995,6 +1048,18 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
             <input type="hidden" name="subaction" value="import_json">
             <input type="file" id="radioImportFileInput" name="profile_json" accept=".json,application/json" onchange="document.getElementById('radioImportForm').submit()">
         </form>
+
+        <!-- Live Quote Header & Rate Card Preview Modal -->
+        <div id="radioPreviewModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:99999; align-items:center; justify-content:center; padding:24px;">
+            <div style="background:#fff; width:100%; max-width:860px; max-height:90vh; overflow-y:auto; border-radius:10px; box-shadow:0 20px 45px rgba(0,0,0,0.3); border:1px solid #cbd5e1;">
+                <div style="background:#5E2B83; color:#fff; padding:14px 22px; display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="font-size:16px;">👁️ Live Quote Header & Rate Card Preview</strong>
+                    <button type="button" onclick="document.getElementById('radioPreviewModal').style.display='none'" style="background:rgba(255,255,255,0.2); border:none; color:#fff; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700;">✕ Close</button>
+                </div>
+                <div style="padding:24px;" id="radioPreviewModalContent">
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1037,6 +1102,113 @@ function deleteTableRow(rowId) {
             row.remove();
         }
     }
+}
+
+function triggerResetDefaults() {
+    if (confirm('Reset all Show Slots, Weekday/Weekend Rates, and Commercial Packages to standard Rate Card defaults? Your station branding and contact details will be preserved.')) {
+        const subInput = document.getElementById('radioSubactionInput');
+        if (subInput) {
+            subInput.value = 'reset_defaults';
+            document.getElementById('radioWizardForm').submit();
+        }
+    }
+}
+
+function openRadioPreviewModal() {
+    const modal = document.getElementById('radioPreviewModal');
+    const body = document.getElementById('radioPreviewModalContent');
+    if (!modal || !body) return;
+
+    const stName = (document.getElementById('station_name') || {}).value || 'Radio Station';
+    const stFreq = (document.getElementById('station_frequency') || {}).value || '';
+    const stTag = (document.getElementById('station_tagline') || {}).value || '';
+    const stPhone = (document.getElementById('station_phone') || {}).value || '';
+    const stEmail = (document.getElementById('station_email') || {}).value || '';
+    const stVat = (document.getElementById('vat_number') || {}).value || '';
+    const curr = (document.getElementById('currency_symbol') || {}).value || 'R';
+    const logoSrc = (document.getElementById('radioLogoPreview') || {}).src || '';
+
+    let slotsRowsHtml = '';
+    document.querySelectorAll('#slotsTableBody tr').forEach(tr => {
+        const inputs = tr.querySelectorAll('input');
+        if (inputs.length >= 6) {
+            const code = inputs[0].value;
+            const title = inputs[2].value;
+            const hrs = inputs[3].value;
+            const wkRate = parseFloat(inputs[4].value || 0).toFixed(2);
+            const wkndRate = parseFloat(inputs[5].value || 0).toFixed(2);
+            slotsRowsHtml += `<tr>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-family:monospace; font-weight:700;">${code}</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-weight:600;">${title}</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; color:#64748b;">${hrs}</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#1e293b;">${curr}${wkRate}</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#5E2B83;">${curr}${wkndRate}</td>
+            </tr>`;
+        }
+    });
+
+    let pkgRowsHtml = '';
+    document.querySelectorAll('#packagesTableBody tr').forEach(tr => {
+        const textInp = tr.querySelector('input[type="text"]');
+        const numInps = tr.querySelectorAll('input[type="number"]');
+        const selects = tr.querySelectorAll('select');
+        if (textInp && numInps.length >= 2) {
+            const name = textInp.value;
+            const spots = numInps[0].value;
+            const rate = parseFloat(numInps[1].value || 0).toFixed(2);
+            const cycle = selects[0] ? selects[0].value : 'weekly';
+            const distLabel = selects[1] && selects[1].selectedOptions[0] ? selects[1].selectedOptions[0].text : '';
+            pkgRowsHtml += `<tr>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-weight:600;">${name}</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; text-transform:capitalize;">${cycle} (${spots} spots)</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:12px; color:#475569;">${distLabel}</td>
+                <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#065f46;">${curr}${rate}</td>
+            </tr>`;
+        }
+    });
+
+    body.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #5E2B83; padding-bottom:16px; margin-bottom:18px;">
+            <div style="display:flex; align-items:center; gap:16px;">
+                <img src="${logoSrc}" style="height:64px; width:64px; object-fit:contain; border:1px solid #e2e8f0; border-radius:6px; padding:4px;">
+                <div>
+                    <h2 style="margin:0; color:#5E2B83; font-size:20px;">${stName} ${stFreq ? '(' + stFreq + ')' : ''}</h2>
+                    <div style="font-size:13px; color:#475569; font-style:italic;">${stTag}</div>
+                </div>
+            </div>
+            <div style="text-align:right; font-size:12px; color:#475569;">
+                <div><strong>Email:</strong> ${stEmail}</div>
+                <div><strong>Phone:</strong> ${stPhone}</div>
+                <div><strong>VAT Reg:</strong> ${stVat}</div>
+            </div>
+        </div>
+        <h4 style="margin:0 0 8px 0; color:#1e293b;">🎙️ Active Rate Card Show Slots (30-Second Spot Rates Excl. VAT)</h4>
+        <table style="width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:18px;">
+            <thead>
+                <tr style="background:#f1f5f9; text-align:left;">
+                    <th style="padding:8px 10px;">Code</th>
+                    <th style="padding:8px 10px;">Show Title</th>
+                    <th style="padding:8px 10px;">Hours</th>
+                    <th style="padding:8px 10px;">Mon–Fri (30s)</th>
+                    <th style="padding:8px 10px;">Sat–Sun (30s)</th>
+                </tr>
+            </thead>
+            <tbody>${slotsRowsHtml}</tbody>
+        </table>
+        <h4 style="margin:0 0 8px 0; color:#1e293b;">📦 Active Commercial Package Presets</h4>
+        <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+            <thead>
+                <tr style="background:#f1f5f9; text-align:left;">
+                    <th style="padding:8px 10px;">Package Name</th>
+                    <th style="padding:8px 10px;">Cycle & Spots</th>
+                    <th style="padding:8px 10px;">Auto-Fill Slot Pattern</th>
+                    <th style="padding:8px 10px;">Rate (Excl. VAT)</th>
+                </tr>
+            </thead>
+            <tbody>${pkgRowsHtml}</tbody>
+        </table>
+    `;
+    modal.style.display = 'flex';
 }
 
 var nextSlotIndex = <?= count($slots) + 10 ?>;
@@ -1107,12 +1279,20 @@ function addPackageRow() {
             </select>
         </td>
         <td>
-            <input type="number" name="packages[${key}][total_spots]" value="50" min="1" style="width:100px;">
+            <input type="number" name="packages[${key}][total_spots]" value="50" min="1" style="width:85px;">
+        </td>
+        <td>
+            <select name="packages[${key}][distribution]" style="width:100%;">
+                <option value="prime_drive">⚡ Prime Drive (Breakfast + Lunch + Drive)</option>
+                <option value="breakfast_focus">☕ Morning Focus (Breakfast + Midmorning)</option>
+                <option value="all_day">☀️ All Day Mon–Fri (06:00–18:00)</option>
+                <option value="weekend_included">🎉 Full Week + Weekend Prime (Mon–Sun)</option>
+            </select>
         </td>
         <td>
             <div style="display:flex; align-items:center; gap:4px;">
                 <span><?= $currencySymbol ?></span>
-                <input type="number" step="0.01" name="packages[${key}][rate]" value="5999.00" style="width:120px; font-weight:600;" required>
+                <input type="number" step="0.01" name="packages[${key}][rate]" value="5999.00" style="width:110px; font-weight:600;" required>
             </div>
         </td>
         <td style="text-align:center;">
