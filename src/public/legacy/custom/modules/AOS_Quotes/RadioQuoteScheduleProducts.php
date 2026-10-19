@@ -50,6 +50,15 @@ class RadioQuoteScheduleProducts
         if (array_key_exists('campaign_end_date_c', $row)) {
             $bean->campaign_end_date_c = $row['campaign_end_date_c'];
         }
+        if (array_key_exists('industry_category_c', $row)) {
+            $bean->industry_category_c = $row['industry_category_c'];
+        }
+        if (array_key_exists('spot_duration_c', $row)) {
+            $bean->spot_duration_c = $row['spot_duration_c'];
+        }
+        if (array_key_exists('applied_package_c', $row)) {
+            $bean->applied_package_c = $row['applied_package_c'];
+        }
         foreach (RadioScheduleService::getAllScheduleFields() as $fieldName => $meta) {
             if (array_key_exists($fieldName, $row)) {
                 $bean->$fieldName = (int) ($row[$fieldName] ?? 0);
@@ -151,6 +160,22 @@ class RadioQuoteScheduleProducts
             }
         }
 
+        if (array_key_exists('industry_category_c', $_REQUEST)) {
+            $cat = trim((string) $_REQUEST['industry_category_c']);
+            $bean->industry_category_c = $cat;
+            $updates[] = "industry_category_c = '" . $db->quote($cat) . "'";
+        }
+        if (array_key_exists('spot_duration_c', $_REQUEST)) {
+            $dur = trim((string) $_REQUEST['spot_duration_c']);
+            $bean->spot_duration_c = $dur;
+            $updates[] = "spot_duration_c = '" . $db->quote($dur) . "'";
+        }
+        if (array_key_exists('applied_package_c', $_REQUEST)) {
+            $pkg = trim((string) $_REQUEST['applied_package_c']);
+            $bean->applied_package_c = $pkg;
+            $updates[] = "applied_package_c = '" . $db->quote($pkg) . "'";
+        }
+
         if (!empty($updates)) {
             $sql = "UPDATE aos_quotes_cstm SET " . implode(', ', $updates) . " WHERE id_c = '{$quoteId}'";
             $db->query($sql, false);
@@ -240,12 +265,17 @@ class RadioQuoteScheduleProducts
             self::ensureCatalogueProductsExist($db);
             $catalogue = RadioScheduleService::getCatalogueProducts($db);
 
+            $spotDuration = ($bean !== null && property_exists($bean, 'spot_duration_c') && !empty($bean->spot_duration_c))
+                ? (string) $bean->spot_duration_c
+                : (string) ($cstmRow['spot_duration_c'] ?? '30 sec');
+
             // 3. Calculate schedule quantities across inclusive date range
             $calc = RadioScheduleService::calculateSchedule(
                 $inputData,
                 $startDate !== null ? (string) $startDate : null,
                 $endDate !== null ? (string) $endDate : null,
-                $db
+                $db,
+                $spotDuration
             );
 
             // Map desired programme quantities by part_number

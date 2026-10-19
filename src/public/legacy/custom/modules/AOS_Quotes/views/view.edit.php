@@ -56,7 +56,8 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
             $inputMap,
             (string) $rawStart,
             (string) $rawEnd,
-            $GLOBALS['db'] ?? null
+            $GLOBALS['db'] ?? null,
+            $_REQUEST['spot_duration_c'] ?? ($this->bean->spot_duration_c ?? '30 sec')
         );
 
         $tplVars = [
@@ -67,6 +68,10 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
             'PUKFM_END_DATE' => $calc['end_date'] ?? '',
             'PUKFM_WEEKLY_SPOTS' => $calc['weekly_spots'],
             'PUKFM_TOTAL_SPOTS' => $calc['total_spots'],
+            'PUKFM_INDUSTRY_CATEGORY' => $_REQUEST['industry_category_c'] ?? ($this->bean->industry_category_c ?? 'other'),
+            'PUKFM_SPOT_DURATION' => $_REQUEST['spot_duration_c'] ?? ($this->bean->spot_duration_c ?? '30 sec'),
+            'PUKFM_APPLIED_PACKAGE' => $_REQUEST['applied_package_c'] ?? ($this->bean->applied_package_c ?? ''),
+            'PUKFM_PACKAGES' => RadioScheduleService::getPackageDefinitions(),
         ];
 
         foreach ($tplVars as $k => $v) {

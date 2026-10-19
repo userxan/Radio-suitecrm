@@ -56,15 +56,61 @@ if ($quoteId !== '' && class_exists('BeanFactory')) {
     }
 }
 
+$action = trim((string) ($payload['action'] ?? $_REQUEST['action'] ?? 'calculate'));
 $startDate = isset($payload['campaign_start_date_c']) ? (string) $payload['campaign_start_date_c'] : null;
 $endDate = isset($payload['campaign_end_date_c']) ? (string) $payload['campaign_end_date_c'] : null;
+$spotDuration = isset($payload['spot_duration_c']) ? (string) $payload['spot_duration_c'] : null;
+$industryCategory = isset($payload['industry_category_c']) ? (string) $payload['industry_category_c'] : null;
 $cells = (isset($payload['cells']) && is_array($payload['cells'])) ? $payload['cells'] : $payload;
 
 if (is_object($db)) {
     RadioQuoteScheduleProducts::ensureCatalogueProductsExist($db);
 }
 
-$result = RadioScheduleService::calculateSchedule($cells, $startDate, $endDate, $db ?? null);
+if ($action === 'get_packages') {
+    echo json_encode([
+        'success' => true,
+        'action' => 'get_packages',
+        'packages' => RadioScheduleService::getPackageDefinitions(),
+    ]);
+    return;
+}
+
+if ($action === 'check_avails') {
+    $capacity = RadioScheduleService::checkStationCapacity(
+        $cells,
+        $startDate,
+        $endDate,
+        $quoteId !== '' ? $quoteId : null,
+        null,
+        $db ?? null
+    );
+    echo json_encode([
+        'success' => true,
+        'action' => 'check_avails',
+        'capacity' => $capacity,
+    ]);
+    return;
+}
+
+if ($action === 'check_conflicts') {
+    $conflicts = RadioScheduleService::checkCategoryConflicts(
+        $industryCategory ?? '',
+        $cells,
+        $startDate,
+        $endDate,
+        null,
+        $db ?? null
+    );
+    echo json_encode([
+        'success' => true,
+        'action' => 'check_conflicts',
+        'conflicts' => $conflicts,
+    ]);
+    return;
+}
+
+$result = RadioScheduleService::calculateSchedule($cells, $startDate, $endDate, $db ?? null, $spotDuration);
 
 if (!$result['valid']) {
     echo json_encode([
@@ -77,6 +123,30 @@ if (!$result['valid']) {
     return;
 }
 
+// Compute avails and conflicts if dates are valid
+$capacity = null;
+$conflicts = [];
+if ($result['date_range_valid']) {
+    $capacity = RadioScheduleService::checkStationCapacity(
+        $result['cells'],
+        $result['start_date'],
+        $result['end_date'],
+        $quoteId !== '' ? $quoteId : null,
+        null,
+        $db ?? null
+    );
+    if (!empty($industryCategory) && $industryCategory !== 'other') {
+        $conflicts = RadioScheduleService::checkCategoryConflicts(
+            $industryCategory,
+            $result['cells'],
+            $result['start_date'],
+            $result['end_date'],
+            null,
+            $db ?? null
+        );
+    }
+}
+
 echo json_encode([
     'success' => true,
     'quote_id' => $quoteId,
@@ -84,9 +154,13 @@ echo json_encode([
     'end_date' => $result['end_date'],
     'dates_provided' => $result['dates_provided'],
     'date_range_valid' => $result['date_range_valid'],
+    'spot_duration' => $result['spot_duration'] ?? '30 sec',
+    'duration_multiplier' => $result['duration_multiplier'] ?? 1.0,
     'weekly_spots' => $result['weekly_spots'],
     'total_spots' => $result['total_spots'],
     'programmes' => $result['programmes'],
     'active_products' => $result['active_products'],
     'totals' => $result['totals'],
+    'capacity' => $capacity,
+    'conflicts' => $conflicts,
 ]);

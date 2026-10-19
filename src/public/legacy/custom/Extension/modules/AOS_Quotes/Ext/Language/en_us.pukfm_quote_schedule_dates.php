@@ -14,6 +14,9 @@ $mod_strings['LBL_CAMPAIGN_END_DATE'] = 'Campaign End Date';
 $mod_strings['LBL_WEEKLY_ADVERT_SCHEDULE'] = 'Weekly Advert Schedule';
 $mod_strings['LBL_CONVERT_TO_RADIO_CAMPAIGN'] = 'Convert to Radio Campaign';
 $mod_strings['LBL_RT_RADIOCAMPAIGNS_AOS_QUOTES_FROM_RT_RADIOCAMPAIGNS_TITLE'] = 'Radio Campaigns';
+$mod_strings['LBL_SPOT_LENGTH'] = 'Spot Duration';
+$mod_strings['LBL_INDUSTRY_CATEGORY'] = 'Industry Category';
+$mod_strings['LBL_APPLIED_PACKAGE'] = 'Applied Package Preset';
 
 if (class_exists('\RadioCRM\RadioScheduleService')) {
     foreach (\RadioCRM\RadioScheduleService::getAllScheduleFields() as $fieldName => $meta) {

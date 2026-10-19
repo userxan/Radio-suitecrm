@@ -33,6 +33,45 @@ $dictionary['AOS_Quotes']['fields']['campaign_end_date_c'] = [
     'reportable' => true,
 ];
 
+$dictionary['AOS_Quotes']['fields']['industry_category_c'] = [
+    'name' => 'industry_category_c',
+    'vname' => 'LBL_INDUSTRY_CATEGORY',
+    'type' => 'enum',
+    'options' => 'radio_industry_category_list',
+    'len' => 100,
+    'default' => 'other',
+    'source' => 'custom_fields',
+    'audited' => true,
+    'reportable' => true,
+    'importable' => 'true',
+];
+
+$dictionary['AOS_Quotes']['fields']['spot_duration_c'] = [
+    'name' => 'spot_duration_c',
+    'vname' => 'LBL_SPOT_LENGTH',
+    'type' => 'enum',
+    'options' => 'radio_spot_duration_list',
+    'len' => 20,
+    'default' => '30 sec',
+    'source' => 'custom_fields',
+    'audited' => true,
+    'reportable' => true,
+    'importable' => 'true',
+];
+
+$dictionary['AOS_Quotes']['fields']['applied_package_c'] = [
+    'name' => 'applied_package_c',
+    'vname' => 'LBL_APPLIED_PACKAGE',
+    'type' => 'enum',
+    'options' => 'radio_packages_list',
+    'len' => 100,
+    'default' => '',
+    'source' => 'custom_fields',
+    'audited' => true,
+    'reportable' => true,
+    'importable' => 'true',
+];
+
 if (class_exists('\RadioCRM\RadioScheduleService')) {
     foreach (\RadioCRM\RadioScheduleService::getAllScheduleFields() as $fieldName => $meta) {
         $labelKey = 'LBL_' . strtoupper($fieldName);

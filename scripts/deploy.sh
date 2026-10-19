@@ -28,7 +28,11 @@ mkdir -p \
     "${APP_ROOT}/extensions/defaultExt/modules/RT_RadioCampaigns/Process/Service/RecordActions" \
     "${APP_ROOT}/logs/legacy" \
     "/srv/myriad_exports/myriad_daily_logs" \
+    "/srv/myriad_exports/myriad_reconciliation" \
     "/srv/radio_crm_backups"
+
+ln -sfn "/srv/myriad_exports/myriad_reconciliation" "/srv/myriad_reconciliation"
+docker exec radio_crm_web ln -sfn "/srv/myriad_exports/myriad_reconciliation" "/srv/myriad_reconciliation" || true
 
 # 2. Sync source tree into /var/www/html
 echo "[Deploy] Syncing src/ into ${APP_ROOT} ..."
@@ -53,13 +57,15 @@ docker exec radio_crm_web bash -c '
 '
 echo "  = All PHP files passed syntax validation."
 
-# 5. Execute numbered migrations 001..004 as www-data
+# 5. Execute numbered migrations 001..006 as www-data
 echo "[Deploy] Executing database migrations and Quick Repair..."
 for mig in \
     001_create_rt_radiocampaigns_tables.php \
     002_create_aos_quotes_schedule_columns.php \
     003_seed_radio_catalogue_products.php \
-    004_quick_repair_and_rebuild.php
+    004_professional_quote_pdf_template.php \
+    005_radio_crm_market_enhancements.php \
+    006_quick_repair_and_rebuild.php
 do
     docker exec -u www-data radio_crm_web php "/opt/radio_crm_repo/migrations/${mig}"
 done

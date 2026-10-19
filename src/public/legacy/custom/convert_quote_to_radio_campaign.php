@@ -109,9 +109,30 @@ class RadioCampaignConverter
         }
 
         // Preserve already-entered spot_length, status, and myriad_cart_number on reconversion (Section 12.2 & 12.4)
+        $quoteSpotDuration = !empty($cstmRow['spot_duration_c']) ? (string) $cstmRow['spot_duration_c'] : '30 sec';
         if ($created || empty($campaignBean->spot_length)) {
-            $campaignBean->spot_length = '30 sec';
+            $campaignBean->spot_length = $quoteSpotDuration;
         }
+
+        $quoteCategory = !empty($cstmRow['industry_category_c']) ? (string) $cstmRow['industry_category_c'] : 'other';
+        if ($created || empty($campaignBean->industry_category)) {
+            $campaignBean->industry_category = $quoteCategory;
+        }
+
+        // Auto-allocate Myriad Cart from range 2000..2999 if not already assigned
+        if (empty($campaignBean->myriad_cart_number) || trim((string) $campaignBean->myriad_cart_number) === '') {
+            $allocatedCart = RadioScheduleService::allocateNextMyriadCart(
+                $campaignBean->start_date,
+                $campaignBean->end_date,
+                $db
+            );
+            $campaignBean->myriad_cart_number = (string) $allocatedCart;
+        }
+
+        if (empty($campaignBean->client_approval_token)) {
+            $campaignBean->client_approval_token = bin2hex(random_bytes(16));
+        }
+
         if ($created || empty($campaignBean->status)) {
             $campaignBean->status = 'Draft';
         }
@@ -121,11 +142,29 @@ class RadioCampaignConverter
         // Ensure idempotent relationship record in rt_radiocampaigns_aos_quotes_c (Section 12.4)
         self::ensureQuoteCampaignRelationship($db, $campaignId, (string) $quote->id);
 
+        $conflicts = [];
+        if (!empty($campaignBean->industry_category) && $campaignBean->industry_category !== 'other') {
+            $conflicts = RadioScheduleService::checkCategoryConflicts(
+                $campaignBean->industry_category,
+                $inputData,
+                $campaignBean->start_date,
+                $campaignBean->end_date,
+                $campaignId,
+                $db
+            );
+        }
+
+        $msg = $created ? 'Radio Campaign created from Quote.' : 'Existing Radio Campaign updated from Quote.';
+        if (!empty($conflicts)) {
+            $msg .= ' (Category Alert: ' . count($conflicts) . ' potential competitor conflict(s) detected in flight schedule)';
+        }
+
         return [
             'success' => true,
-            'message' => $created ? 'Radio Campaign created from Quote.' : 'Existing Radio Campaign updated from Quote.',
+            'message' => $msg,
             'campaign_id' => $campaignId,
             'created' => $created,
+            'conflicts' => $conflicts,
             'campaign' => [
                 'id' => $campaignId,
                 'name' => $campaignBean->name,
@@ -135,8 +174,10 @@ class RadioCampaignConverter
                 'spot_length' => $campaignBean->spot_length,
                 'status' => $campaignBean->status,
                 'myriad_cart_number' => $campaignBean->myriad_cart_number,
+                'industry_category' => $campaignBean->industry_category,
                 'quote_reference' => $campaignBean->quote_reference,
                 'linked_quote_id' => $campaignBean->linked_quote_id,
+                'client_approval_token' => $campaignBean->client_approval_token,
             ],
         ];
     }

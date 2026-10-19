@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Migration 004: Programmatically run SuiteCRM Quick Repair and Rebuild
+ * Migration 006: Programmatically run SuiteCRM Quick Repair and Rebuild
  * to compile all Extension/ fragments into Ext/ and clear legacy caches.
  */
 
@@ -23,7 +23,7 @@ global $current_user;
 $current_user = BeanFactory::newBean('Users');
 $current_user->getSystemUser();
 
-echo "[Migration 004] Running SuiteCRM Quick Repair and Rebuild...\n";
+echo "[Migration 006] Running SuiteCRM Quick Repair and Rebuild...\n";
 
 $rac = new RepairAndClear();
 $rac->repairAndClearAll(
@@ -56,4 +56,4 @@ foreach ($expectedCompiled as $relPath) {
     echo "  = Verified compiled file: {$relPath}\n";
 }
 
-echo "[Migration 004] Complete.\n";
+echo "[Migration 006] Complete.\n";

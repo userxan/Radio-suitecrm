@@ -44,6 +44,17 @@ class RT_RadioCampaigns extends Basic
     public $file_url;
     public $file;
 
+    public $industry_category = 'other';
+    public $reconciled_spots = 0;
+    public $missed_spots = 0;
+    public $reconciliation_status = 'Pending';
+    public $script_text;
+    public $voice_talent;
+    public $production_status = 'Draft';
+    public $client_approval_token;
+    public $client_approved_at;
+    public $client_feedback;
+
     public function __construct()
     {
         parent::__construct();

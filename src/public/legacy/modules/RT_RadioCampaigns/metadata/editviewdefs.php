@@ -40,8 +40,16 @@ $viewdefs[$module_name]['EditView'] = [
                 'quote_reference',
             ],
             [
+                'industry_category',
                 'linked_quote_id',
-                '',
+            ],
+            [
+                'production_status',
+                'voice_talent',
+            ],
+            [
+                'script_text',
+                'reconciliation_status',
             ],
             [
                 'description',

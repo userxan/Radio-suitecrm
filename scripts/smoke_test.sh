@@ -22,11 +22,15 @@ echo "[Smoke 2/4] Running Section 20 Mandatory Acceptance Test Suite..."
 docker exec -u www-data radio_crm_web php /opt/radio_crm_repo/tests/run_acceptance_tests.php
 
 # 3. Run UI / DOM & Symfony Container Verification
-echo "[Smoke 3/4] Running UI / DOM & Symfony Container Verification..."
+echo "[Smoke 3/5] Running UI / DOM & Symfony Container Verification..."
 docker exec -u www-data radio_crm_web php /opt/radio_crm_repo/tests/run_ui_http_tests.php
 
-# 4. Inspect generated Myriad export files (Section 21.4)
-echo "[Smoke 4/4] Verifying generated Myriad CSV & daily .log files in /srv/myriad_exports ..."
+# 4. Run Radio Station Market Enhancements Suite (Capacity, Category Conflicts, Auto Cart, Playout Reconciliation, Affidavits, Invoicing, ICASA)
+echo "[Smoke 4/5] Running Radio Station Market Enhancements Suite..."
+docker exec -u www-data radio_crm_web php /opt/radio_crm_repo/tests/test_radio_enhancements.php
+
+# 5. Inspect generated Myriad export files (Section 21.4)
+echo "[Smoke 5/5] Verifying generated Myriad CSV & daily .log files in /srv/myriad_exports ..."
 find /srv/myriad_exports -maxdepth 1 -type f -name '*.csv' -printf '%TY-%Tm-%Td %TH:%TM %p\n' | sort
 find /srv/myriad_exports/myriad_daily_logs -maxdepth 1 -type f -printf '%p\n' | sort
 ls -ld /srv/myriad_exports /srv/myriad_exports/myriad_daily_logs

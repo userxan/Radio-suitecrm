@@ -28,6 +28,63 @@
                    style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px;" />
         </div>
 
+        <div>
+            <label for="spot_duration_c" style="display: block; font-weight: 600; margin-bottom: 4px;">
+                Spot Duration
+            </label>
+            <select id="spot_duration_c"
+                    name="spot_duration_c"
+                    style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-weight: 500;">
+                <option value="15 sec" {if $PUKFM_SPOT_DURATION == '15 sec'}selected{/if}>15 sec (50% Rate)</option>
+                <option value="30 sec" {if $PUKFM_SPOT_DURATION == '30 sec' || empty($PUKFM_SPOT_DURATION)}selected{/if}>30 sec (Standard)</option>
+                <option value="45 sec" {if $PUKFM_SPOT_DURATION == '45 sec'}selected{/if}>45 sec (150% Rate)</option>
+                <option value="60 sec" {if $PUKFM_SPOT_DURATION == '60 sec'}selected{/if}>60 sec (200% Rate)</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="industry_category_c" style="display: block; font-weight: 600; margin-bottom: 4px;">
+                Advertiser Category
+            </label>
+            <select id="industry_category_c"
+                    name="industry_category_c"
+                    style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-weight: 500;">
+                <option value="other" {if $PUKFM_INDUSTRY_CATEGORY == 'other'}selected{/if}>General / Other</option>
+                <option value="automotive" {if $PUKFM_INDUSTRY_CATEGORY == 'automotive'}selected{/if}>Automotive & Dealerships</option>
+                <option value="dining" {if $PUKFM_INDUSTRY_CATEGORY == 'dining'}selected{/if}>Restaurants & Fast Food</option>
+                <option value="hospitality" {if $PUKFM_INDUSTRY_CATEGORY == 'hospitality'}selected{/if}>Nightlife, Bars & Events</option>
+                <option value="financial" {if $PUKFM_INDUSTRY_CATEGORY == 'financial'}selected{/if}>Banking & Financial</option>
+                <option value="campus" {if $PUKFM_INDUSTRY_CATEGORY == 'campus'}selected{/if}>Campus Retail & Student Services</option>
+                <option value="telecom" {if $PUKFM_INDUSTRY_CATEGORY == 'telecom'}selected{/if}>Telecom & Tech</option>
+                <option value="health" {if $PUKFM_INDUSTRY_CATEGORY == 'health'}selected{/if}>Healthcare & Fitness</option>
+                <option value="education" {if $PUKFM_INDUSTRY_CATEGORY == 'education'}selected{/if}>Education & Departments</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="applied_package_c" style="display: block; font-weight: 600; margin-bottom: 4px;">
+                Package Preset
+            </label>
+            <select id="applied_package_c"
+                    name="applied_package_c"
+                    style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-weight: 500;">
+                <option value="">-- Custom Schedule --</option>
+                <option value="option_1" {if $PUKFM_APPLIED_PACKAGE == 'option_1'}selected{/if}>Option 1: 50 Prime Recorded Ads (Weekly - R5,999)</option>
+                <option value="option_2" {if $PUKFM_APPLIED_PACKAGE == 'option_2'}selected{/if}>Option 2: 50 Prime Live Reads (Weekly - R6,999)</option>
+                <option value="option_3" {if $PUKFM_APPLIED_PACKAGE == 'option_3'}selected{/if}>Option 3: 120 Prime Recorded Ads (Monthly - R15,999)</option>
+                <option value="option_4" {if $PUKFM_APPLIED_PACKAGE == 'option_4'}selected{/if}>Option 4: 120 Prime Live Reads (Monthly - R16,999)</option>
+            </select>
+        </div>
+
+        <div>
+            <button type="button"
+                    id="pukfm_toggle_avails"
+                    class="button"
+                    style="padding: 6px 14px; background: #0969da; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                📊 Station Avails
+            </button>
+        </div>
+
         <!-- RADIO_CLEAR_ALL_SPOTS_START -->
         <div>
             <button type="button"
@@ -38,6 +95,14 @@
             </button>
         </div>
         <!-- RADIO_CLEAR_ALL_SPOTS_END -->
+    </div>
+
+    <div id="pukfm_capacity_warning_msg"
+         style="display: none; margin-bottom: 12px; padding: 10px 14px; background: #fff8c5; border: 1px solid #d4a72c; color: #7d4e00; border-radius: 4px; font-weight: 600;">
+    </div>
+
+    <div id="pukfm_conflict_warning_msg"
+         style="display: none; margin-bottom: 12px; padding: 10px 14px; background: #fff1e5; border: 1px solid #f97515; color: #9a3412; border-radius: 4px; font-weight: 600;">
     </div>
 
     <div id="pukfm_schedule_validation_msg"
@@ -460,10 +525,17 @@
             recordId = formEl.elements['record'].value || '';
         }
 
+        var durEl = document.getElementById('spot_duration_c');
+        var catEl = document.getElementById('industry_category_c');
+        var pkgEl = document.getElementById('applied_package_c');
+
         var payload = {
             quote_id: recordId,
             campaign_start_date_c: state.start_date,
             campaign_end_date_c: state.end_date,
+            spot_duration_c: durEl ? durEl.value : '30 sec',
+            industry_category_c: catEl ? catEl.value : 'other',
+            applied_package_c: pkgEl ? pkgEl.value : '',
             cells: state.cells
         };
 
@@ -488,6 +560,36 @@
                 if (totalEl) totalEl.textContent = String(data.total_spots);
                 applyProductsToQuoteDom(data);
                 if (statusEl) statusEl.textContent = '';
+
+                // Handle capacity warnings
+                var capEl = document.getElementById('pukfm_capacity_warning_msg');
+                if (capEl) {
+                    if (data.capacity && !data.capacity.valid && data.capacity.violations) {
+                        var vKeys = Object.keys(data.capacity.violations);
+                        capEl.innerHTML = '⚠️ <strong>Station Capacity Alert:</strong> ' + vKeys.length +
+                            ' hourly slot(s) exceed the maximum broadcast limit of 20 spots/hour! Please adjust quantities to avoid overbooking.';
+                        capEl.style.display = 'block';
+                    } else {
+                        capEl.style.display = 'none';
+                    }
+                }
+
+                // Handle category conflict warnings
+                var confEl = document.getElementById('pukfm_conflict_warning_msg');
+                if (confEl) {
+                    if (data.conflicts && data.conflicts.length > 0) {
+                        var compNames = [];
+                        for (var c = 0; c < data.conflicts.length; c++) {
+                            compNames.push(data.conflicts[c].campaign_name + ' (' + data.conflicts[c].day + ' ' + data.conflicts[c].slot_label + ')');
+                        }
+                        confEl.innerHTML = '⚠️ <strong>Category Conflict Alert:</strong> Competing advertiser(s) in category <em>' +
+                            (catEl ? catEl.options[catEl.selectedIndex].text : '') + '</em> already scheduled in matching slots: ' +
+                            compNames.slice(0, 3).join(', ') + (compNames.length > 3 ? ' and more...' : '');
+                        confEl.style.display = 'block';
+                    } else {
+                        confEl.style.display = 'none';
+                    }
+                }
             } else if (data && data.message) {
                 showValidationMessage(data.message);
                 if (statusEl) statusEl.textContent = '';
@@ -514,6 +616,99 @@
         }
     }
 
+    var availsActive = false;
+    function toggleStationAvails() {
+        var startInput = document.getElementById('campaign_start_date_c');
+        var endInput = document.getElementById('campaign_end_date_c');
+        var startVal = startInput ? startInput.value : '';
+        var endVal = endInput ? endInput.value : '';
+        var btn = document.getElementById('pukfm_toggle_avails');
+
+        if (availsActive) {
+            availsActive = false;
+            if (btn) btn.style.background = '#0969da';
+            var inputs = getScheduleInputs();
+            for (var k = 0; k < inputs.length; k++) {
+                inputs[k].style.background = '#ffffff';
+                inputs[k].removeAttribute('title');
+            }
+            return;
+        }
+
+        if (!startVal || !endVal) {
+            alert('Please select both Campaign Start Date and End Date to view station avails.');
+            return;
+        }
+
+        var formEl = document.getElementById('EditView');
+        var recordId = formEl && formEl.elements['record'] ? formEl.elements['record'].value : '';
+        var state = computeLocalTotals();
+
+        fetch('index.php?entryPoint=radio_schedule_ajax_sync', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                action: 'check_avails',
+                quote_id: recordId,
+                campaign_start_date_c: startVal,
+                campaign_end_date_c: endVal,
+                cells: state.cells
+            })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data && data.success && data.capacity && data.capacity.capacity_matrix) {
+                availsActive = true;
+                if (btn) btn.style.background = '#1a7f37';
+                var matrix = data.capacity.capacity_matrix;
+                for (var f in matrix) {
+                    var cellEl = document.getElementById(f);
+                    if (cellEl && matrix[f]) {
+                        var item = matrix[f];
+                        var status = item.status;
+                        if (status === 'full') {
+                            cellEl.style.background = '#ffebe9';
+                        } else if (status === 'filling') {
+                            cellEl.style.background = '#fff8c5';
+                        } else {
+                            cellEl.style.background = '#dafbe1';
+                        }
+                        cellEl.title = item.day + ' ' + item.label + ' — Booked: ' + item.booked +
+                            '/20 spots (' + item.remaining + ' remaining)';
+                    }
+                }
+            }
+        });
+    }
+
+    function applyPackagePreset(pkgKey) {
+        if (!pkgKey) return;
+        fetch('index.php?entryPoint=radio_schedule_ajax_sync&action=get_packages')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data && data.packages && data.packages[pkgKey]) {
+                var pkg = data.packages[pkgKey];
+                var allInputs = getScheduleInputs();
+                for (var i = 0; i < allInputs.length; i++) {
+                    allInputs[i].value = '0';
+                    allInputs[i].style.borderColor = '#c0c7cf';
+                }
+                var prime = pkg.prime_slots || {};
+                for (var f in prime) {
+                    var inputEl = document.getElementById(f);
+                    if (inputEl) {
+                        inputEl.value = String(prime[f]);
+                    }
+                }
+                scheduleRecalcAndSync(true);
+            }
+        });
+    }
+
     function initScheduleEvents() {
         var wrapper = document.getElementById('weekly_advert_schedule_wrapper');
         if (!wrapper) return;
@@ -538,6 +733,29 @@
         if (endInput) {
             endInput.addEventListener('change', function() { scheduleRecalcAndSync(true); });
             endInput.addEventListener('input', function() { scheduleRecalcAndSync(false); });
+        }
+
+        var durSelect = document.getElementById('spot_duration_c');
+        if (durSelect) {
+            durSelect.addEventListener('change', function() { scheduleRecalcAndSync(true); });
+        }
+
+        var catSelect = document.getElementById('industry_category_c');
+        if (catSelect) {
+            catSelect.addEventListener('change', function() { scheduleRecalcAndSync(true); });
+        }
+
+        var pkgSelect = document.getElementById('applied_package_c');
+        if (pkgSelect) {
+            pkgSelect.addEventListener('change', function() { applyPackagePreset(pkgSelect.value); });
+        }
+
+        var availsBtn = document.getElementById('pukfm_toggle_avails');
+        if (availsBtn) {
+            availsBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleStationAvails();
+            });
         }
 
         var clearBtn = document.getElementById('pukfm_clear_all_spots');
