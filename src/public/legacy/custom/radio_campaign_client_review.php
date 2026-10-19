@@ -85,10 +85,15 @@ if (isset($_GET['stream']) && $_GET['stream'] === '1' && $hasAudio) {
     exit;
 }
 
-$logoPath = '/var/www/html/public/legacy/custom/include/RadioCRM/pukfm_logo_round.jpeg';
+require_once 'custom/include/RadioCRM/RadioStationConfigService.php';
+$stConfig = \RadioCRM\RadioStationConfigService::getSettings($db);
+$stName = htmlspecialchars((string) ($stConfig['station_name'] ?? 'Radio Station'), ENT_QUOTES);
+$stSlogan = htmlspecialchars((string) ($stConfig['station_slogan'] ?? 'On-Air Broadcast'), ENT_QUOTES);
+$logoRel = htmlspecialchars(ltrim((string) ($stConfig['station_logo_url'] ?? 'custom/include/RadioCRM/radio_station_logo.png'), '/'), ENT_QUOTES);
+
 $campName = htmlspecialchars((string) $camp['name'], ENT_QUOTES);
 $scriptText = htmlspecialchars((string) ($camp['script_text'] ?: 'Commercial script pending authoring by station production team.'), ENT_QUOTES);
-$talent = htmlspecialchars((string) ($camp['voice_talent'] ?: 'PUKfm Voice Team'), ENT_QUOTES);
+$talent = htmlspecialchars((string) ($camp['voice_talent'] ?: ($stName . ' Voice Team')), ENT_QUOTES);
 $status = htmlspecialchars((string) $camp['production_status'], ENT_QUOTES);
 $dates = htmlspecialchars("{$camp['start_date']} to {$camp['end_date']}", ENT_QUOTES);
 $spots = (int) $camp['number_of_spots'];
@@ -99,12 +104,12 @@ $dur = htmlspecialchars((string) $camp['spot_length'], ENT_QUOTES);
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PUKfm 93.6 - Commercial Creative Approval</title>
+<title><?= $stName ?> - Commercial Creative Approval</title>
 <style>
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f6f8fa; margin: 0; padding: 20px; color: #24292f; }
 .card { max-width: 720px; margin: 30px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 32px; border: 1px solid #d0d7de; }
 .header { display: flex; align-items: center; border-bottom: 2px solid #5E2B83; padding-bottom: 18px; margin-bottom: 24px; }
-.header img { width: 64px; height: 64px; margin-right: 18px; }
+.header img { width: 64px; height: 64px; margin-right: 18px; object-fit: contain; }
 .header h2 { margin: 0; color: #5E2B83; font-size: 22px; }
 .header p { margin: 4px 0 0; color: #57606a; font-size: 13px; }
 .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: 600; font-size: 12px; }
@@ -124,10 +129,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helve
 <body>
 <div class="card">
     <div class="header">
-        <img src="custom/include/RadioCRM/pukfm_logo_round.jpeg" alt="PUKfm 93.6" />
+        <img src="<?= $logoRel ?>" alt="<?= $stName ?>" onerror="this.src='custom/include/RadioCRM/radio_station_logo.png'" />
         <div>
-            <h2>PUKfm 93.6 Commercial Creative Approval</h2>
-            <p>North-West University Campus Radio | meer as net radio</p>
+            <h2><?= $stName ?> Commercial Creative Approval</h2>
+            <p><?= $stSlogan ?></p>
         </div>
     </div>
 
@@ -172,7 +177,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helve
         <form method="POST" style="margin-top:14px;">
             <input type="hidden" name="token" value="<?= htmlspecialchars($token, ENT_QUOTES) ?>">
             <p style="font-size:14px; color:#57606a; margin-bottom:14px;">
-                Please review the script and audio preview above. Click <strong>Approve for Broadcast</strong> to authorize playout on PUKfm 93.6, or provide revision requests below.
+                Please review the script and audio preview above. Click <strong>Approve for Broadcast</strong> to authorize playout on <?= $stName ?>, or provide revision requests below.
             </p>
             <div style="margin-bottom:18px;">
                 <button type="submit" name="client_action" value="approve" class="btn btn-approve">✓ Approve for Broadcast</button>

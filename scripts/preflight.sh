@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "============================================================"
-echo "PUKfm Radio CRM - Preflight Check"
+echo "Radio CRM - Preflight Check"
 echo "============================================================"
 date
 hostname -I

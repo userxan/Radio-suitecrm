@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Migration 004: Replace the default "PUKfm Standard Quote PDF" template with a professional,
+ * Migration 004: Replace the default "Standard Radio Quote PDF" template with a professional,
  * branded layout (logo header, styled line-item table, totals panel, footer).
  *
  * Note: SuiteCRM stores template HTML entity-encoded and the PDF generator strips raw tags,
@@ -20,12 +20,25 @@ if (!defined('sugarEntry')) {
     define('sugarEntry', true);
 }
 require_once 'include/entryPoint.php';
+require_once 'custom/include/RadioCRM/RadioStationConfigService.php';
+
+use RadioCRM\RadioStationConfigService;
 
 global $db;
 
+$stationSettings = class_exists('RadioCRM\RadioStationConfigService')
+    ? RadioStationConfigService::getSettings($db)
+    : [];
+$stationName = htmlspecialchars((string) ($stationSettings['station_name'] ?? 'Community Radio FM'), ENT_QUOTES);
+$stationTagline = htmlspecialchars((string) ($stationSettings['station_tagline'] ?? 'The Voice of the Community'), ENT_QUOTES);
+
 global $sugar_config;
-// TCPDF in SuiteCRM only loads images from self-referential URLs (validate_external_host), not file paths.
-$logo = rtrim((string) $sugar_config['site_url'], '/') . '/legacy/custom/include/RadioCRM/pukfm_logo_round.jpeg';
+$customLogoUrl = (string) ($stationSettings['station_logo_url'] ?? '');
+if (!empty($customLogoUrl) && file_exists($legacyDir . '/' . ltrim($customLogoUrl, '/'))) {
+    $logo = rtrim((string) $sugar_config['site_url'], '/') . '/legacy/' . ltrim($customLogoUrl, '/');
+} else {
+    $logo = rtrim((string) $sugar_config['site_url'], '/') . '/legacy/custom/include/RadioCRM/radio_station_logo.png';
+}
 
 $purple = '#6B2C91';
 $teal = '#1A8CA3';
@@ -36,7 +49,7 @@ $headerHtml = <<<HTML
 <table width="100%" cellpadding="2" cellspacing="0">
 <tr>
 <td width="16%"><img src="{$logo}" width="62" height="62" /></td>
-<td width="50%"><font size="15" color="{$purple}"><b>PUKfm 93.6</b></font><br /><font size="8" color="{$grey}">meer as net radio | more than just radio</font></td>
+<td width="50%"><font size="15" color="{$purple}"><b>{$stationName}</b></font><br /><font size="8" color="{$grey}">{$stationTagline}</font></td>
 <td width="34%" align="right"><font size="20" color="{$teal}"><b>QUOTATION</b></font></td>
 </tr>
 </table>
@@ -89,14 +102,14 @@ $bodyHtml = <<<HTML
 </tr>
 </table>
 <br /><br />
-<font size="8" color="{$grey}">All amounts are in South African Rand (ZAR). This quotation is subject to PUKfm's standard advertising terms and conditions.</font>
+<font size="8" color="{$grey}">All amounts are in South African Rand (ZAR). This quotation is subject to standard radio advertising terms and conditions.</font>
 HTML;
 
 $footerHtml = <<<HTML
 <hr />
 <table width="100%" cellpadding="2" cellspacing="0">
 <tr>
-<td width="75%"><font size="8" color="{$grey}">PUKfm 93.6 | meer as net radio | more than just radio</font></td>
+<td width="75%"><font size="8" color="{$grey}">{$stationName} | {$stationTagline}</font></td>
 <td width="25%" align="right"><font size="8" color="{$grey}">Page {PAGENO}</font></td>
 </tr>
 </table>
@@ -108,15 +121,15 @@ foreach (['headerHtml', 'bodyHtml', 'footerHtml'] as $var) {
     $$var = trim((string) preg_replace('/>\s+</', '><', preg_replace('/\s*\R\s*/', ' ', $$var)));
 }
 
-$res = $db->query("SELECT id FROM aos_pdf_templates WHERE name = 'PUKfm Standard Quote PDF' AND deleted = 0 LIMIT 1", false);
+$res = $db->query("SELECT id FROM aos_pdf_templates WHERE (name = 'Standard Radio Quote PDF' OR name LIKE '%Standard Quote PDF') AND deleted = 0 LIMIT 1", false);
 $row = $res ? $db->fetchByAssoc($res) : null;
 if (!$row) {
-    echo "[Migration 004] Template 'PUKfm Standard Quote PDF' not found; run migration 003 first.\n";
+    echo "[Migration 004] Template 'Standard Radio Quote PDF' not found; run migration 003 first.\n";
     exit(1);
 }
 
 $db->query(sprintf(
-    "UPDATE aos_pdf_templates SET description = '%s', pdfheader = '%s', pdffooter = '%s',
+    "UPDATE aos_pdf_templates SET name = 'Standard Radio Quote PDF', description = '%s', pdfheader = '%s', pdffooter = '%s',
         margin_left = 15, margin_right = 15, margin_top = 38, margin_bottom = 20,
         margin_header = 8, margin_footer = 8, date_modified = '%s'
      WHERE id = '%s'",

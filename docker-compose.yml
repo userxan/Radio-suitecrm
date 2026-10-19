@@ -23,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: pukfm/suitecrm:8.10.1-php8.3
+    image: radiocrm/suitecrm:8.10.1-php8.3
     container_name: radio_crm_web
     restart: unless-stopped
     depends_on:

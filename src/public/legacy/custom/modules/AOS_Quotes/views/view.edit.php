@@ -68,19 +68,19 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
         );
 
         $tplVars = [
-            'PUKFM_SLOTS' => $slotsForTpl,
-            'PUKFM_DAYS' => RadioScheduleService::DAYS,
-            'PUKFM_CELL_VALUES' => $calc['cells'],
-            'PUKFM_START_DATE' => $calc['start_date'] ?? '',
-            'PUKFM_END_DATE' => $calc['end_date'] ?? '',
-            'PUKFM_WEEKLY_SPOTS' => $calc['weekly_spots'],
-            'PUKFM_TOTAL_SPOTS' => $calc['total_spots'],
-            'PUKFM_INDUSTRY_CATEGORY' => $_REQUEST['industry_category_c'] ?? ($this->bean->industry_category_c ?? 'other'),
-            'PUKFM_SPOT_DURATION' => $_REQUEST['spot_duration_c'] ?? ($this->bean->spot_duration_c ?? '30 sec'),
-            'PUKFM_APPLIED_PACKAGE' => $_REQUEST['applied_package_c'] ?? ($this->bean->applied_package_c ?? ''),
-            'PUKFM_PACKAGES' => RadioScheduleService::getPackageDefinitions(),
-            'PUKFM_STATION_CONFIGURED' => RadioStationConfigService::isConfigured($GLOBALS['db'] ?? null),
-            'PUKFM_STATION_NAME' => $stConfig['station_name'] ?? 'PUKfm 93.6',
+            'RADIO_SLOTS' => $slotsForTpl,
+            'RADIO_DAYS' => RadioScheduleService::DAYS,
+            'RADIO_CELL_VALUES' => $calc['cells'],
+            'RADIO_START_DATE' => $calc['start_date'] ?? '',
+            'RADIO_END_DATE' => $calc['end_date'] ?? '',
+            'RADIO_WEEKLY_SPOTS' => $calc['weekly_spots'],
+            'RADIO_TOTAL_SPOTS' => $calc['total_spots'],
+            'RADIO_INDUSTRY_CATEGORY' => $_REQUEST['industry_category_c'] ?? ($this->bean->industry_category_c ?? 'other'),
+            'RADIO_SPOT_DURATION' => $_REQUEST['spot_duration_c'] ?? ($this->bean->spot_duration_c ?? '30 sec'),
+            'RADIO_APPLIED_PACKAGE' => $_REQUEST['applied_package_c'] ?? ($this->bean->applied_package_c ?? ''),
+            'RADIO_PACKAGES' => RadioScheduleService::getPackageDefinitions(),
+            'RADIO_STATION_CONFIGURED' => RadioStationConfigService::isConfigured($GLOBALS['db'] ?? null),
+            'RADIO_STATION_NAME' => $stConfig['station_name'] ?? 'Community Radio FM',
         ];
 
         foreach ($tplVars as $k => $v) {

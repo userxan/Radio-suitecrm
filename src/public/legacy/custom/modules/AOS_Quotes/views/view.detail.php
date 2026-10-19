@@ -26,10 +26,10 @@ class CustomAOS_QuotesViewDetail extends AOS_QuotesViewDetail
         );
 
         $tplVars = [
-            'PUKFM_START_DATE' => $calc['start_date'] ?? '',
-            'PUKFM_END_DATE' => $calc['end_date'] ?? '',
-            'PUKFM_WEEKLY_SPOTS' => $calc['weekly_spots'],
-            'PUKFM_TOTAL_SPOTS' => $calc['total_spots'],
+            'RADIO_START_DATE' => $calc['start_date'] ?? '',
+            'RADIO_END_DATE' => $calc['end_date'] ?? '',
+            'RADIO_WEEKLY_SPOTS' => $calc['weekly_spots'],
+            'RADIO_TOTAL_SPOTS' => $calc['total_spots'],
         ];
 
         foreach ($tplVars as $k => $v) {

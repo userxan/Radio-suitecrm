@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * UI / DOM & Symfony Container Verification Suite for PUKfm Radio CRM.
+ * UI / DOM & Symfony Container Verification Suite for Radio CRM.
  * Verifies:
  * 1. AOS_Quotes EditView renders #weekly_advert_schedule_wrapper and all 168 inputs + 2 dates INSIDE <form name="EditView">.
  * 2. AOS_Quotes DetailView renders Convert to Radio Campaign action pointing to entryPoint=convert_quote_to_radio_campaign.
@@ -26,7 +26,7 @@ use App\Kernel;
 use RadioCRM\RadioScheduleService;
 
 echo "======================================================================\n";
-echo "PUKfm Radio CRM - UI / DOM & Symfony Container Verification\n";
+echo "Radio CRM - UI / DOM & Symfony Container Verification\n";
 echo "======================================================================\n";
 
 $failures = 0;
@@ -112,10 +112,10 @@ foreach (RadioScheduleService::getAllScheduleFields() as $f => $m) {
     }
 }
 
-$hasSummaryIds = strpos($editHtml, 'id="pukfm_weekly_total_bar"') !== false
-    && strpos($editHtml, 'id="pukfm_weekly_total"') !== false
+$hasSummaryIds = strpos($editHtml, 'id="radio_weekly_total_bar"') !== false
+    && strpos($editHtml, 'id="radio_weekly_total"') !== false
     && strpos($editHtml, 'id="radio_total_spots_detail"') !== false
-    && strpos($editHtml, 'id="pukfm_clear_all_spots"') !== false
+    && strpos($editHtml, 'id="radio_clear_all_spots"') !== false
     && strpos($editHtml, 'id="campaign_start_date_c"') !== false
     && strpos($editHtml, 'id="campaign_end_date_c"') !== false;
 
@@ -203,7 +203,7 @@ if ($cRow && !empty($cRow['id'])) {
         "INSERT INTO private_documents_media_objects
             (id, name, date_entered, date_modified, deleted, file_path, size, mime_type, original_name, parent_type, parent_id, parent_field, temporary)
          VALUES
-            ('{$mediaRowId}', 'PUKfm_Promo_Spot.mp3', '{$nowStr}', '{$nowStr}', 0, '{$fakeMediaUuid}', 164, 'audio/mpeg', 'PUKfm_Promo_Spot.mp3', 'RT_RadioCampaigns', '" . $db->quote($testCampId) . "', 'file', 0)",
+            ('{$mediaRowId}', 'Radio_Promo_Spot.mp3', '{$nowStr}', '{$nowStr}', 0, '{$fakeMediaUuid}', 164, 'audio/mpeg', 'Radio_Promo_Spot.mp3', 'RT_RadioCampaigns', '" . $db->quote($testCampId) . "', 'file', 0)",
         false
     );
 

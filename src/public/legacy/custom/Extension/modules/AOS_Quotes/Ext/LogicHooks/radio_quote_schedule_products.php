@@ -12,7 +12,7 @@ if (!isset($hook_array['after_save']) || !is_array($hook_array['after_save'])) {
 
 $hook_array['after_retrieve'][] = [
     10,
-    'Load PUKfm Radio Quote Weekly Schedule Custom Fields',
+    'Load Radio Quote Weekly Schedule Custom Fields',
     'custom/modules/AOS_Quotes/RadioQuoteScheduleProducts.php',
     'RadioQuoteScheduleProducts',
     'loadScheduleFields',
@@ -20,7 +20,7 @@ $hook_array['after_retrieve'][] = [
 
 $hook_array['after_save'][] = [
     90,
-    'Sync PUKfm Radio Quote Weekly Schedule Products',
+    'Sync Radio Quote Weekly Schedule Products',
     'custom/modules/AOS_Quotes/RadioQuoteScheduleProducts.php',
     'RadioQuoteScheduleProducts',
     'syncSelectedProducts',

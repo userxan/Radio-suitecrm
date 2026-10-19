@@ -1,13 +1,13 @@
-{* PUKfm Weekly Advert Schedule Template - Embedded inside AOS_Quotes EditView form *}
+{* Radio Weekly Advert Schedule Template - Embedded inside AOS_Quotes EditView form *}
 <div id="weekly_advert_schedule_wrapper" style="margin: 15px 0; padding: 15px; border: 1px solid #d0d7de; border-radius: 6px; background: #ffffff;">
     <h4 style="margin-top: 0; margin-bottom: 12px; color: #1f2328; font-weight: 600;">
-        {$PUKFM_STATION_NAME|default:'PUKfm 93.6'} Weekly Advert Schedule
+        {$RADIO_STATION_NAME|default:'Community Radio FM'} Weekly Advert Schedule
     </h4>
 
-    {if !$PUKFM_STATION_CONFIGURED}
+    {if !$RADIO_STATION_CONFIGURED}
     <div style="margin-bottom: 12px; padding: 8px 12px; background: #eef8f9; border: 1px solid #1B8FA3; border-radius: 4px; font-size: 13px; color: #0f5664;">
         📻 <strong>Station Setup Guide:</strong> Need to customize your station name, logo, show schedule, or rate cards? 
-        <a href="index.php?entryPoint=radio_station_wizard" target="_blank" style="color: #5E2B83; font-weight: bold; text-decoration: underline;">Launch the Station Setup Wizard</a>.
+        <a href="./index.php?module=Administration&action=radio_station_wizard" target="_blank" style="color: #5E2B83; font-weight: bold; text-decoration: underline;">Launch the Station Setup Wizard</a>.
     </div>
     {/if}
 
@@ -19,8 +19,8 @@
             <input type="date"
                    id="campaign_start_date_c"
                    name="campaign_start_date_c"
-                   value="{$PUKFM_START_DATE|escape:'html'}"
-                   class="pukfm-date-input"
+                   value="{$RADIO_START_DATE|escape:'html'}"
+                   class="radio-date-input"
                    style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px;" />
         </div>
         <div>
@@ -30,8 +30,8 @@
             <input type="date"
                    id="campaign_end_date_c"
                    name="campaign_end_date_c"
-                   value="{$PUKFM_END_DATE|escape:'html'}"
-                   class="pukfm-date-input"
+                   value="{$RADIO_END_DATE|escape:'html'}"
+                   class="radio-date-input"
                    style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px;" />
         </div>
 
@@ -42,10 +42,10 @@
             <select id="spot_duration_c"
                     name="spot_duration_c"
                     style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-weight: 500;">
-                <option value="15 sec" {if $PUKFM_SPOT_DURATION == '15 sec'}selected{/if}>15 sec (50% Rate)</option>
-                <option value="30 sec" {if $PUKFM_SPOT_DURATION == '30 sec' || empty($PUKFM_SPOT_DURATION)}selected{/if}>30 sec (Standard)</option>
-                <option value="45 sec" {if $PUKFM_SPOT_DURATION == '45 sec'}selected{/if}>45 sec (150% Rate)</option>
-                <option value="60 sec" {if $PUKFM_SPOT_DURATION == '60 sec'}selected{/if}>60 sec (200% Rate)</option>
+                <option value="15 sec" {if $RADIO_SPOT_DURATION == '15 sec'}selected{/if}>15 sec (50% Rate)</option>
+                <option value="30 sec" {if $RADIO_SPOT_DURATION == '30 sec' || empty($RADIO_SPOT_DURATION)}selected{/if}>30 sec (Standard)</option>
+                <option value="45 sec" {if $RADIO_SPOT_DURATION == '45 sec'}selected{/if}>45 sec (150% Rate)</option>
+                <option value="60 sec" {if $RADIO_SPOT_DURATION == '60 sec'}selected{/if}>60 sec (200% Rate)</option>
             </select>
         </div>
 
@@ -56,15 +56,15 @@
             <select id="industry_category_c"
                     name="industry_category_c"
                     style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-weight: 500;">
-                <option value="other" {if $PUKFM_INDUSTRY_CATEGORY == 'other'}selected{/if}>General / Other</option>
-                <option value="automotive" {if $PUKFM_INDUSTRY_CATEGORY == 'automotive'}selected{/if}>Automotive & Dealerships</option>
-                <option value="dining" {if $PUKFM_INDUSTRY_CATEGORY == 'dining'}selected{/if}>Restaurants & Fast Food</option>
-                <option value="hospitality" {if $PUKFM_INDUSTRY_CATEGORY == 'hospitality'}selected{/if}>Nightlife, Bars & Events</option>
-                <option value="financial" {if $PUKFM_INDUSTRY_CATEGORY == 'financial'}selected{/if}>Banking & Financial</option>
-                <option value="campus" {if $PUKFM_INDUSTRY_CATEGORY == 'campus'}selected{/if}>Campus Retail & Student Services</option>
-                <option value="telecom" {if $PUKFM_INDUSTRY_CATEGORY == 'telecom'}selected{/if}>Telecom & Tech</option>
-                <option value="health" {if $PUKFM_INDUSTRY_CATEGORY == 'health'}selected{/if}>Healthcare & Fitness</option>
-                <option value="education" {if $PUKFM_INDUSTRY_CATEGORY == 'education'}selected{/if}>Education & Departments</option>
+                <option value="other" {if $RADIO_INDUSTRY_CATEGORY == 'other'}selected{/if}>General / Other</option>
+                <option value="automotive" {if $RADIO_INDUSTRY_CATEGORY == 'automotive'}selected{/if}>Automotive & Dealerships</option>
+                <option value="dining" {if $RADIO_INDUSTRY_CATEGORY == 'dining'}selected{/if}>Restaurants & Fast Food</option>
+                <option value="hospitality" {if $RADIO_INDUSTRY_CATEGORY == 'hospitality'}selected{/if}>Nightlife, Bars & Events</option>
+                <option value="financial" {if $RADIO_INDUSTRY_CATEGORY == 'financial'}selected{/if}>Banking & Financial</option>
+                <option value="campus" {if $RADIO_INDUSTRY_CATEGORY == 'campus'}selected{/if}>Campus Retail & Student Services</option>
+                <option value="telecom" {if $RADIO_INDUSTRY_CATEGORY == 'telecom'}selected{/if}>Telecom & Tech</option>
+                <option value="health" {if $RADIO_INDUSTRY_CATEGORY == 'health'}selected{/if}>Healthcare & Fitness</option>
+                <option value="education" {if $RADIO_INDUSTRY_CATEGORY == 'education'}selected{/if}>Education & Departments</option>
             </select>
         </div>
 
@@ -76,16 +76,16 @@
                     name="applied_package_c"
                     style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-weight: 500;">
                 <option value="">-- Custom Schedule --</option>
-                <option value="option_1" {if $PUKFM_APPLIED_PACKAGE == 'option_1'}selected{/if}>Option 1: 50 Prime Recorded Ads (Weekly - R5,999)</option>
-                <option value="option_2" {if $PUKFM_APPLIED_PACKAGE == 'option_2'}selected{/if}>Option 2: 50 Prime Live Reads (Weekly - R6,999)</option>
-                <option value="option_3" {if $PUKFM_APPLIED_PACKAGE == 'option_3'}selected{/if}>Option 3: 120 Prime Recorded Ads (Monthly - R15,999)</option>
-                <option value="option_4" {if $PUKFM_APPLIED_PACKAGE == 'option_4'}selected{/if}>Option 4: 120 Prime Live Reads (Monthly - R16,999)</option>
+                <option value="option_1" {if $RADIO_APPLIED_PACKAGE == 'option_1'}selected{/if}>Option 1: 50 Prime Recorded Ads (Weekly - R5,999)</option>
+                <option value="option_2" {if $RADIO_APPLIED_PACKAGE == 'option_2'}selected{/if}>Option 2: 50 Prime Live Reads (Weekly - R6,999)</option>
+                <option value="option_3" {if $RADIO_APPLIED_PACKAGE == 'option_3'}selected{/if}>Option 3: 120 Prime Recorded Ads (Monthly - R15,999)</option>
+                <option value="option_4" {if $RADIO_APPLIED_PACKAGE == 'option_4'}selected{/if}>Option 4: 120 Prime Live Reads (Monthly - R16,999)</option>
             </select>
         </div>
 
         <div>
             <button type="button"
-                    id="pukfm_toggle_avails"
+                    id="radio_toggle_avails"
                     class="button"
                     style="padding: 6px 14px; background: #0969da; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
                 📊 Station Avails
@@ -95,7 +95,7 @@
         <!-- RADIO_CLEAR_ALL_SPOTS_START -->
         <div>
             <button type="button"
-                    id="pukfm_clear_all_spots"
+                    id="radio_clear_all_spots"
                     class="button"
                     style="padding: 6px 14px; background: #d9534f; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
                 Clear All Spots
@@ -104,31 +104,31 @@
         <!-- RADIO_CLEAR_ALL_SPOTS_END -->
     </div>
 
-    <div id="pukfm_capacity_warning_msg"
+    <div id="radio_capacity_warning_msg"
          style="display: none; margin-bottom: 12px; padding: 10px 14px; background: #fff8c5; border: 1px solid #d4a72c; color: #7d4e00; border-radius: 4px; font-weight: 600;">
     </div>
 
-    <div id="pukfm_conflict_warning_msg"
+    <div id="radio_conflict_warning_msg"
          style="display: none; margin-bottom: 12px; padding: 10px 14px; background: #fff1e5; border: 1px solid #f97515; color: #9a3412; border-radius: 4px; font-weight: 600;">
     </div>
 
-    <div id="pukfm_schedule_validation_msg"
+    <div id="radio_schedule_validation_msg"
          style="display: none; margin-bottom: 12px; padding: 8px 12px; background: #ffebe9; border: 1px solid #ff818266; color: #cf222e; border-radius: 4px; font-weight: 600;">
     </div>
 
-    <div id="pukfm_weekly_total_bar"
+    <div id="radio_weekly_total_bar"
          style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center; margin-bottom: 12px; padding: 10px 14px; background: #ddf4ff; border: 1px solid #54aeff66; border-radius: 4px; font-size: 14px; font-weight: 600; color: #0969da;">
         <div>
-            Total Spots: <span id="radio_total_spots_detail">{$PUKFM_TOTAL_SPOTS|default:0}</span>
+            Total Spots: <span id="radio_total_spots_detail">{$RADIO_TOTAL_SPOTS|default:0}</span>
         </div>
         <div>
-            Weekly spots: <span id="pukfm_weekly_total">{$PUKFM_WEEKLY_SPOTS|default:0}</span>
+            Weekly spots: <span id="radio_weekly_total">{$RADIO_WEEKLY_SPOTS|default:0}</span>
         </div>
-        <div id="pukfm_sync_status" style="font-size: 12px; font-weight: normal; color: #57606a;"></div>
+        <div id="radio_sync_status" style="font-size: 12px; font-weight: normal; color: #57606a;"></div>
     </div>
 
     <div style="overflow-x: auto;">
-        <table id="pukfm_schedule_table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <table id="radio_schedule_table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
             <thead>
                 <tr style="background: #24292f; color: #ffffff; text-align: center;">
                     <th style="padding: 8px; border: 1px solid #d0d7de; text-align: left; min-width: 160px;">Slot</th>
@@ -143,7 +143,7 @@
                 </tr>
             </thead>
             <tbody>
-                {foreach from=$PUKFM_SLOTS key=slotKey item=slot}
+                {foreach from=$RADIO_SLOTS key=slotKey item=slot}
                     {assign var="hourCount" value=$slot.hours|@count}
                     {assign var="hourIndex" value=0}
                     {foreach from=$slot.hours key=hourKey item=hourInfo}
@@ -160,9 +160,9 @@
                             <td style="padding: 6px 8px; border: 1px solid #d0d7de; text-align: center; font-family: monospace; white-space: nowrap;">
                                 {$hourInfo.label|escape:'html'}
                             </td>
-                            {foreach from=$PUKFM_DAYS key=dayKey item=dayInfo}
+                            {foreach from=$RADIO_DAYS key=dayKey item=dayInfo}
                                 {assign var="fieldName" value="`$dayKey`_`$slotKey`_`$hourKey`_c"}
-                                {assign var="cellVal" value=$PUKFM_CELL_VALUES[$fieldName]|default:0}
+                                {assign var="cellVal" value=$RADIO_CELL_VALUES[$fieldName]|default:0}
                                 <td style="padding: 4px; border: 1px solid #d0d7de; text-align: center;">
                                     <input type="number"
                                            min="0"
@@ -175,7 +175,7 @@
                                            data-slot="{$slotKey}"
                                            data-part-number="{$slot.part_number|escape:'html'}"
                                            data-hour="{$hourKey}"
-                                           class="pukfm-schedule-cell"
+                                           class="radio-schedule-cell"
                                            style="width: 58px; padding: 4px; text-align: center; border: 1px solid #c0c7cf; border-radius: 3px;" />
                                 </td>
                             {/foreach}
@@ -258,12 +258,12 @@
 
     function getScheduleInputs() {
         return Array.prototype.slice.call(
-            document.querySelectorAll('#weekly_advert_schedule_wrapper input.pukfm-schedule-cell')
+            document.querySelectorAll('#weekly_advert_schedule_wrapper input.radio-schedule-cell')
         );
     }
 
     function showValidationMessage(msg) {
-        var box = document.getElementById('pukfm_schedule_validation_msg');
+        var box = document.getElementById('radio_schedule_validation_msg');
         if (!box) return;
         if (msg) {
             box.textContent = msg;
@@ -462,7 +462,7 @@
             showValidationMessage(validationMsg);
         }
 
-        var weeklyEl = document.getElementById('pukfm_weekly_total');
+        var weeklyEl = document.getElementById('radio_weekly_total');
         var totalEl = document.getElementById('radio_total_spots_detail');
         if (weeklyEl) weeklyEl.textContent = String(weeklySpots);
         if (totalEl) totalEl.textContent = String(dateRangeValid ? totalSpots : 0);
@@ -523,7 +523,7 @@
     function triggerAjaxSync(state) {
         if (!state.valid) return;
         var currentSeq = ++ajaxSeq;
-        var statusEl = document.getElementById('pukfm_sync_status');
+        var statusEl = document.getElementById('radio_sync_status');
         if (statusEl) statusEl.textContent = 'Syncing schedule totals...';
 
         var formEl = document.getElementById('EditView');
@@ -561,7 +561,7 @@
                 return;
             }
             if (data && data.success) {
-                var weeklyEl = document.getElementById('pukfm_weekly_total');
+                var weeklyEl = document.getElementById('radio_weekly_total');
                 var totalEl = document.getElementById('radio_total_spots_detail');
                 if (weeklyEl) weeklyEl.textContent = String(data.weekly_spots);
                 if (totalEl) totalEl.textContent = String(data.total_spots);
@@ -569,7 +569,7 @@
                 if (statusEl) statusEl.textContent = '';
 
                 // Handle capacity warnings
-                var capEl = document.getElementById('pukfm_capacity_warning_msg');
+                var capEl = document.getElementById('radio_capacity_warning_msg');
                 if (capEl) {
                     if (data.capacity && !data.capacity.valid && data.capacity.violations) {
                         var vKeys = Object.keys(data.capacity.violations);
@@ -582,7 +582,7 @@
                 }
 
                 // Handle category conflict warnings
-                var confEl = document.getElementById('pukfm_conflict_warning_msg');
+                var confEl = document.getElementById('radio_conflict_warning_msg');
                 if (confEl) {
                     if (data.conflicts && data.conflicts.length > 0) {
                         var compNames = [];
@@ -629,7 +629,7 @@
         var endInput = document.getElementById('campaign_end_date_c');
         var startVal = startInput ? startInput.value : '';
         var endVal = endInput ? endInput.value : '';
-        var btn = document.getElementById('pukfm_toggle_avails');
+        var btn = document.getElementById('radio_toggle_avails');
 
         if (availsActive) {
             availsActive = false;
@@ -757,7 +757,7 @@
             pkgSelect.addEventListener('change', function() { applyPackagePreset(pkgSelect.value); });
         }
 
-        var availsBtn = document.getElementById('pukfm_toggle_avails');
+        var availsBtn = document.getElementById('radio_toggle_avails');
         if (availsBtn) {
             availsBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -765,7 +765,7 @@
             });
         }
 
-        var clearBtn = document.getElementById('pukfm_clear_all_spots');
+        var clearBtn = document.getElementById('radio_clear_all_spots');
         if (clearBtn) {
             clearBtn.addEventListener('click', function(e) {
                 e.preventDefault();

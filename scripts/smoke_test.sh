@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "============================================================"
-echo "PUKfm Radio CRM - End-to-End Smoke & Acceptance Tests"
+echo "Radio CRM - End-to-End Smoke & Acceptance Tests"
 echo "============================================================"
 
 # 1. Verify database schema counts (Section 16.3)

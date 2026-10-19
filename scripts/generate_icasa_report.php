@@ -19,16 +19,28 @@ if (!defined('sugarEntry')) {
 }
 require_once 'include/entryPoint.php';
 require_once 'custom/include/RadioCRM/RadioScheduleService.php';
+require_once 'custom/include/RadioCRM/RadioStationConfigService.php';
 
 use RadioCRM\RadioScheduleService;
+use RadioCRM\RadioStationConfigService;
 
 global $db;
+
+$stationSettings = class_exists('RadioCRM\RadioStationConfigService')
+    ? RadioStationConfigService::getSettings($db)
+    : [];
+$stationName = (string) ($stationSettings['station_name'] ?? 'Radio Station');
+$rawCallsign = (string) ($stationSettings['station_callsign'] ?? 'Radio');
+$callsign = preg_replace('/[^a-zA-Z0-9_-]/', '', $rawCallsign);
+if ($callsign === '') {
+    $callsign = 'Radio';
+}
 
 $year = isset($argv[1]) ? (int) $argv[1] : (int) date('Y');
 $month = isset($argv[2]) ? (int) $argv[2] : (int) date('n');
 
 echo "============================================================\n";
-echo sprintf("PUKfm 93.6 - ICASA / SAMRO Monthly Broadcast Report (%04d-%02d)\n", $year, $month);
+echo sprintf("%s - ICASA / SAMRO Monthly Broadcast Report (%04d-%02d)\n", $stationName, $year, $month);
 echo "============================================================\n";
 
 $report = RadioScheduleService::generateIcasaComplianceReport($year, $month, $db);
@@ -48,6 +60,6 @@ foreach ($report['by_category'] as $cat => $cnt) {
     echo sprintf("  - %-20s: %d plays\n", $cat, $cnt);
 }
 
-$exportFile = "/srv/myriad_exports/PUKfm_ICASA_Report_{$year}_{$month}.csv";
+$exportFile = "/srv/myriad_exports/{$callsign}_ICASA_Report_{$year}_{$month}.csv";
 file_put_contents($exportFile, $report['csv']);
 echo "\nDetailed CSV report exported to: {$exportFile}\n";

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * PUKfm Radio CRM - CLI Station Setup & Profile Importer
+ * Radio CRM - CLI Station Setup & Profile Importer
  * Usage:
  *   php scripts/setup_station.php [--profile=path/to/station_profile.json]
  *   php scripts/setup_station.php [--export=path/to/export.json]
@@ -28,7 +28,7 @@ $current_user = BeanFactory::newBean('Users');
 $current_user->getSystemUser();
 
 echo "============================================================\n";
-echo "PUKfm Radio CRM - Station Setup & Configuration Manager\n";
+echo "Radio CRM - Station Setup & Configuration Manager\n";
 echo "============================================================\n";
 
 $options = getopt('', ['profile:', 'export:', 'status']);

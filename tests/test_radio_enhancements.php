@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * PUKfm Radio CRM - Test Suite for Radio Station Market Enhancements
+ * Radio CRM - Test Suite for Radio Station Market Enhancements
  * Tests:
  * 1. Station Hourly Capacity Check (>20 cap)
  * 2. Category Clash / Separation Detection
@@ -25,15 +25,17 @@ if (!defined('sugarEntry')) {
 }
 require_once 'include/entryPoint.php';
 require_once 'custom/include/RadioCRM/RadioScheduleService.php';
+require_once 'custom/include/RadioCRM/RadioStationConfigService.php';
 
 use RadioCRM\RadioScheduleService;
+use RadioCRM\RadioStationConfigService;
 
 global $current_user, $db;
 $current_user = BeanFactory::newBean('Users');
 $current_user->getSystemUser();
 
 echo "======================================================================\n";
-echo "PUKfm Radio CRM - Testing Radio Station Market Enhancements\n";
+echo "Radio CRM - Testing Radio Station Market Enhancements\n";
 echo "======================================================================\n";
 
 $passCount = 0;
@@ -126,7 +128,7 @@ $testCampId = $testCamp->save();
 
 // Create sample Myriad log file in /srv/myriad_reconciliation
 $sampleLogDir = '/srv/myriad_reconciliation';
-$sampleLogFile = $sampleLogDir . '/PUKfm_Adverts_20261010_Test_Playout.log';
+$sampleLogFile = $sampleLogDir . '/Radio_Adverts_20261010_Test_Playout.log';
 $sampleLogLines = [
     "| |07:15:00|2050|00:30|AUDIO|Reconciliation Test Campaign|",
     "| |07:45:00|2050|00:30|AUDIO|Reconciliation Test Campaign|",
@@ -173,10 +175,12 @@ assertCheck(
 // Test 5: Broadcast Affidavit (Proof of Performance)
 $affidavitRes = $scheduleService->generateBroadcastAffidavitHtml($testCampId);
 $affidavitHtml = (string) ($affidavitRes['html'] ?? '');
+$stSettings = RadioStationConfigService::getSettings($db);
+$expectedStationName = (string) ($stSettings['station_name'] ?? 'Radio');
 assertCheck(
     ($affidavitRes['success'] ?? false) === true &&
     strpos($affidavitHtml, 'BROADCAST AFFIDAVIT') !== false &&
-    strpos($affidavitHtml, 'PUKfm 93.6') !== false &&
+    strpos($affidavitHtml, $expectedStationName) !== false &&
     strpos($affidavitHtml, 'Reconciliation Test Campaign') !== false &&
     strpos($affidavitHtml, '2050') !== false,
     'T5: Broadcast Affidavit HTML contains certified header, station brand, and playout rows',

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * PUKfm Radio CRM - Test Suite for Station Setup Wizard & Branding Configuration
+ * Radio CRM - Test Suite for Station Setup Wizard & Branding Configuration
  * Tests:
  * 1. Settings Table & Default Configuration
  * 2. Branding & Station Identity Updates
@@ -36,7 +36,7 @@ $current_user = BeanFactory::newBean('Users');
 $current_user->getSystemUser();
 
 echo "======================================================================\n";
-echo "PUKfm Radio CRM - Testing Station Setup Wizard & Branding Architecture\n";
+echo "Radio CRM - Testing Station Setup Wizard & Branding Architecture\n";
 echo "======================================================================\n";
 
 $passCount = 0;
@@ -58,6 +58,7 @@ function assertCheck(bool $condition, string $label, string $details = ''): void
 // -------------------------------------------------------------
 RadioStationConfigService::ensureTableExists($db);
 $settings = RadioStationConfigService::getSettings($db);
+$initialSettings = $settings;
 assertCheck(
     isset($settings['station_name']) &&
     isset($settings['slots']) &&
@@ -156,38 +157,15 @@ assertCheck(
     'jsonLength=' . strlen($exportedJson)
 );
 
-// Reset to standard PUKfm defaults via import
-$pukfmProfile = [
-    'station_name' => 'PUKfm 93.6',
-    'station_callsign' => 'PUKfm',
-    'station_frequency' => '93.6 FM',
-    'station_tagline' => 'meer as net radio | more than just radio',
-    'station_logo_url' => 'custom/include/RadioCRM/pukfm_logo_round.jpeg',
-    'station_manager_name' => 'Station Manager / Traffic Director',
-    'station_email' => 'traffic@pukfm.co.za',
-    'station_phone' => '+27 18 299 1111',
-    'studio_address' => 'NWU Campus, Hoffman St, Potchefstroom, 2531, South Africa',
-    'vat_number' => '4010199360',
-    'vat_rate' => 15.0,
-    'currency_symbol' => 'R',
-    'currency_iso' => 'ZAR',
-    'hourly_capacity' => 20,
-    'max_ad_minutes_per_hour' => 10.0,
-    'cart_range_start' => 2000,
-    'cart_range_end' => 2999,
-    'playout_log_dir' => '/srv/myriad_reconciliation',
-    'export_dir' => '/srv/myriad_exports',
-    'station_configured' => true,
-    'slots' => RadioStationConfigService::DEFAULT_SLOTS,
-];
-$reimported = RadioStationConfigService::importProfileJson(json_encode($pukfmProfile), $db);
+// Reset to initial station profile via import
+$reimported = RadioStationConfigService::importProfileJson(json_encode($initialSettings), $db);
 $finalSettings = RadioStationConfigService::getSettings($db);
 assertCheck(
     $reimported &&
-    $finalSettings['station_name'] === 'PUKfm 93.6' &&
-    $finalSettings['hourly_capacity'] === 20 &&
-    $finalSettings['cart_range_start'] === 2000,
-    'W5.2: Restored standard PUKfm 93.6 profile with 20 cap and 2000 cart start',
+    $finalSettings['station_name'] === $initialSettings['station_name'] &&
+    $finalSettings['hourly_capacity'] === $initialSettings['hourly_capacity'] &&
+    $finalSettings['cart_range_start'] === $initialSettings['cart_range_start'],
+    'W5.2: Restored initial station profile (' . $initialSettings['station_name'] . ')',
     "station={$finalSettings['station_name']}"
 );
 
@@ -207,8 +185,8 @@ assertCheck(
 // -------------------------------------------------------------
 $cliOutput = shell_exec('php /opt/radio_crm_repo/scripts/setup_station.php 2>&1');
 assertCheck(
-    strpos((string)$cliOutput, 'PUKfm Radio CRM - Station Setup') !== false &&
-    strpos((string)$cliOutput, 'PUKfm 93.6') !== false &&
+    strpos((string)$cliOutput, 'Radio CRM - Station Setup') !== false &&
+    strpos((string)$cliOutput, (string)$initialSettings['station_name']) !== false &&
     strpos((string)$cliOutput, 'Configured Show Slots') !== false,
     'W7: CLI setup script (scripts/setup_station.php) executes cleanly and outputs station report',
     'outputLength=' . strlen((string)$cliOutput)

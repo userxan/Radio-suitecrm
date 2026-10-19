@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Migration 006: Radio Station Settings Table & Initial Profile Seeding
  * Creates radio_station_settings table.
  * If station_profile.json exists in the repository root, imports it.
- * Otherwise seeds default PUKfm 93.6 configuration.
+ * Otherwise seeds generic default station configuration.
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -40,7 +40,7 @@ if (file_exists($profilePath)) {
     $res = $db->query("SELECT COUNT(*) AS total FROM " . RadioStationConfigService::TABLE_NAME, false);
     $cnt = $res ? (int) ($db->fetchByAssoc($res)['total'] ?? 0) : 0;
     if ($cnt === 0) {
-        echo "  + Seeding default PUKfm 93.6 station configuration...\n";
+        echo "  + Seeding default station configuration...\n";
         $initial = RadioStationConfigService::DEFAULT_SETTINGS;
         $initial['slots'] = RadioStationConfigService::DEFAULT_SLOTS;
         $initial['station_configured'] = false; // Fresh install flag

@@ -146,7 +146,7 @@ $viewdefs[$module_name] = [
                     0 => [
                         'name' => 'campaign_start_date_c',
                         'label' => 'LBL_WEEKLY_ADVERT_SCHEDULE',
-                        'customCode' => '<div id="pukfm_weekly_total_bar">Total Spots: <strong id="radio_total_spots_detail">{$PUKFM_TOTAL_SPOTS|default:0}</strong> &nbsp;|&nbsp; Weekly spots: <strong id="pukfm_weekly_total">{$PUKFM_WEEKLY_SPOTS|default:0}</strong></div>',
+                        'customCode' => '<div id="radio_weekly_total_bar">Total Spots: <strong id="radio_total_spots_detail">{$RADIO_TOTAL_SPOTS|default:0}</strong> &nbsp;|&nbsp; Weekly spots: <strong id="radio_weekly_total">{$RADIO_WEEKLY_SPOTS|default:0}</strong></div>',
                     ],
                     1 => '',
                 ],

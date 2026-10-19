@@ -13,7 +13,7 @@ This repository contains the complete, reproducible source code, Docker infrastr
 
 ### Master Install in 3 Steps:
 ```bash
-git clone https://github.com/userxan/pukfm-suitecrm.git /opt/suitecrm && cd /opt/suitecrm
+git clone https://github.com/<your-username>/radio-crm.git /opt/suitecrm && cd /opt/suitecrm
 cp .env.example .env && nano .env
 docker compose up -d && sudo ./install_radio_crm.sh
 ```

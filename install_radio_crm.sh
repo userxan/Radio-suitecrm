@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "============================================================"
-echo "PUKfm Radio CRM - Master Installer & Verification Suite"
+echo "Radio CRM - Master Installer & Verification Suite"
 echo "============================================================"
 
 chmod +x \
@@ -29,5 +29,5 @@ chmod +x \
 "${REPO_DIR}/scripts/backup.sh" verified_release
 
 echo "============================================================"
-echo "PUKfm Radio CRM installation and verification COMPLETE!"
+echo "Radio CRM installation and verification COMPLETE!"
 echo "============================================================"

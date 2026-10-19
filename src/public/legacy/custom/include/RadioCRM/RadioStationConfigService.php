@@ -14,16 +14,16 @@ class RadioStationConfigService
     public const TABLE_NAME = 'radio_station_settings';
 
     public const DEFAULT_SETTINGS = [
-        'station_name' => 'PUKfm 93.6',
-        'station_callsign' => 'PUKfm',
-        'station_frequency' => '93.6 FM',
-        'station_tagline' => 'meer as net radio | more than just radio',
-        'station_logo_url' => 'custom/include/RadioCRM/pukfm_logo_round.jpeg',
+        'station_name' => 'Community Radio FM',
+        'station_callsign' => 'RADIO',
+        'station_frequency' => '101.5 FM',
+        'station_tagline' => 'Your Voice, Your Station',
+        'station_logo_url' => 'custom/include/RadioCRM/radio_station_logo.png',
         'station_manager_name' => 'Station Manager / Traffic Director',
-        'station_email' => 'traffic@pukfm.co.za',
-        'station_phone' => '+27 18 299 1111',
-        'studio_address' => 'NWU Campus, Hoffman St, Potchefstroom, 2531, South Africa',
-        'vat_number' => '4010199360',
+        'station_email' => 'traffic@station.local',
+        'station_phone' => '+27 11 000 0000',
+        'studio_address' => 'Broadcast House, 1 Radio Boulevard, Studio City',
+        'vat_number' => '4000123456',
         'vat_rate' => 15.0,
         'currency_symbol' => 'R',
         'currency_iso' => 'ZAR',
@@ -296,9 +296,9 @@ class RadioStationConfigService
 
         $templateId = 'f4b47a53-2fc1-469c-a5c2-fae4dba3cf55';
         $siteUrl = rtrim((string) ($GLOBALS['sugar_config']['site_url'] ?? ''), '/');
-        $stationName = htmlspecialchars((string) ($branding['station_name'] ?? 'PUKfm 93.6'), ENT_QUOTES);
-        $stationTagline = htmlspecialchars((string) ($branding['station_tagline'] ?? 'meer as net radio | more than just radio'), ENT_QUOTES);
-        $logoUrl = (string) ($branding['station_logo_url'] ?? 'custom/include/RadioCRM/pukfm_logo_round.jpeg');
+        $stationName = htmlspecialchars((string) ($branding['station_name'] ?? 'Community Radio FM'), ENT_QUOTES);
+        $stationTagline = htmlspecialchars((string) ($branding['station_tagline'] ?? 'Your Voice, Your Station'), ENT_QUOTES);
+        $logoUrl = (string) ($branding['station_logo_url'] ?? 'custom/include/RadioCRM/radio_station_logo.png');
         $fullLogoUrl = str_starts_with($logoUrl, 'http') ? $logoUrl : "{$siteUrl}/legacy/{$logoUrl}";
 
         $purple = '#6B2C91';

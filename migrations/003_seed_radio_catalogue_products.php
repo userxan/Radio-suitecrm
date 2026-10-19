@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Migration 003: Idempotently seed the 8 definitive PUKfm radio programme products in aos_products
+ * Migration 003: Idempotently seed the 8 definitive radio programme products in aos_products
  * and ensure a default Quote PDF template exists in aos_pdf_templates (Section 7.1, 11, 16.3).
  */
 
@@ -69,7 +69,7 @@ $customExtLangDir = $legacyDir . '/custom/Extension/application/Ext/Language';
 if (!is_dir($customExtLangDir)) {
     mkdir($customExtLangDir, 0775, true);
 }
-file_put_contents($customExtLangDir . '/en_us.pukfm_vat_list.php', $langContent);
+file_put_contents($customExtLangDir . '/en_us.radio_vat_list.php', $langContent);
 
 if (file_exists('include/portability/Services/Cache/CacheManager.php')) {
     require_once 'include/portability/Services/Cache/CacheManager.php';
@@ -99,32 +99,32 @@ if ($cnt !== 8) {
     exit(1);
 }
 
-echo "[Migration 003] Ensuring product categories and all PUKfm Rate Card 2026 items exist in aos_products...\n";
+echo "[Migration 003] Ensuring product categories and all Radio Rate Card items exist in aos_products...\n";
 
 $categoriesDef = [
     'schedule' => [
         'name' => 'Radio Programme Schedule',
-        'description' => 'PUKfm 93.6 weekly programme schedule slots for automated quote schedule calculation.',
+        'description' => 'Radio station weekly programme schedule slots for automated quote schedule calculation.',
     ],
     'recorded_ads' => [
         'name' => 'Recorded Ads (30 Seconds)',
-        'description' => 'PUKfm Rate Card 2026 - Radio Advertising Rates: Recorded Ads (30 Seconds) (Monday-Friday & Saturday-Sunday). Prices exclude VAT.',
+        'description' => 'Radio Rate Card - Radio Advertising Rates: Recorded Ads (30 Seconds) (Monday-Friday & Saturday-Sunday). Prices exclude VAT.',
     ],
     'live_reads' => [
         'name' => 'Live Reads (30 Seconds)',
-        'description' => 'PUKfm Rate Card 2026 - Radio Advertising Rates: Live Reads (30 Seconds) (Monday-Friday & Saturday-Sunday). Prices exclude VAT.',
+        'description' => 'Radio Rate Card - Radio Advertising Rates: Live Reads (30 Seconds) (Monday-Friday & Saturday-Sunday). Prices exclude VAT.',
     ],
     'packages' => [
         'name' => 'Advertising Packages',
-        'description' => 'PUKfm Rate Card 2026 - Weekly and Monthly Prime Time Advertising Packages (Options 1 to 4). Prices exclude VAT.',
+        'description' => 'Radio Rate Card - Weekly and Monthly Prime Time Advertising Packages (Options 1 to 4). Prices exclude VAT.',
     ],
     'social_media' => [
         'name' => 'Social Media Advertising',
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising Rates (@PUKfm936 on Facebook, TikTok, Instagram, Twitter/X). Prices exclude VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising Rates (@stationhandle on Facebook, TikTok, Instagram, Twitter/X). Prices exclude VAT.',
     ],
     'misc' => [
         'name' => 'Misc. Rates',
-        'description' => 'PUKfm Rate Card 2026 - Miscellaneous Rates (Interviews, Powerspots, Sponsored Content Segments, Outside Broadcasts, Simulcasts). Prices exclude VAT.',
+        'description' => 'Radio Rate Card - Miscellaneous Rates (Interviews, Powerspots, Sponsored Content Segments, Outside Broadcasts, Simulcasts). Prices exclude VAT.',
     ],
 ];
 
@@ -173,7 +173,7 @@ $db->query(
     false
 );
 
-// All 46 items from PUKfm_Rate_Card_2026.pdf
+// All 46 items from Radio_Rate_Card_2026.pdf
 $rateCardProducts = [
     // Page 6: Radio Advertising Rates - Recorded Ads (30 Seconds) - Monday to Friday
     [
@@ -182,7 +182,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 350.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Monday to Friday, 06:00 - 09:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Monday to Friday, 06:00 - 09:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'REC-30S-MF-0900-1200',
@@ -190,7 +190,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 320.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Monday to Friday, 09:00 - 12:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Monday to Friday, 09:00 - 12:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'REC-30S-MF-1200-1500',
@@ -198,7 +198,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 350.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Monday to Friday, 12:00 - 15:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Monday to Friday, 12:00 - 15:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'REC-30S-MF-1500-1800',
@@ -206,7 +206,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 350.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Monday to Friday, 15:00 - 18:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Monday to Friday, 15:00 - 18:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'REC-30S-MF-1800-2100',
@@ -214,7 +214,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 300.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Monday to Friday, 18:00 - 21:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Monday to Friday, 18:00 - 21:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'REC-30S-MF-2100-0000',
@@ -222,7 +222,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 220.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Monday to Friday, 21:00 - 00:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Monday to Friday, 21:00 - 00:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'REC-30S-MF-0000-0600',
@@ -230,7 +230,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 120.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Monday to Friday, 00:00 - 06:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Monday to Friday, 00:00 - 06:00. Price excludes VAT.',
     ],
 
     // Page 6: Radio Advertising Rates - Recorded Ads (30 Seconds) - Saturday and Sunday
@@ -240,7 +240,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 120.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Saturday and Sunday, 00:00 - 06:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Saturday and Sunday, 00:00 - 06:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'REC-30S-SS-0600-1000',
@@ -248,7 +248,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 300.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Saturday and Sunday, 06:00 - 10:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Saturday and Sunday, 06:00 - 10:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'REC-30S-SS-1000-1400',
@@ -256,7 +256,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 350.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Saturday and Sunday, 10:00 - 14:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Saturday and Sunday, 10:00 - 14:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'REC-30S-SS-1400-1800',
@@ -264,7 +264,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 350.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Saturday and Sunday, 14:00 - 18:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Saturday and Sunday, 14:00 - 18:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'REC-30S-SS-1800-2200',
@@ -272,7 +272,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 220.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Saturday and Sunday, 18:00 - 22:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Saturday and Sunday, 18:00 - 22:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'REC-30S-SS-2200-0000',
@@ -280,7 +280,7 @@ $rateCardProducts = [
         'category_key' => 'recorded_ads',
         'type' => 'Good',
         'price' => 120.00,
-        'description' => 'PUKfm Rate Card 2026 - Recorded Ads (30 Seconds), Saturday and Sunday, 22:00 - 00:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Recorded Ads (30 Seconds), Saturday and Sunday, 22:00 - 00:00. Price excludes VAT.',
     ],
 
     // Page 7: Radio Advertising Rates - Live Reads (30 Seconds) - Monday to Friday
@@ -290,7 +290,7 @@ $rateCardProducts = [
         'category_key' => 'live_reads',
         'type' => 'Good',
         'price' => 380.00,
-        'description' => 'PUKfm Rate Card 2026 - Live Reads (30 Seconds), Monday to Friday, 06:00 - 09:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Live Reads (30 Seconds), Monday to Friday, 06:00 - 09:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'LIVE-30S-MF-0900-1200',
@@ -298,7 +298,7 @@ $rateCardProducts = [
         'category_key' => 'live_reads',
         'type' => 'Good',
         'price' => 350.00,
-        'description' => 'PUKfm Rate Card 2026 - Live Reads (30 Seconds), Monday to Friday, 09:00 - 12:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Live Reads (30 Seconds), Monday to Friday, 09:00 - 12:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'LIVE-30S-MF-1200-1500',
@@ -306,7 +306,7 @@ $rateCardProducts = [
         'category_key' => 'live_reads',
         'type' => 'Good',
         'price' => 380.00,
-        'description' => 'PUKfm Rate Card 2026 - Live Reads (30 Seconds), Monday to Friday, 12:00 - 15:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Live Reads (30 Seconds), Monday to Friday, 12:00 - 15:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'LIVE-30S-MF-1500-1800',
@@ -314,7 +314,7 @@ $rateCardProducts = [
         'category_key' => 'live_reads',
         'type' => 'Good',
         'price' => 380.00,
-        'description' => 'PUKfm Rate Card 2026 - Live Reads (30 Seconds), Monday to Friday, 15:00 - 18:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Live Reads (30 Seconds), Monday to Friday, 15:00 - 18:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'LIVE-30S-MF-1800-2100',
@@ -322,7 +322,7 @@ $rateCardProducts = [
         'category_key' => 'live_reads',
         'type' => 'Good',
         'price' => 300.00,
-        'description' => 'PUKfm Rate Card 2026 - Live Reads (30 Seconds), Monday to Friday, 18:00 - 21:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Live Reads (30 Seconds), Monday to Friday, 18:00 - 21:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'LIVE-30S-MF-2100-0000',
@@ -330,7 +330,7 @@ $rateCardProducts = [
         'category_key' => 'live_reads',
         'type' => 'Good',
         'price' => 250.00,
-        'description' => 'PUKfm Rate Card 2026 - Live Reads (30 Seconds), Monday to Friday, 21:00 - 00:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Live Reads (30 Seconds), Monday to Friday, 21:00 - 00:00. Price excludes VAT.',
     ],
 
     // Page 7: Radio Advertising Rates - Live Reads (30 Seconds) - Saturday and Sunday
@@ -340,7 +340,7 @@ $rateCardProducts = [
         'category_key' => 'live_reads',
         'type' => 'Good',
         'price' => 380.00,
-        'description' => 'PUKfm Rate Card 2026 - Live Reads (30 Seconds), Saturday and Sunday, 06:00 - 10:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Live Reads (30 Seconds), Saturday and Sunday, 06:00 - 10:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'LIVE-30S-SS-1000-1400',
@@ -348,7 +348,7 @@ $rateCardProducts = [
         'category_key' => 'live_reads',
         'type' => 'Good',
         'price' => 350.00,
-        'description' => 'PUKfm Rate Card 2026 - Live Reads (30 Seconds), Saturday and Sunday, 10:00 - 14:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Live Reads (30 Seconds), Saturday and Sunday, 10:00 - 14:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'LIVE-30S-SS-1400-1800',
@@ -356,7 +356,7 @@ $rateCardProducts = [
         'category_key' => 'live_reads',
         'type' => 'Good',
         'price' => 380.00,
-        'description' => 'PUKfm Rate Card 2026 - Live Reads (30 Seconds), Saturday and Sunday, 14:00 - 18:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Live Reads (30 Seconds), Saturday and Sunday, 14:00 - 18:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'LIVE-30S-SS-1800-2200',
@@ -364,7 +364,7 @@ $rateCardProducts = [
         'category_key' => 'live_reads',
         'type' => 'Good',
         'price' => 250.00,
-        'description' => 'PUKfm Rate Card 2026 - Live Reads (30 Seconds), Saturday and Sunday, 18:00 - 22:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Live Reads (30 Seconds), Saturday and Sunday, 18:00 - 22:00. Price excludes VAT.',
     ],
     [
         'part_number' => 'LIVE-30S-SS-2200-0000',
@@ -372,7 +372,7 @@ $rateCardProducts = [
         'category_key' => 'live_reads',
         'type' => 'Good',
         'price' => 150.00,
-        'description' => 'PUKfm Rate Card 2026 - Live Reads (30 Seconds), Saturday and Sunday, 22:00 - 00:00. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Live Reads (30 Seconds), Saturday and Sunday, 22:00 - 00:00. Price excludes VAT.',
     ],
 
     // Page 8: Advertising Packages
@@ -382,7 +382,7 @@ $rateCardProducts = [
         'category_key' => 'packages',
         'type' => 'Good',
         'price' => 5999.00,
-        'description' => 'PUKfm Rate Card 2026 - Weekly Package (Option 1): 50 Prime Time Recorded Ads. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Weekly Package (Option 1): 50 Prime Time Recorded Ads. Price excludes VAT.',
     ],
     [
         'part_number' => 'PKG-WK-OPT2-50-LIVE',
@@ -390,7 +390,7 @@ $rateCardProducts = [
         'category_key' => 'packages',
         'type' => 'Good',
         'price' => 6999.00,
-        'description' => 'PUKfm Rate Card 2026 - Weekly Package (Option 2): 50 Prime Time Live Reads. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Weekly Package (Option 2): 50 Prime Time Live Reads. Price excludes VAT.',
     ],
     [
         'part_number' => 'PKG-MO-OPT3-30X4-REC',
@@ -398,7 +398,7 @@ $rateCardProducts = [
         'category_key' => 'packages',
         'type' => 'Good',
         'price' => 15999.00,
-        'description' => 'PUKfm Rate Card 2026 - Monthly Package (Option 3): 30 Prime Time Recorded Ads x 4 weeks (120 ads total). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Monthly Package (Option 3): 30 Prime Time Recorded Ads x 4 weeks (120 ads total). Price excludes VAT.',
     ],
     [
         'part_number' => 'PKG-MO-OPT4-30X4-LIVE',
@@ -406,7 +406,7 @@ $rateCardProducts = [
         'category_key' => 'packages',
         'type' => 'Good',
         'price' => 16999.00,
-        'description' => 'PUKfm Rate Card 2026 - Monthly Package (Option 4): 30 Prime Time Live Reads x 4 weeks (120 live reads total). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Monthly Package (Option 4): 30 Prime Time Live Reads x 4 weeks (120 live reads total). Price excludes VAT.',
     ],
 
     // Page 11: Social Media Advertising Rates - Facebook
@@ -416,7 +416,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 1000.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (Facebook @PUKfm936): Sponsored Post. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (Facebook @stationhandle): Sponsored Post. Price excludes VAT.',
     ],
     [
         'part_number' => 'SOC-FB-STORY-POST-CMB',
@@ -424,7 +424,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 1200.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (Facebook @PUKfm936): Story/Post Combo. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (Facebook @stationhandle): Story/Post Combo. Price excludes VAT.',
     ],
     [
         'part_number' => 'SOC-FB-SPONS-PKG-4',
@@ -432,7 +432,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 1950.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (Facebook @PUKfm936): Sponsored Post Package (4 posts). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (Facebook @stationhandle): Sponsored Post Package (4 posts). Price excludes VAT.',
     ],
 
     // Page 11: Social Media Advertising Rates - TikTok
@@ -442,7 +442,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 400.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (TikTok @PUKfm936): Sponsored Post. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (TikTok @stationhandle): Sponsored Post. Price excludes VAT.',
     ],
     [
         'part_number' => 'SOC-TT-STORY-POST-CMB',
@@ -450,7 +450,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 800.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (TikTok @PUKfm936): Story/Post Combo. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (TikTok @stationhandle): Story/Post Combo. Price excludes VAT.',
     ],
     [
         'part_number' => 'SOC-TT-SPONS-PKG-4',
@@ -458,7 +458,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 1500.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (TikTok @PUKfm936): Sponsored Post Package (4 posts). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (TikTok @stationhandle): Sponsored Post Package (4 posts). Price excludes VAT.',
     ],
 
     // Page 11: Social Media Advertising Rates - Instagram
@@ -468,7 +468,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 500.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (Instagram @PUKfm936): Sponsored Post. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (Instagram @stationhandle): Sponsored Post. Price excludes VAT.',
     ],
     [
         'part_number' => 'SOC-IG-STORY-POST-CMB',
@@ -476,7 +476,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 700.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (Instagram @PUKfm936): Story/Post Combo. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (Instagram @stationhandle): Story/Post Combo. Price excludes VAT.',
     ],
     [
         'part_number' => 'SOC-IG-SPONS-PKG-4',
@@ -484,7 +484,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 1500.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (Instagram @PUKfm936): Sponsored Post Package (4 posts). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (Instagram @stationhandle): Sponsored Post Package (4 posts). Price excludes VAT.',
     ],
     [
         'part_number' => 'SOC-IG-STORY',
@@ -492,7 +492,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 400.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (Instagram @PUKfm936): Instagram Story. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (Instagram @stationhandle): Instagram Story. Price excludes VAT.',
     ],
 
     // Page 11: Social Media Advertising Rates - Twitter (X)
@@ -502,7 +502,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 500.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (Twitter/X @PUKfm936): Sponsored Tweet. Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (Twitter/X @stationhandle): Sponsored Tweet. Price excludes VAT.',
     ],
     [
         'part_number' => 'SOC-TW-PINNED-1MO',
@@ -510,7 +510,7 @@ $rateCardProducts = [
         'category_key' => 'social_media',
         'type' => 'Good',
         'price' => 1000.00,
-        'description' => 'PUKfm Rate Card 2026 - Social Media Advertising (Twitter/X @PUKfm936): Pinned Tweet (1 Month). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Social Media Advertising (Twitter/X @stationhandle): Pinned Tweet (1 Month). Price excludes VAT.',
     ],
 
     // Page 12: Misc. Rates
@@ -520,7 +520,7 @@ $rateCardProducts = [
         'category_key' => 'misc',
         'type' => 'Good',
         'price' => 2000.00,
-        'description' => 'PUKfm Rate Card 2026 - Misc. Rates: 10 Minute Interview (In-person/Telephonic). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Misc. Rates: 10 Minute Interview (In-person/Telephonic). Price excludes VAT.',
     ],
     [
         'part_number' => 'MISC-INT-30MIN',
@@ -528,7 +528,7 @@ $rateCardProducts = [
         'category_key' => 'misc',
         'type' => 'Good',
         'price' => 5000.00,
-        'description' => 'PUKfm Rate Card 2026 - Misc. Rates: 30 Minute Interview (In-person/Telephonic). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Misc. Rates: 30 Minute Interview (In-person/Telephonic). Price excludes VAT.',
     ],
     [
         'part_number' => 'MISC-POWERSPOT',
@@ -536,7 +536,7 @@ $rateCardProducts = [
         'category_key' => 'misc',
         'type' => 'Good',
         'price' => 500.00,
-        'description' => 'PUKfm Rate Card 2026 - Misc. Rates: Powerspot (Prime time shows). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Misc. Rates: Powerspot (Prime time shows). Price excludes VAT.',
     ],
     [
         'part_number' => 'MISC-SPONS-SEGMENT',
@@ -544,15 +544,15 @@ $rateCardProducts = [
         'category_key' => 'misc',
         'type' => 'Good',
         'price' => 2500.00,
-        'description' => 'PUKfm Rate Card 2026 - Misc. Rates: Sponsored Content Segment (Prime time shows). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Misc. Rates: Sponsored Content Segment (Prime time shows). Price excludes VAT.',
     ],
     [
         'part_number' => 'MISC-OB-3HR-POTCH',
-        'name' => '3 Hour Outside Broadcast (Around Potchefstroom)',
+        'name' => '3 Hour Outside Broadcast (Local Broadcast Area)',
         'category_key' => 'misc',
         'type' => 'Good',
         'price' => 15000.00,
-        'description' => 'PUKfm Rate Card 2026 - Misc. Rates: 3 Hour Outside Broadcast (Around Potchefstroom) (with free spots worth R15,000). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Misc. Rates: 3 Hour Outside Broadcast (Local Broadcast Area) (with free spots worth R15,000). Price excludes VAT.',
     ],
     [
         'part_number' => 'MISC-SIMULCAST-3HR',
@@ -560,7 +560,7 @@ $rateCardProducts = [
         'category_key' => 'misc',
         'type' => 'Good',
         'price' => 12000.00,
-        'description' => 'PUKfm Rate Card 2026 - Misc. Rates: 3 Hour Simulcast (with free spots worth R12,000). Price excludes VAT.',
+        'description' => 'Radio Rate Card - Misc. Rates: 3 Hour Simulcast (with free spots worth R12,000). Price excludes VAT.',
     ],
 ];
 
@@ -625,7 +625,7 @@ foreach ($rateCardProducts as $item) {
     $seededRateCardCount++;
 }
 
-echo "  = Seeded/verified {$seededRateCardCount} PUKfm Rate Card 2026 products across " . count($categoryIds) . " categories.\n";
+echo "  = Seeded/verified {$seededRateCardCount} Radio Rate Card products across " . count($categoryIds) . " categories.\n";
 
 // Ensure at least one active AOS_Quotes PDF template exists in aos_pdf_templates so native Quote PDF generation works
 $tplRes = $db->query(
@@ -637,7 +637,7 @@ if (!$tplRow) {
     echo "  + Creating default AOS_Quotes PDF template in aos_pdf_templates...\n";
     $tplId = RadioQuoteScheduleProducts::generateUuid();
     $nowUtc = gmdate('Y-m-d H:i:s');
-    $headerHtml = '<p><strong>PUKfm Radio Quotation</strong></p>';
+    $headerHtml = '<p><strong>Radio Quotation</strong></p>';
     $bodyHtml = <<<'HTML'
 <h2>Quotation: $aos_quotes_name (Quote #$aos_quotes_number)</h2>
 <p><strong>Campaign Start Date:</strong> $aos_quotes_campaign_start_date_c &nbsp;&nbsp; <strong>Campaign End Date:</strong> $aos_quotes_campaign_end_date_c</p>
@@ -674,7 +674,7 @@ if (!$tplRow) {
     <strong>Grand Total (Incl. VAT):</strong> $aos_quotes_total_amount
 </p>
 HTML;
-    $footerHtml = '<p style="font-size: 10px;">Generated by PUKfm Radio CRM</p>';
+    $footerHtml = '<p style="font-size: 10px;">Generated by Radio CRM</p>';
 
     $sql = sprintf(
         "INSERT INTO aos_pdf_templates (
@@ -683,7 +683,7 @@ HTML;
             pdfheader, pdffooter, margin_left, margin_right, margin_top, margin_bottom,
             margin_header, margin_footer, page_size, orientation
         ) VALUES (
-            '%s', 'PUKfm Standard Quote PDF', '%s', '%s', '1', '1',
+            '%s', 'Standard Radio Quote PDF', '%s', '%s', '1', '1',
             '%s', 0, '1', 1, 'AOS_Quotes',
             '%s', '%s', 15, 15, 16, 16,
             9, 9, 'A4', 'Portrait'

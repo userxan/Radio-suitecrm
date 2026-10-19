@@ -810,11 +810,20 @@ class RadioScheduleService
         }
         @chmod($csvPath, 0664);
 
+        $stationSettings = class_exists('RadioStationConfigService')
+            ? RadioStationConfigService::getSettings()
+            : [];
+        $rawCallsign = (string) ($stationSettings['station_callsign'] ?? 'Radio');
+        $callsign = preg_replace('/[^a-zA-Z0-9_-]/', '', $rawCallsign);
+        if ($callsign === '') {
+            $callsign = 'Radio';
+        }
+
         // Atomic write for each active day's .log file (Section 14.5)
         $writtenLogs = [];
         foreach ($dailyLogLines as $dateYmd => $lines) {
             $ymdCompact = str_replace('-', '', $dateYmd);
-            $logFilename = "PUKfm_Adverts_{$ymdCompact}_{$safeName}_{$timestamp}.log";
+            $logFilename = "{$callsign}_Adverts_{$ymdCompact}_{$safeName}_{$timestamp}.log";
             $logPath = $dailyDir . '/' . $logFilename;
             $tmpLog = $logPath . '.tmp.' . uniqid('', true);
             $logContent = implode("\r\n", $lines) . "\r\n";
@@ -993,7 +1002,7 @@ class RadioScheduleService
     }
 
     /**
-     * Get definitive PUKfm rate card package definitions (Options 1 to 4).
+     * Get definitive radio rate card package definitions (Options 1 to 4).
      *
      * @return array<string, array{key:string, name:string, type:string, total_spots:int, rate:float, description:string, prime_slots:array<string, int>}>
      */
@@ -1513,15 +1522,15 @@ class RadioScheduleService
         }
 
         $stationSettings = RadioStationConfigService::getSettings($db);
-        $stName = htmlspecialchars((string) ($stationSettings['station_name'] ?? 'PUKfm 93.6'), ENT_QUOTES);
-        $stTagline = htmlspecialchars((string) ($stationSettings['station_tagline'] ?? 'meer as net radio | more than just radio'), ENT_QUOTES);
-        $stAddress = htmlspecialchars((string) ($stationSettings['studio_address'] ?? 'North-West University Potchefstroom Campus Radio'), ENT_QUOTES);
+        $stName = htmlspecialchars((string) ($stationSettings['station_name'] ?? 'Community Radio FM'), ENT_QUOTES);
+        $stTagline = htmlspecialchars((string) ($stationSettings['station_tagline'] ?? 'The Voice of the Community'), ENT_QUOTES);
+        $stAddress = htmlspecialchars((string) ($stationSettings['studio_address'] ?? 'Broadcast House, Studio 1'), ENT_QUOTES);
         $stManager = htmlspecialchars((string) ($stationSettings['station_manager_name'] ?? 'Station Manager / Programme Director'), ENT_QUOTES);
 
         $customLogoUrl = (string) ($stationSettings['station_logo_url'] ?? '');
         $logoPath = '/var/www/html/public/legacy/' . ltrim($customLogoUrl, '/');
         if (!file_exists($logoPath) || empty($customLogoUrl)) {
-            $logoPath = '/var/www/html/public/legacy/custom/include/RadioCRM/pukfm_logo_round.jpeg';
+            $logoPath = '/var/www/html/public/legacy/custom/include/RadioCRM/radio_station_logo.png';
         }
         $logoHtml = file_exists($logoPath)
             ? '<img src="' . $logoPath . '" width="60" height="60" style="vertical-align:middle;" />'

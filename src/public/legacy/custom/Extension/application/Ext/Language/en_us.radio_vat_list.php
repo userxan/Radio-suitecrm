@@ -1,5 +1,5 @@
 <?php
-// PUKfm 93.6 - South African Standard VAT (15%)
+// Radio CRM - Standard VAT Rate (15%)
 if (!isset($app_list_strings)) {
     $app_list_strings = [];
 }

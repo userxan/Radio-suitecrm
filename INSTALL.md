@@ -71,7 +71,7 @@ Clone the project repository into `/opt/suitecrm` (or your preferred deployment 
 
 ```bash
 # Clone the repository
-sudo git clone https://github.com/userxan/pukfm-suitecrm.git /opt/suitecrm
+sudo git clone https://github.com/<your-username>/radio-crm.git /opt/suitecrm
 
 # Grant ownership to your current user
 sudo chown -R $USER:$USER /opt/suitecrm
@@ -119,7 +119,7 @@ TZ=Africa/Johannesburg
 
 ## Step 4: Station Profile Customization (Optional)
 
-If you are deploying for a station other than PUKfm 93.6 and want to pre-seed their name, logo, show titles, and rate card **before** launching:
+If you want to pre-seed your station's custom name, logo, show titles, and rate card **before** launching:
 
 ```bash
 # Copy the example profile template
@@ -172,7 +172,7 @@ What the installer executes automatically:
 You should see:
 ```text
 All Smoke & Acceptance Tests PASSED.
-PUKfm Radio CRM installation and verification COMPLETE!
+Radio CRM installation and verification COMPLETE!
 ```
 
 ---

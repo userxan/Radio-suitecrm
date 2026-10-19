@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Mandatory End-to-End Acceptance Test Suite for PUKfm Radio CRM (Section 20: A1-A5, B1-B3, C1-C3, D1-D6, E1-E3).
+ * Mandatory End-to-End Acceptance Test Suite for Radio CRM (Section 20: A1-A5, B1-B3, C1-C3, D1-D6, E1-E3).
  * Executes against the live SuiteCRM 8.10.1 database, Beans, Logic Hooks, PDF engine, EntryPoints,
  * and Symfony ProcessHandler (ExportToMyriadAction).
  */
@@ -58,7 +58,7 @@ function assertTest(string $code, string $title, bool $condition, string $detail
 }
 
 echo "======================================================================\n";
-echo "PUKfm Radio CRM - Section 20 Mandatory End-to-End Acceptance Suite\n";
+echo "Radio CRM - Section 20 Mandatory End-to-End Acceptance Suite\n";
 echo "======================================================================\n";
 
 // Clean up any prior test quotes, campaigns, roles, and users so repeated runs leave a single clean verification record
@@ -641,10 +641,10 @@ $logDatesFound = [];
 $thuLogContentOk = false;
 foreach ($dailyLogs as $logFile) {
     if (file_exists($logFile)) {
-        if (preg_match('/PUKfm_Adverts_(\d{8})_/', basename($logFile), $m)) {
+        if (preg_match('/[A-Za-z0-9_-]+_Adverts_(\d{8})_/', basename($logFile), $m)) {
             $logDatesFound[] = $m[1];
         }
-        if (strpos(basename($logFile), 'PUKfm_Adverts_20260618_') === 0) {
+        if (preg_match('/^[A-Za-z0-9_-]+_Adverts_20260618_/', basename($logFile))) {
             $content = (string) file_get_contents($logFile);
             $expectedLog1 = '| |04:20:00|1|00:30|AUDIO|Radio Campaign - Test Radio Advert Quote - Music Unlimited|';
             $expectedLog2 = '| |04:40:00|1|00:30|AUDIO|Radio Campaign - Test Radio Advert Quote - Music Unlimited|';
@@ -805,7 +805,7 @@ $nonAdmin = BeanFactory::newBean('Users');
 $nonAdmin->user_name = 'radio_sales_rep_' . substr(md5((string) microtime(true)), 0, 6);
 $nonAdmin->first_name = 'Sales';
 $nonAdmin->last_name = 'Rep';
-$nonAdmin->email1 = $nonAdmin->user_name . '@pukfm.local';
+$nonAdmin->email1 = $nonAdmin->user_name . '@station.local';
 $nonAdmin->status = 'Active';
 $nonAdmin->is_admin = 0;
 $nonAdmin->save();

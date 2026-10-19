@@ -58,9 +58,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'import_json') {
 // -------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'save_wizard')) {
     $settingsData = [
-        'station_name' => trim((string) ($_POST['station_name'] ?? 'PUKfm 93.6')),
-        'station_callsign' => trim((string) ($_POST['station_callsign'] ?? 'PUKfm')),
-        'station_frequency' => trim((string) ($_POST['station_frequency'] ?? '93.6 FM')),
+        'station_name' => trim((string) ($_POST['station_name'] ?? 'Community Radio FM')),
+        'station_callsign' => trim((string) ($_POST['station_callsign'] ?? 'RADIO')),
+        'station_frequency' => trim((string) ($_POST['station_frequency'] ?? '101.5 FM')),
         'station_tagline' => trim((string) ($_POST['station_tagline'] ?? '')),
         'station_manager_name' => trim((string) ($_POST['station_manager_name'] ?? '')),
         'station_email' => trim((string) ($_POST['station_email'] ?? '')),
@@ -126,11 +126,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'save
 $cfg = RadioStationConfigService::getSettings($db);
 $slots = $cfg['slots'] ?? RadioStationConfigService::DEFAULT_SLOTS;
 
-$stationName = htmlspecialchars((string) ($cfg['station_name'] ?? 'PUKfm 93.6'), ENT_QUOTES);
-$stationCallsign = htmlspecialchars((string) ($cfg['station_callsign'] ?? 'PUKfm'), ENT_QUOTES);
-$stationFreq = htmlspecialchars((string) ($cfg['station_frequency'] ?? '93.6 FM'), ENT_QUOTES);
+$stationName = htmlspecialchars((string) ($cfg['station_name'] ?? 'Community Radio FM'), ENT_QUOTES);
+$stationCallsign = htmlspecialchars((string) ($cfg['station_callsign'] ?? 'RADIO'), ENT_QUOTES);
+$stationFreq = htmlspecialchars((string) ($cfg['station_frequency'] ?? '101.5 FM'), ENT_QUOTES);
 $stationTagline = htmlspecialchars((string) ($cfg['station_tagline'] ?? ''), ENT_QUOTES);
-$logoUrl = htmlspecialchars((string) ($cfg['station_logo_url'] ?? 'custom/include/RadioCRM/pukfm_logo_round.jpeg'), ENT_QUOTES);
+$logoUrl = htmlspecialchars((string) ($cfg['station_logo_url'] ?? 'custom/include/RadioCRM/radio_station_logo.png'), ENT_QUOTES);
 $managerName = htmlspecialchars((string) ($cfg['station_manager_name'] ?? ''), ENT_QUOTES);
 $email = htmlspecialchars((string) ($cfg['station_email'] ?? ''), ENT_QUOTES);
 $phone = htmlspecialchars((string) ($cfg['station_phone'] ?? ''), ENT_QUOTES);
@@ -446,30 +446,30 @@ body {
                     <div class="form-group">
                         <label for="station_name">Station Name *</label>
                         <input type="text" id="station_name" name="station_name" value="<?= $stationName ?>" required>
-                        <span class="hint">e.g. PUKfm 93.6 or Kovsie FM</span>
+                        <span class="hint">e.g. Metro FM or Voice of Cape Town</span>
                     </div>
                     <div class="form-group">
                         <label for="station_callsign">Callsign</label>
                         <input type="text" id="station_callsign" name="station_callsign" value="<?= $stationCallsign ?>">
-                        <span class="hint">Short station code (e.g. PUKfm)</span>
+                        <span class="hint">Short station code (e.g. RADIO)</span>
                     </div>
                     <div class="form-group">
                         <label for="station_frequency">On-Air Frequency</label>
                         <input type="text" id="station_frequency" name="station_frequency" value="<?= $stationFreq ?>">
-                        <span class="hint">e.g. 93.6 FM</span>
+                        <span class="hint">e.g. 101.5 FM</span>
                     </div>
                 </div>
 
                 <div class="form-group" style="margin-bottom:20px;">
                     <label for="station_tagline">Station Slogan / Tagline</label>
                     <input type="text" id="station_tagline" name="station_tagline" value="<?= $stationTagline ?>">
-                    <span class="hint">Printed on quotation headers (e.g. meer as net radio | more than just radio)</span>
+                    <span class="hint">Printed on quotation headers (e.g. Your Voice, Your Music)</span>
                 </div>
 
                 <div class="form-group" style="margin-bottom:24px;">
                     <label>Station Logo</label>
                     <div class="logo-upload-box">
-                        <img id="logoPreview" src="<?= $logoUrl ?>" alt="Logo Preview" class="logo-preview-img" onerror="this.src='custom/include/RadioCRM/pukfm_logo_round.jpeg'">
+                        <img id="logoPreview" src="<?= $logoUrl ?>" alt="Logo Preview" class="logo-preview-img" onerror="this.src='custom/include/RadioCRM/radio_station_logo.png'">
                         <div style="flex:1;">
                             <input type="file" id="station_logo" name="station_logo" accept="image/png,image/jpeg,image/svg+xml,image/webp" onchange="previewLogo(this)">
                             <div class="hint" style="margin-top:6px;">Upload PNG or JPEG (Transparent PNG recommended). Automatically scales onto PDFs, Affidavits, and Web Header.</div>

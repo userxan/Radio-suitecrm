@@ -80,9 +80,12 @@ $subtotal = round($totalSpots * $unitPrice, 2);
 $vatAmt = round($subtotal * RadioScheduleService::DEFAULT_VAT_RATE, 2);
 $grandTotal = round($subtotal + $vatAmt, 2);
 
+$stConfig = RadioStationConfigService::getSettings($db);
+$stName = (string) ($stConfig['station_name'] ?? 'Radio Station');
+
 $invName = 'Invoice - ' . $campName;
 $invNameEsc = $db->quote($invName);
-$desc = "Broadcast commercial advertising campaign on PUKfm 93.6. Cart: {$cart}. Spots: {$totalSpots} ({$spotDur}). Verified via Myriad playout automation.";
+$desc = "Broadcast commercial advertising campaign on {$stName}. Cart: {$cart}. Spots: {$totalSpots} ({$spotDur}). Verified via Myriad playout automation.";
 $descEsc = $db->quote($desc);
 
 if ($invRow) {
@@ -123,7 +126,7 @@ if ($invRow) {
 
     // Add line item
     $lineId = RadioQuoteScheduleProducts::generateUuid();
-    $prodName = 'PUKfm Commercial Broadcast - ' . $spotDur;
+    $prodName = $stName . ' Commercial Broadcast - ' . $spotDur;
     $db->query(
         "INSERT INTO aos_products_quotes (
             id, name, date_entered, date_modified, modified_user_id, created_by,

@@ -5,7 +5,7 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_ROOT="/var/www/html"
 
 echo "============================================================"
-echo "PUKfm Radio CRM - Deploying Customizations & Running Migrations"
+echo "Radio CRM - Deploying Customizations & Running Migrations"
 echo "============================================================"
 
 # 1. Pre-create all required target directories (Section 17)

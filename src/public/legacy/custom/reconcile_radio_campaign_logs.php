@@ -73,7 +73,7 @@ if ($recordId !== '') {
     exit;
 }
 
-echo "<h3>PUKfm Playout Log Reconciliation</h3>";
+echo "<h3>Radio Playout Log Reconciliation</h3>";
 echo "<p>Processed " . count($results) . " log file(s).</p>";
 echo "<pre>" . print_r($results, true) . "</pre>";
 echo "<p><a href='index.php?module=RT_RadioCampaigns&action=index'>Back to Radio Campaigns</a></p>";
