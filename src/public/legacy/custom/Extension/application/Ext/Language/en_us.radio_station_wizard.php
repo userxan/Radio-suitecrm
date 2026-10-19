@@ -12,6 +12,3 @@ $app_strings['LBL_RADIO_STATION_DASHBOARD_TITLE'] = 'Station Revenue, Renewal & 
 $app_strings['LBL_RADIO_STATION_DASHBOARD_DESC'] = 'View booked revenue by show slot, expiring campaign renewals, studio production pipeline, and ICASA compliance CSV reports.';
 $app_strings['LBL_RADIO_LIVEREAD_SHEET_TITLE'] = 'Studio Presenter Live-Read & Run Sheet';
 $app_strings['LBL_RADIO_LIVEREAD_SHEET_DESC'] = 'Generate a printable daily studio live-read script and commercial playout run sheet grouped by show daypart.';
-$app_strings['LBL_RADIO_DOCUMENTATION_TITLE'] = 'CRMSuite Full Documentation & OneDrive Sync';
-$app_strings['LBL_RADIO_DOCUMENTATION_DESC'] = 'View, print, download (.doc, .html, .md), or upload the complete CRMSuite technical and user documentation to Microsoft OneDrive.';
-

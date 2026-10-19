@@ -93,7 +93,6 @@
 │       │   ├── generate_broadcast_affidavit.php
 │       │   ├── generate_presenter_liveread_sheet.php
 │       │   ├── radio_campaign_client_review.php
-│       │   ├── radio_crm_documentation.php
 │       │   ├── radio_schedule_ajax_sync.php
 │       │   ├── radio_station_dashboard.php
 │       │   ├── radio_station_wizard.php
@@ -103,7 +102,6 @@
 │       │   │   ├── RadioScheduleService.php
 │       │   │   └── RadioStationConfigService.php
 │       │   ├── modules/Administration/
-│       │   │   ├── radio_documentation.php
 │       │   │   ├── radio_liveread_sheet.php
 │       │   │   ├── radio_station_dashboard.php
 │       │   │   └── radio_station_wizard.php
@@ -355,7 +353,6 @@
 <li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?module=Administration&amp;action=radio_station_wizard</code> — Station Setup &amp; Rate Card Wizard</li>
 <li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?module=Administration&amp;action=radio_station_dashboard</code> — Station Revenue, Renewal &amp; ICASA Dashboard</li>
 <li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?module=Administration&amp;action=radio_liveread_sheet</code> — Studio Presenter Live-Read &amp; Run-Sheet Generator</li>
-<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?module=Administration&amp;action=radio_documentation</code> — Full Documentation &amp; OneDrive Cloud Upload Hub</li>
 </ul>
 <h3>Custom EntryPoints (<code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">index.php?entryPoint=...</code>)</h3>
 <ul>
@@ -368,7 +365,6 @@
 <li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">radio_campaign_client_review</code> — External Client Schedule Review &amp; Creative Upload Portal</li>
 <li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">send_radio_client_email</code> — HTML Email dispatcher for Client Portal links</li>
 <li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">generate_presenter_liveread_sheet</code> — Daily Studio Presenter Run-Sheet printable view</li>
-<li><code style="background:#f1f5f9;padding:2px 5px;border-radius:4px;">radio_crm_documentation</code> — Documentation viewer, Word/HTML/MD downloader &amp; OneDrive uploader</li>
 </ul>
 <hr>
 <h2>16. Deployment, Backup/Restore &amp; Automated Test Suites</h2>

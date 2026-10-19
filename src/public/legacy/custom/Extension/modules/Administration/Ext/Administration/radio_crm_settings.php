@@ -22,13 +22,6 @@ $admin_option_defs['Administration']['radio_liveread_sheet'] = [
     './index.php?module=Administration&action=radio_liveread_sheet',
     'admin-aos-settings',
 ];
-$admin_option_defs['Administration']['radio_documentation'] = [
-    'Administration',
-    'LBL_RADIO_DOCUMENTATION_TITLE',
-    'LBL_RADIO_DOCUMENTATION_DESC',
-    './index.php?module=Administration&action=radio_documentation',
-    'admin-aos-settings',
-];
 
 $admin_group_header[] = [
     'LBL_RADIO_STATION_ADMIN_TITLE',

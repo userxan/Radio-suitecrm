@@ -99,7 +99,6 @@
 │       │   ├── generate_broadcast_affidavit.php
 │       │   ├── generate_presenter_liveread_sheet.php
 │       │   ├── radio_campaign_client_review.php
-│       │   ├── radio_crm_documentation.php
 │       │   ├── radio_schedule_ajax_sync.php
 │       │   ├── radio_station_dashboard.php
 │       │   ├── radio_station_wizard.php
@@ -109,7 +108,6 @@
 │       │   │   ├── RadioScheduleService.php
 │       │   │   └── RadioStationConfigService.php
 │       │   ├── modules/Administration/
-│       │   │   ├── radio_documentation.php
 │       │   │   ├── radio_liveread_sheet.php
 │       │   │   ├── radio_station_dashboard.php
 │       │   │   └── radio_station_wizard.php
@@ -379,7 +377,6 @@ Written atomically to `/srv/myriad_exports/`:
 - `index.php?module=Administration&action=radio_station_wizard` — Station Setup & Rate Card Wizard
 - `index.php?module=Administration&action=radio_station_dashboard` — Station Revenue, Renewal & ICASA Dashboard
 - `index.php?module=Administration&action=radio_liveread_sheet` — Studio Presenter Live-Read & Run-Sheet Generator
-- `index.php?module=Administration&action=radio_documentation` — Full Documentation & OneDrive Cloud Upload Hub
 
 ### Custom EntryPoints (`index.php?entryPoint=...`)
 - `radio_schedule_ajax_sync` — Live AJAX pricing, weekday/weekend line preview & hourly inventory clutter check
@@ -391,7 +388,6 @@ Written atomically to `/srv/myriad_exports/`:
 - `radio_campaign_client_review` — External Client Schedule Review & Creative Upload Portal
 - `send_radio_client_email` — HTML Email dispatcher for Client Portal links
 - `generate_presenter_liveread_sheet` — Daily Studio Presenter Run-Sheet printable view
-- `radio_crm_documentation` — Documentation viewer, Word/HTML/MD downloader & OneDrive uploader
 
 ---
 

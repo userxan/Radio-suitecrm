@@ -618,9 +618,6 @@ $exportDir = htmlspecialchars((string) ($cfg['export_dir'] ?? '/srv/myriad_expor
                 <a href="<?= $isEmbedded ? 'index.php?module=Administration&action=radio_station_dashboard' : 'index.php?entryPoint=radio_station_dashboard' ?>" class="btn-back">
                     📊 Revenue & ICASA Dashboard
                 </a>
-                <a href="<?= $isEmbedded ? 'index.php?module=Administration&action=radio_documentation' : 'index.php?entryPoint=radio_crm_documentation' ?>" class="btn-back">
-                    📖 Documentation & OneDrive
-                </a>
                 <a href="index.php?module=Administration&action=index" class="btn-back">← Back to Admin</a>
             </div>
         </div>
