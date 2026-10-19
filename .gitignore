@@ -3,3 +3,7 @@ backups/
 *.tar.gz
 *.sql
 *.sql.gz
+
+# Local station-specific profile overrides (keeps repo white-labeled)
+station_profile.json
+*.local.json
