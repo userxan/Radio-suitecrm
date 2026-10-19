@@ -152,8 +152,12 @@
                                 <td rowspan="{$hourCount}"
                                     style="padding: 8px; border: 1px solid #d0d7de; font-weight: 600; vertical-align: middle; background: #f0f4f8;">
                                     <div>{$slot.label|escape:'html'}</div>
-                                    <div style="font-size: 11px; color: #57606a; font-weight: normal;">
-                                        {$slot.part_number|escape:'html'} (R{$slot.rate|string_format:"%.2f"})
+                                    <div style="font-size: 11px; color: #57606a; font-weight: normal; margin-top: 3px;">
+                                        {$slot.part_number|escape:'html'}
+                                        <div style="margin-top: 4px; font-size: 10px; line-height: 1.4;">
+                                            <span style="display: inline-block; background: #dafbe1; color: #116329; padding: 1px 5px; border-radius: 3px; font-weight: 600;">Mon-Fri: {$slot.weekday_rate_label}</span>
+                                            <span style="display: inline-block; background: #fff8c5; color: #7d4e00; padding: 1px 5px; border-radius: 3px; font-weight: 600; margin-top: 2px;">Sat-Sun: {$slot.weekend_rate_label}</span>
+                                        </div>
                                     </div>
                                 </td>
                             {/if}
@@ -163,6 +167,7 @@
                             {foreach from=$RADIO_DAYS key=dayKey item=dayInfo}
                                 {assign var="fieldName" value="`$dayKey`_`$slotKey`_`$hourKey`_c"}
                                 {assign var="cellVal" value=$RADIO_CELL_VALUES[$fieldName]|default:0}
+                                {assign var="cellRate" value=$RADIO_CELL_RATES[$fieldName]|default:$slot.rate}
                                 <td style="padding: 4px; border: 1px solid #d0d7de; text-align: center;">
                                     <input type="number"
                                            min="0"
@@ -175,6 +180,8 @@
                                            data-slot="{$slotKey}"
                                            data-part-number="{$slot.part_number|escape:'html'}"
                                            data-hour="{$hourKey}"
+                                           data-rate="{$cellRate}"
+                                           title="{$dayInfo.label} {$hourInfo.label} - Rate: R{$cellRate|string_format:'%.2f'} / spot"
                                            class="radio-schedule-cell"
                                            style="width: 58px; padding: 4px; text-align: center; border: 1px solid #c0c7cf; border-radius: 3px;" />
                                 </td>
@@ -204,15 +211,71 @@
     };
 
     var RADIO_SLOT_RATES = {
-        'PRE-BREAKFAST': 300.00,
-        'MORNING-BUZZ': 320.00,
-        'MIDMORNING-BANTER': 280.00,
-        'MIDDAY-PULSE': 260.00,
-        'CRUISE-CONTROL': 320.00,
-        'SPECIALTY-SHOW-1': 240.00,
+        'PRE-BREAKFAST': 120.00,
+        'MORNING-BUZZ': 350.00,
+        'MIDMORNING-BANTER': 320.00,
+        'MIDDAY-PULSE': 350.00,
+        'CRUISE-CONTROL': 350.00,
+        'SPECIALTY-SHOW-1': 300.00,
         'SPECIALTY-SHOW-2': 220.00,
         'MUSIC-UNLIMITED': 120.00
     };
+
+    var RADIO_SLOT_BASE_RATES = {
+        'PRE-BREAKFAST': 120.00,
+        'MORNING-BUZZ': 350.00,
+        'MIDMORNING-BANTER': 320.00,
+        'MIDDAY-PULSE': 350.00,
+        'CRUISE-CONTROL': 350.00,
+        'SPECIALTY-SHOW-1': 300.00,
+        'SPECIALTY-SHOW-2': 220.00,
+        'MUSIC-UNLIMITED': 120.00
+    };
+
+    function getRateCardHourlyPrice(dayKey, hourKey) {
+        var isWeekend = (dayKey === 'sat' || dayKey === 'sun');
+        if (!isWeekend) {
+            switch (hourKey) {
+                case '0000_0100': case '0100_0200': case '0200_0300':
+                case '0300_0400': case '0400_0500': case '0500_0600':
+                    return 120.00;
+                case '0600_0700': case '0700_0800': case '0800_0900':
+                    return 350.00;
+                case '0900_1000': case '1000_1100': case '1100_1200':
+                    return 320.00;
+                case '1200_1300': case '1300_1400': case '1400_1500':
+                    return 350.00;
+                case '1500_1600': case '1600_1700': case '1700_1800':
+                    return 350.00;
+                case '1800_1900': case '1900_2000': case '2000_2100':
+                    return 300.00;
+                case '2100_2200': case '2200_2300': case '2300_0000':
+                    return 220.00;
+                default:
+                    return 220.00;
+            }
+        } else {
+            switch (hourKey) {
+                case '0000_0100': case '0100_0200': case '0200_0300':
+                case '0300_0400': case '0400_0500': case '0500_0600':
+                    return 120.00;
+                case '0600_0700': case '0700_0800': case '0800_0900':
+                case '0900_1000':
+                    return 300.00;
+                case '1000_1100': case '1100_1200': case '1200_1300':
+                case '1300_1400': case '1400_1500': case '1500_1600':
+                case '1600_1700': case '1700_1800':
+                    return 350.00;
+                case '1800_1900': case '1900_2000': case '2000_2100':
+                case '2100_2200':
+                    return 220.00;
+                case '2200_2300': case '2300_0000':
+                    return 120.00;
+                default:
+                    return 220.00;
+            }
+        }
+    }
 
     var RADIO_PACKAGES = {
         'option_1': { rate: 5999.00, total_spots: 50, type: 'weekly' },
@@ -397,6 +460,25 @@
         }
     }
 
+    function updateCellTooltips() {
+        var durEl = document.getElementById('spot_duration_c');
+        var dur = durEl ? durEl.value : '30 sec';
+        var durMult = RADIO_DURATION_MULTIPLIERS[dur] || 1.0;
+        var inputs = getScheduleInputs();
+        for (var i = 0; i < inputs.length; i++) {
+            var inp = inputs[i];
+            var dayKey = inp.getAttribute('data-day');
+            var hourKey = inp.getAttribute('data-hour');
+            if (dayKey && hourKey) {
+                var baseRate = getRateCardHourlyPrice(dayKey, hourKey);
+                var curRate = Math.round(baseRate * durMult * 100) / 100;
+                var dayLabel = dayKey.charAt(0).toUpperCase() + dayKey.slice(1);
+                var hourLabel = hourKey.replace('_', ' - ');
+                inp.title = dayLabel + ' ' + hourLabel + ' - Rate: R' + curRate.toFixed(2) + ' / spot (' + dur + ')';
+            }
+        }
+    }
+
     function computeLocalTotals() {
         var startInput = document.getElementById('campaign_start_date_c');
         var endInput = document.getElementById('campaign_end_date_c');
@@ -430,9 +512,13 @@
         var totalSpots = 0;
         var hasInvalidQuantity = false;
         var payloadCells = {};
+        var durEl = document.getElementById('spot_duration_c');
+        var dur = durEl ? durEl.value : '30 sec';
+        var durMult = RADIO_DURATION_MULTIPLIERS[dur] || 1.0;
+
         var slotTotals = {};
         for (var part in RADIO_SLOT_RATES) {
-            slotTotals[part] = { weekly: 0, total: 0 };
+            slotTotals[part] = { weekly: 0, total: 0, weeklyNet: 0.0, totalNet: 0.0 };
         }
 
         for (var i = 0; i < inputs.length; i++) {
@@ -455,15 +541,25 @@
             if (qty > 0) {
                 weeklySpots += qty;
                 var partNum = inp.getAttribute('data-part-number');
+                var dayKey = inp.getAttribute('data-day');
+                var hourKey = inp.getAttribute('data-hour');
+                var baseCellRate = getRateCardHourlyPrice(dayKey, hourKey);
+                var cellRate = Math.round(baseCellRate * durMult * 100) / 100;
+                var cellWeeklyNet = Math.round(qty * cellRate * 100) / 100;
+
                 if (partNum && slotTotals[partNum]) {
                     slotTotals[partNum].weekly += qty;
+                    slotTotals[partNum].weeklyNet = Math.round((slotTotals[partNum].weeklyNet + cellWeeklyNet) * 100) / 100;
                 }
                 if (dateRangeValid) {
                     var phpW = parseInt(inp.getAttribute('data-php-w'), 10);
                     var reps = repeats[phpW] || 0;
-                    totalSpots += qty * reps;
+                    var cellPlays = qty * reps;
+                    totalSpots += cellPlays;
                     if (partNum && slotTotals[partNum]) {
-                        slotTotals[partNum].total += qty * reps;
+                        slotTotals[partNum].total += cellPlays;
+                        var cellTotalNet = Math.round(cellPlays * cellRate * 100) / 100;
+                        slotTotals[partNum].totalNet = Math.round((slotTotals[partNum].totalNet + cellTotalNet) * 100) / 100;
                     }
                 }
             }
@@ -486,10 +582,6 @@
 
         // Immediate synchronous DOM update so line items and totals update instantly on user input
         if (validationMsg === '') {
-            var durEl = document.getElementById('spot_duration_c');
-            var dur = durEl ? durEl.value : '30 sec';
-            var durMult = RADIO_DURATION_MULTIPLIERS[dur] || 1.0;
-
             var pkgEl = document.getElementById('applied_package_c');
             var pkgKey = pkgEl ? pkgEl.value : '';
             var isPkg = Boolean(pkgKey && RADIO_PACKAGES[pkgKey]);
@@ -550,9 +642,9 @@
                     var st = slotTotals[pn];
                     var q = dateRangeValid ? st.total : st.weekly;
                     if (q > 0) {
-                        var baseRate = RADIO_SLOT_RATES[pn] || 0;
-                        var rate = Math.round(baseRate * durMult * 100) / 100;
-                        var net = Math.round(q * rate * 100) / 100;
+                        var net = dateRangeValid ? st.totalNet : st.weeklyNet;
+                        net = Math.round(net * 100) / 100;
+                        var unitPrice = q > 0 ? (Math.round((net / q) * 10000) / 10000) : (RADIO_SLOT_RATES[pn] || 0);
                         var v = Math.round(net * 0.15 * 100) / 100;
                         var g = Math.round((net + v) * 100) / 100;
                         subtotal = Math.round((subtotal + net) * 100) / 100;
@@ -562,7 +654,7 @@
                             part_number: pn,
                             product_name: pn,
                             product_id: '',
-                            unit_price: rate,
+                            unit_price: unitPrice,
                             total_qty: q,
                             weekly_qty: st.weekly,
                             net_total: net,
@@ -845,7 +937,10 @@
 
         var durSelect = document.getElementById('spot_duration_c');
         if (durSelect) {
-            durSelect.addEventListener('change', function() { scheduleRecalcAndSync(true); });
+            durSelect.addEventListener('change', function() {
+                updateCellTooltips();
+                scheduleRecalcAndSync(true);
+            });
         }
 
         var catSelect = document.getElementById('industry_category_c');
@@ -894,6 +989,7 @@
             });
         }
 
+        updateCellTooltips();
         computeLocalTotals();
     }
 

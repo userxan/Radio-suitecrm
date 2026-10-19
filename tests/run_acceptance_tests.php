@@ -235,7 +235,8 @@ assertTest(
 // ---------------------------------------------------------------------------
 
 // B1: Select Pre Breakfast 4 total plays and Morning Buzz 2 total plays; assert two correct product lines,
-// rates R300/R320, net R1,200/R640 and VAT R180/R96 if VAT=15%.
+// Rate Card rates: Mon-Fri Pre Breakfast (00:00-06:00 band) = R120, Morning Buzz (06:00-09:00 band) = R350.
+// Net R480/R700 and VAT R72/R105 with VAT=15%.
 // Note: 2026-06-15 (Mon) to 2026-06-21 (Sun) is exactly 1 full week (1 occurrence of each weekday).
 $quoteB = BeanFactory::newBean('AOS_Quotes');
 $quoteB->name = 'Acceptance Quote B1 Pricing & PDF';
@@ -266,28 +267,98 @@ $mb = $b1Lines['MORNING-BUZZ'] ?? null;
 $b1Ok = count($b1Lines) === 2
     && $pb !== null
     && (int) round((float) $pb['product_qty']) === 4
-    && round((float) $pb['product_unit_price'], 2) === 300.00
-    && round((float) $pb['product_total_price'], 2) === 1200.00
-    && round((float) $pb['vat_amt'], 2) === 180.00
+    && round((float) $pb['product_unit_price'], 2) === 120.00
+    && round((float) $pb['product_total_price'], 2) === 480.00
+    && round((float) $pb['vat_amt'], 2) === 72.00
     && $mb !== null
     && (int) round((float) $mb['product_qty']) === 2
-    && round((float) $mb['product_unit_price'], 2) === 320.00
-    && round((float) $mb['product_total_price'], 2) === 640.00
-    && round((float) $mb['vat_amt'], 2) === 96.00;
+    && round((float) $mb['product_unit_price'], 2) === 350.00
+    && round((float) $mb['product_total_price'], 2) === 700.00
+    && round((float) $mb['vat_amt'], 2) === 105.00;
 
 assertTest(
     'B1',
-    'Pre Breakfast (4 x R300 = R1200, VAT R180) and Morning Buzz (2 x R320 = R640, VAT R96)',
+    'Pre Breakfast (4 x R120 = R480, VAT R72) and Morning Buzz (2 x R350 = R700, VAT R105) match Rate Card',
     $b1Ok,
     sprintf(
-        'lines=%d, PB=(qty=%s,net=%s,vat=%s), MB=(qty=%s,net=%s,vat=%s)',
+        'lines=%d, PB=(qty=%s,unit=%s,net=%s,vat=%s), MB=(qty=%s,unit=%s,net=%s,vat=%s)',
         count($b1Lines),
         $pb['product_qty'] ?? 'null',
+        $pb['product_unit_price'] ?? 'null',
         $pb['product_total_price'] ?? 'null',
         $pb['vat_amt'] ?? 'null',
         $mb['product_qty'] ?? 'null',
+        $mb['product_unit_price'] ?? 'null',
         $mb['product_total_price'] ?? 'null',
         $mb['vat_amt'] ?? 'null'
+    )
+);
+
+// B1.1: Verify weekend rate card price differences (Saturday/Sunday vs Weekday)
+// Rate Card: Morning Buzz is R350 on weekdays vs R300 on weekends (-R50 difference)
+// Rate Card: Specialty Show 1 is R300 on weekdays vs R220 on weekends (-R80 difference)
+$quoteBWknd = BeanFactory::newBean('AOS_Quotes');
+$quoteBWknd->name = 'Acceptance Quote B1 Weekend Price Difference';
+$quoteBWknd->stage = 'Draft';
+$quoteBWknd->assigned_user_id = $current_user->id;
+$quoteBWknd->campaign_start_date_c = '2026-06-15';
+$quoteBWknd->campaign_end_date_c = '2026-06-21';
+$quoteBWknd->sat_morning_buzz_0600_0700_c = 1;
+$quoteBWknd->sun_morning_buzz_0700_0800_c = 1; // Total Weekend Morning Buzz = 2
+$quoteBWknd->sat_specialty_show_1_1800_1900_c = 2; // Total Weekend Specialty Show 1 = 2
+$quoteBWkndId = (string) $quoteBWknd->save();
+
+$b1WkndRes = $db->query(
+    "SELECT part_number, product_qty, product_unit_price, product_total_price, vat_amt
+     FROM aos_products_quotes
+     WHERE parent_type = 'AOS_Quotes' AND parent_id = '" . $db->quote($quoteBWkndId) . "' AND deleted = 0
+     ORDER BY number ASC",
+    false
+);
+$b1WkndLines = [];
+while ($b1WkndRes && ($r = $db->fetchByAssoc($b1WkndRes))) {
+    $b1WkndLines[$r['part_number']] = $r;
+}
+$mbWknd = $b1WkndLines['MORNING-BUZZ'] ?? null;
+$ss1Wknd = $b1WkndLines['SPECIALTY-SHOW-1'] ?? null;
+
+// Mixed quote: 1 spot on Monday (R350) + 1 spot on Saturday (R300) = Total 2 spots @ R325 avg, net R650
+$calcMixed = RadioScheduleService::calculateSchedule(
+    ['mon_morning_buzz_0700_0800_c' => 1, 'sat_morning_buzz_0700_0800_c' => 1],
+    '2026-06-15',
+    '2026-06-21',
+    $db
+);
+$mbMixedProg = null;
+foreach ($calcMixed['programmes'] as $p) {
+    if ($p['part_number'] === 'MORNING-BUZZ') {
+        $mbMixedProg = $p;
+        break;
+    }
+}
+
+$b1WkndOk = $mbWknd !== null
+    && round((float) $mbWknd['product_unit_price'], 2) === 300.00
+    && round((float) $mbWknd['product_total_price'], 2) === 600.00
+    && $ss1Wknd !== null
+    && round((float) $ss1Wknd['product_unit_price'], 2) === 220.00
+    && round((float) $ss1Wknd['product_total_price'], 2) === 440.00
+    && $mbMixedProg !== null
+    && round((float) $mbMixedProg['unit_price'], 2) === 325.00
+    && round((float) $mbMixedProg['net_total'], 2) === 650.00;
+
+assertTest(
+    'B1.Weekend',
+    'Weekend spots apply distinct rates (MB R300 vs Wk R350, SS1 R220 vs Wk R300, Mixed R325 avg)',
+    $b1WkndOk,
+    sprintf(
+        'MB_wknd=(unit=%s,net=%s), SS1_wknd=(unit=%s,net=%s), Mixed=(unit=%s,net=%s)',
+        $mbWknd['product_unit_price'] ?? 'null',
+        $mbWknd['product_total_price'] ?? 'null',
+        $ss1Wknd['product_unit_price'] ?? 'null',
+        $ss1Wknd['product_total_price'] ?? 'null',
+        $mbMixedProg['unit_price'] ?? 'null',
+        $mbMixedProg['net_total'] ?? 'null'
     )
 );
 
@@ -1031,10 +1102,10 @@ $db->query("DELETE FROM users WHERE id = '" . $db->quote($nonAdminId) . "'", fal
 $db->query("DELETE FROM acl_roles WHERE id = '" . $db->quote($roleId) . "'", false);
 $db->query("DELETE FROM acl_roles_users WHERE user_id = '" . $db->quote($nonAdminId) . "'", false);
 $db->query("DELETE FROM acl_roles_actions WHERE role_id = '" . $db->quote($roleId) . "'", false);
-$db->query("DELETE FROM aos_quotes_cstm WHERE id_c IN ('" . $db->quote($quoteAId) . "', '" . $db->quote($quoteBId) . "')", false);
-$db->query("DELETE FROM aos_products_quotes WHERE parent_type = 'AOS_Quotes' AND parent_id IN ('" . $db->quote($quoteAId) . "', '" . $db->quote($quoteBId) . "')", false);
-$db->query("DELETE FROM aos_line_item_groups WHERE parent_id IN ('" . $db->quote($quoteAId) . "', '" . $db->quote($quoteBId) . "')", false);
-$db->query("DELETE FROM aos_quotes WHERE id IN ('" . $db->quote($quoteAId) . "', '" . $db->quote($quoteBId) . "')", false);
+$db->query("DELETE FROM aos_quotes_cstm WHERE id_c IN ('" . $db->quote($quoteAId) . "', '" . $db->quote($quoteBId) . "', '" . $db->quote($quoteBWkndId) . "')", false);
+$db->query("DELETE FROM aos_products_quotes WHERE parent_type = 'AOS_Quotes' AND parent_id IN ('" . $db->quote($quoteAId) . "', '" . $db->quote($quoteBId) . "', '" . $db->quote($quoteBWkndId) . "')", false);
+$db->query("DELETE FROM aos_line_item_groups WHERE parent_id IN ('" . $db->quote($quoteAId) . "', '" . $db->quote($quoteBId) . "', '" . $db->quote($quoteBWkndId) . "')", false);
+$db->query("DELETE FROM aos_quotes WHERE id IN ('" . $db->quote($quoteAId) . "', '" . $db->quote($quoteBId) . "', '" . $db->quote($quoteBWkndId) . "')", false);
 foreach (glob('/srv/myriad_exports/radio_campaign_Radio_Campaign_-_Rep_Owned_Campaign*.csv') ?: [] as $repCsv) {
     @unlink($repCsv);
 }

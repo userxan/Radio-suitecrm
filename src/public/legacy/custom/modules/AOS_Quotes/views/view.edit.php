@@ -25,14 +25,51 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
             $pn = $slot['part_number'];
             $rate = $catalogue[$pn]['price'] ?? $slot['default_rate'];
             $label = $confSlots[$pn]['title'] ?? $slot['label'];
+
+            $slotDefRate = (float) $slot['default_rate'];
+            $customScale = ($slotDefRate > 0 && abs($rate - $slotDefRate) > 0.001)
+                ? ($rate / $slotDefRate)
+                : 1.0;
+
+            $wkRates = [];
+            $wkndRates = [];
+            foreach (array_keys($slot['hours']) as $hourKey) {
+                $wkRates[] = round(RadioScheduleService::getRateCardHourlyPrice('mon', $hourKey) * $customScale, 2);
+                $wkndRates[] = round(RadioScheduleService::getRateCardHourlyPrice('sat', $hourKey) * $customScale, 2);
+            }
+            $minWk = min($wkRates);
+            $maxWk = max($wkRates);
+            $minWknd = min($wkndRates);
+            $maxWknd = max($wkndRates);
+
+            $wkLabel = ($minWk === $maxWk) ? sprintf('R%.2f', $minWk) : sprintf('R%.2f - R%.2f', $minWk, $maxWk);
+            $wkndLabel = ($minWknd === $maxWknd) ? sprintf('R%.2f', $minWknd) : sprintf('R%.2f - R%.2f', $minWknd, $maxWknd);
+
             $slotsForTpl[$slotKey] = [
                 'key' => $slotKey,
                 'label' => $label,
                 'part_number' => $pn,
                 'rate' => $rate,
+                'weekday_rate' => $minWk,
+                'weekday_rate_label' => $wkLabel,
+                'weekend_rate' => $minWknd,
+                'weekend_rate_label' => $wkndLabel,
                 'hours' => $slot['hours'],
                 'programme_time' => $confSlots[$pn]['hours'] ?? ($slot['programme_time'] ?? ''),
             ];
+        }
+
+        $cellRates = [];
+        foreach (RadioScheduleService::getAllScheduleFields() as $fieldName => $meta) {
+            $slotKey = $meta['slot_key'];
+            $slotDefRate = (float) (RadioScheduleService::SLOTS[$slotKey]['default_rate'] ?? 350.00);
+            $catPrice = isset($catalogue[RadioScheduleService::SLOTS[$slotKey]['part_number']]['price'])
+                ? (float) $catalogue[RadioScheduleService::SLOTS[$slotKey]['part_number']]['price']
+                : $slotDefRate;
+            $customScale = ($slotDefRate > 0 && abs($catPrice - $slotDefRate) > 0.001)
+                ? ($catPrice / $slotDefRate)
+                : 1.0;
+            $cellRates[$fieldName] = round(RadioScheduleService::getRateCardHourlyPrice($meta['day_key'], $meta['hour_key']) * $customScale, 2);
         }
 
         // Load saved values from bean or preserve entered $_REQUEST values on validation reload
@@ -73,6 +110,7 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
             'RADIO_SLOTS' => $slotsForTpl,
             'RADIO_DAYS' => RadioScheduleService::DAYS,
             'RADIO_CELL_VALUES' => $calc['cells'],
+            'RADIO_CELL_RATES' => $cellRates,
             'RADIO_START_DATE' => $calc['start_date'] ?? '',
             'RADIO_END_DATE' => $calc['end_date'] ?? '',
             'RADIO_WEEKLY_SPOTS' => $calc['weekly_spots'],

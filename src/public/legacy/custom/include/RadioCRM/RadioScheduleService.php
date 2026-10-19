@@ -47,7 +47,7 @@ class RadioScheduleService
             'label' => 'Pre Breakfast',
             'part_number' => 'PRE-BREAKFAST',
             'product_name' => 'PRE-BREAKFAST',
-            'default_rate' => 300.00,
+            'default_rate' => 120.00,
             'programme_time' => '05:00-06:00',
             'description' => 'One 30 second prerecorded advertisement played between 05:00 and 06:00.',
             'hours' => [
@@ -59,7 +59,7 @@ class RadioScheduleService
             'label' => 'Morning Buzz',
             'part_number' => 'MORNING-BUZZ',
             'product_name' => 'MORNING-BUZZ',
-            'default_rate' => 320.00,
+            'default_rate' => 350.00,
             'programme_time' => '06:00-09:00',
             'description' => 'One 30 second prerecorded advertisement played between 06:00 and 09:00.',
             'hours' => [
@@ -73,7 +73,7 @@ class RadioScheduleService
             'label' => 'Midmorning Banter',
             'part_number' => 'MIDMORNING-BANTER',
             'product_name' => 'MIDMORNING-BANTER',
-            'default_rate' => 350.00,
+            'default_rate' => 320.00,
             'programme_time' => '09:00-12:00',
             'description' => 'One 30 second prerecorded advertisement played between 09:00 and 12:00.',
             'hours' => [
@@ -155,6 +155,37 @@ class RadioScheduleService
             ],
         ],
     ];
+
+    /**
+     * Official Rate Card 2026 hourly unit pricing for Recorded Ads (30 Seconds).
+     * Differentiates Monday-Friday (weekday) vs Saturday-Sunday (weekend).
+     */
+    public static function getRateCardHourlyPrice(string $dayKey, string $hourKey): float
+    {
+        $isWeekend = ($dayKey === 'sat' || $dayKey === 'sun');
+        if (!$isWeekend) {
+            return match ($hourKey) {
+                '0000_0100', '0100_0200', '0200_0300', '0300_0400', '0400_0500', '0500_0600' => 120.00,
+                '0600_0700', '0700_0800', '0800_0900' => 350.00,
+                '0900_1000', '1000_1100', '1100_1200' => 320.00,
+                '1200_1300', '1300_1400', '1400_1500' => 350.00,
+                '1500_1600', '1600_1700', '1700_1800' => 350.00,
+                '1800_1900', '1900_2000', '2000_2100' => 300.00,
+                '2100_2200', '2200_2300', '2300_0000' => 220.00,
+                default => 220.00,
+            };
+        }
+
+        return match ($hourKey) {
+            '0000_0100', '0100_0200', '0200_0300', '0300_0400', '0400_0500', '0500_0600' => 120.00,
+            '0600_0700', '0700_0800', '0800_0900', '0900_1000' => 300.00,
+            '1000_1100', '1100_1200', '1200_1300', '1300_1400' => 350.00,
+            '1400_1500', '1500_1600', '1600_1700', '1700_1800' => 350.00,
+            '1800_1900', '1900_2000', '2000_2100', '2100_2200' => 220.00,
+            '2200_2300', '2300_0000' => 120.00,
+            default => 220.00,
+        };
+    }
 
     /**
      * Returns metadata for all 168 schedule fields keyed by exact column name.
@@ -446,6 +477,8 @@ class RadioScheduleService
                 'description' => $cat['description'],
                 'weekly_qty' => 0,
                 'total_qty' => 0,
+                'weekly_net' => 0.0,
+                'total_net' => 0.0,
                 'net_total' => 0.0,
                 'vat_rate' => self::DEFAULT_VAT_STRING,
                 'vat_amt' => 0.0,
@@ -470,11 +503,26 @@ class RadioScheduleService
             $slotKey = $meta['slot_key'];
             $slotAggregates[$slotKey]['weekly_qty'] += $qty;
 
+            $cellBaseRate = self::getRateCardHourlyPrice($meta['day_key'], $meta['hour_key']);
+            $slotDefRate = (float) (self::SLOTS[$slotKey]['default_rate'] ?? 350.00);
+            $catPrice = isset($catalogue[$slotAggregates[$slotKey]['part_number']]['price'])
+                ? (float) $catalogue[$slotAggregates[$slotKey]['part_number']]['price']
+                : $slotDefRate;
+            $customScale = ($slotDefRate > 0 && abs($catPrice - $slotDefRate) > 0.001)
+                ? ($catPrice / $slotDefRate)
+                : 1.0;
+            $cellUnitRate = round($cellBaseRate * $customScale * $durationMultiplier, 2);
+
+            $cellWeeklyNet = round($qty * $cellUnitRate, 2);
+            $slotAggregates[$slotKey]['weekly_net'] = round($slotAggregates[$slotKey]['weekly_net'] + $cellWeeklyNet, 2);
+
             if ($dateRangeValid) {
                 $repeats = $weekdayRepeats[$meta['php_w']] ?? 0;
                 $fieldTotalPlays = $qty * $repeats;
                 $totalSpots += $fieldTotalPlays;
                 $slotAggregates[$slotKey]['total_qty'] += $fieldTotalPlays;
+                $cellTotalNet = round($fieldTotalPlays * $cellUnitRate, 2);
+                $slotAggregates[$slotKey]['total_net'] = round($slotAggregates[$slotKey]['total_net'] + $cellTotalNet, 2);
             }
         }
 
@@ -534,11 +582,18 @@ class RadioScheduleService
 
             foreach ($slotAggregates as $slotKey => &$agg) {
                 $lineQty = $dateRangeValid ? $agg['total_qty'] : 0;
-                $unitPrice = (float) $agg['unit_price'];
-                $net = round($lineQty * $unitPrice, 2);
+                if ($dateRangeValid) {
+                    $net = round((float) $agg['total_net'], 2);
+                    $unitPrice = $lineQty > 0 ? round($net / $lineQty, 4) : (float) $agg['unit_price'];
+                } else {
+                    $weeklyQty = $agg['weekly_qty'];
+                    $net = 0.0;
+                    $unitPrice = $weeklyQty > 0 ? round($agg['weekly_net'] / $weeklyQty, 4) : (float) $agg['unit_price'];
+                }
                 $vat = round($net * self::DEFAULT_VAT_RATE, 2);
                 $gross = round($net + $vat, 2);
 
+                $agg['unit_price'] = $unitPrice;
                 $agg['net_total'] = $net;
                 $agg['vat_amt'] = $vat;
                 $agg['gross_total'] = $gross;
