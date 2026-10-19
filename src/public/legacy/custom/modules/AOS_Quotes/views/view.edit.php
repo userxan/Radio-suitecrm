@@ -59,12 +59,14 @@ class CustomAOS_QuotesViewEdit extends AOS_QuotesViewEdit
             $rawEnd = date('Y-m-t');
         }
 
+        $appliedPackage = $_REQUEST['applied_package_c'] ?? ($this->bean->applied_package_c ?? '');
         $calc = RadioScheduleService::calculateSchedule(
             $inputMap,
             (string) $rawStart,
             (string) $rawEnd,
             $GLOBALS['db'] ?? null,
-            $_REQUEST['spot_duration_c'] ?? ($this->bean->spot_duration_c ?? '30 sec')
+            $_REQUEST['spot_duration_c'] ?? ($this->bean->spot_duration_c ?? '30 sec'),
+            $appliedPackage
         );
 
         $tplVars = [

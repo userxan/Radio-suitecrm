@@ -22,7 +22,9 @@ class CustomAOS_QuotesViewDetail extends AOS_QuotesViewDetail
             $inputMap,
             (string) ($this->bean->campaign_start_date_c ?? ''),
             (string) ($this->bean->campaign_end_date_c ?? ''),
-            $GLOBALS['db'] ?? null
+            $GLOBALS['db'] ?? null,
+            (string) ($this->bean->spot_duration_c ?? '30 sec'),
+            (string) ($this->bean->applied_package_c ?? '')
         );
 
         $tplVars = [

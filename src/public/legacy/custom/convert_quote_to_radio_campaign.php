@@ -58,7 +58,9 @@ class RadioCampaignConverter
             $inputData,
             $startDate !== null ? (string) $startDate : null,
             $endDate !== null ? (string) $endDate : null,
-            $db
+            $db,
+            $cstmRow['spot_duration_c'] ?? ($quote->spot_duration_c ?? '30 sec'),
+            $cstmRow['applied_package_c'] ?? ($quote->applied_package_c ?? null)
         );
 
         if (!$calc['valid']) {

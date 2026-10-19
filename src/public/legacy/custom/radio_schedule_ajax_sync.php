@@ -61,6 +61,7 @@ $startDate = isset($payload['campaign_start_date_c']) ? (string) $payload['campa
 $endDate = isset($payload['campaign_end_date_c']) ? (string) $payload['campaign_end_date_c'] : null;
 $spotDuration = isset($payload['spot_duration_c']) ? (string) $payload['spot_duration_c'] : null;
 $industryCategory = isset($payload['industry_category_c']) ? (string) $payload['industry_category_c'] : null;
+$appliedPackage = isset($payload['applied_package_c']) ? (string) $payload['applied_package_c'] : null;
 $cells = (isset($payload['cells']) && is_array($payload['cells'])) ? $payload['cells'] : $payload;
 
 if (is_object($db)) {
@@ -110,7 +111,7 @@ if ($action === 'check_conflicts') {
     return;
 }
 
-$result = RadioScheduleService::calculateSchedule($cells, $startDate, $endDate, $db ?? null, $spotDuration);
+$result = RadioScheduleService::calculateSchedule($cells, $startDate, $endDate, $db ?? null, $spotDuration, $appliedPackage);
 
 if (!$result['valid']) {
     echo json_encode([
@@ -156,6 +157,7 @@ echo json_encode([
     'date_range_valid' => $result['date_range_valid'],
     'spot_duration' => $result['spot_duration'] ?? '30 sec',
     'duration_multiplier' => $result['duration_multiplier'] ?? 1.0,
+    'applied_package' => $result['applied_package'] ?? '',
     'weekly_spots' => $result['weekly_spots'],
     'total_spots' => $result['total_spots'],
     'programmes' => $result['programmes'],

@@ -11,97 +11,97 @@
     </div>
     {/if}
 
-    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; margin-bottom: 14px; padding: 10px 12px; background: #f6f8fa; border: 1px solid #d8dee4; border-radius: 4px;">
-        <div>
-            <label for="campaign_start_date_c" style="display: block; font-weight: 600; margin-bottom: 4px;">
-                Campaign Start Date
-            </label>
-            <input type="date"
-                   id="campaign_start_date_c"
-                   name="campaign_start_date_c"
-                   value="{$RADIO_START_DATE|escape:'html'}"
-                   class="radio-date-input"
-                   style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px;" />
-        </div>
-        <div>
-            <label for="campaign_end_date_c" style="display: block; font-weight: 600; margin-bottom: 4px;">
-                Campaign End Date
-            </label>
-            <input type="date"
-                   id="campaign_end_date_c"
-                   name="campaign_end_date_c"
-                   value="{$RADIO_END_DATE|escape:'html'}"
-                   class="radio-date-input"
-                   style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px;" />
+    <div style="background: #f6f8fa; border: 1px solid #d8dee4; border-radius: 6px; padding: 14px 16px; margin-bottom: 14px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;">
+            <div style="flex: 1 1 140px; min-width: 140px;">
+                <label for="campaign_start_date_c" style="display: block; font-size: 11px; font-weight: 700; color: #57606a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; white-space: nowrap;">
+                    Campaign Start Date
+                </label>
+                <input type="date"
+                       id="campaign_start_date_c"
+                       name="campaign_start_date_c"
+                       value="{$RADIO_START_DATE|escape:'html'}"
+                       class="radio-date-input"
+                       style="box-sizing: border-box; width: 100%; height: 38px; padding: 6px 10px; font-size: 13px; font-family: inherit; color: #1f2328; background-color: #ffffff; border: 1px solid #d0d7de; border-radius: 6px;" />
+            </div>
+
+            <div style="flex: 1 1 140px; min-width: 140px;">
+                <label for="campaign_end_date_c" style="display: block; font-size: 11px; font-weight: 700; color: #57606a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; white-space: nowrap;">
+                    Campaign End Date
+                </label>
+                <input type="date"
+                       id="campaign_end_date_c"
+                       name="campaign_end_date_c"
+                       value="{$RADIO_END_DATE|escape:'html'}"
+                       class="radio-date-input"
+                       style="box-sizing: border-box; width: 100%; height: 38px; padding: 6px 10px; font-size: 13px; font-family: inherit; color: #1f2328; background-color: #ffffff; border: 1px solid #d0d7de; border-radius: 6px;" />
+            </div>
+
+            <div style="flex: 1 1 160px; min-width: 150px;">
+                <label for="spot_duration_c" style="display: block; font-size: 11px; font-weight: 700; color: #57606a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; white-space: nowrap;">
+                    Spot Duration
+                </label>
+                <select id="spot_duration_c"
+                        name="spot_duration_c"
+                        style="box-sizing: border-box; width: 100%; height: 38px; padding: 6px 10px; font-size: 13px; font-family: inherit; color: #1f2328; background-color: #ffffff; border: 1px solid #d0d7de; border-radius: 6px; font-weight: 500;">
+                    <option value="15 sec" {if $RADIO_SPOT_DURATION == '15 sec'}selected{/if}>15 sec (50% Rate)</option>
+                    <option value="30 sec" {if $RADIO_SPOT_DURATION == '30 sec' || empty($RADIO_SPOT_DURATION)}selected{/if}>30 sec (Standard Rate)</option>
+                    <option value="45 sec" {if $RADIO_SPOT_DURATION == '45 sec'}selected{/if}>45 sec (150% Rate)</option>
+                    <option value="60 sec" {if $RADIO_SPOT_DURATION == '60 sec'}selected{/if}>60 sec (200% Rate)</option>
+                </select>
+            </div>
+
+            <div style="flex: 1.2 1 200px; min-width: 190px;">
+                <label for="industry_category_c" style="display: block; font-size: 11px; font-weight: 700; color: #57606a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; white-space: nowrap;">
+                    Advertiser Category
+                </label>
+                <select id="industry_category_c"
+                        name="industry_category_c"
+                        style="box-sizing: border-box; width: 100%; height: 38px; padding: 6px 10px; font-size: 13px; font-family: inherit; color: #1f2328; background-color: #ffffff; border: 1px solid #d0d7de; border-radius: 6px; font-weight: 500;">
+                    <option value="other" {if $RADIO_INDUSTRY_CATEGORY == 'other'}selected{/if}>General / Other</option>
+                    <option value="automotive" {if $RADIO_INDUSTRY_CATEGORY == 'automotive'}selected{/if}>Automotive & Dealerships</option>
+                    <option value="dining" {if $RADIO_INDUSTRY_CATEGORY == 'dining'}selected{/if}>Restaurants & Fast Food</option>
+                    <option value="hospitality" {if $RADIO_INDUSTRY_CATEGORY == 'hospitality'}selected{/if}>Nightlife, Bars & Events</option>
+                    <option value="financial" {if $RADIO_INDUSTRY_CATEGORY == 'financial'}selected{/if}>Banking & Financial</option>
+                    <option value="campus" {if $RADIO_INDUSTRY_CATEGORY == 'campus'}selected{/if}>Campus Retail & Student Services</option>
+                    <option value="telecom" {if $RADIO_INDUSTRY_CATEGORY == 'telecom'}selected{/if}>Telecom & Tech</option>
+                    <option value="health" {if $RADIO_INDUSTRY_CATEGORY == 'health'}selected{/if}>Healthcare & Fitness</option>
+                    <option value="education" {if $RADIO_INDUSTRY_CATEGORY == 'education'}selected{/if}>Education & Departments</option>
+                </select>
+            </div>
+
+            <div style="flex: 1.6 1 270px; min-width: 250px;">
+                <label for="applied_package_c" style="display: block; font-size: 11px; font-weight: 700; color: #57606a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; white-space: nowrap;">
+                    Package Preset
+                </label>
+                <select id="applied_package_c"
+                        name="applied_package_c"
+                        style="box-sizing: border-box; width: 100%; height: 38px; padding: 6px 10px; font-size: 13px; font-family: inherit; color: #1f2328; background-color: #ffffff; border: 1px solid #d0d7de; border-radius: 6px; font-weight: 500;">
+                    <option value="">-- Custom Schedule --</option>
+                    <option value="option_1" {if $RADIO_APPLIED_PACKAGE == 'option_1'}selected{/if}>Option 1: 50 Prime Recorded Ads (Weekly - R5,999)</option>
+                    <option value="option_2" {if $RADIO_APPLIED_PACKAGE == 'option_2'}selected{/if}>Option 2: 50 Prime Live Reads (Weekly - R6,999)</option>
+                    <option value="option_3" {if $RADIO_APPLIED_PACKAGE == 'option_3'}selected{/if}>Option 3: 120 Prime Recorded Ads (Monthly - R15,999)</option>
+                    <option value="option_4" {if $RADIO_APPLIED_PACKAGE == 'option_4'}selected{/if}>Option 4: 120 Prime Live Reads (Monthly - R16,999)</option>
+                </select>
+            </div>
         </div>
 
-        <div>
-            <label for="spot_duration_c" style="display: block; font-weight: 600; margin-bottom: 4px;">
-                Spot Duration
-            </label>
-            <select id="spot_duration_c"
-                    name="spot_duration_c"
-                    style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-weight: 500;">
-                <option value="15 sec" {if $RADIO_SPOT_DURATION == '15 sec'}selected{/if}>15 sec (50% Rate)</option>
-                <option value="30 sec" {if $RADIO_SPOT_DURATION == '30 sec' || empty($RADIO_SPOT_DURATION)}selected{/if}>30 sec (Standard)</option>
-                <option value="45 sec" {if $RADIO_SPOT_DURATION == '45 sec'}selected{/if}>45 sec (150% Rate)</option>
-                <option value="60 sec" {if $RADIO_SPOT_DURATION == '60 sec'}selected{/if}>60 sec (200% Rate)</option>
-            </select>
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #d8dee4;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button"
+                        id="radio_toggle_avails"
+                        class="button"
+                        style="height: 36px; padding: 0 16px; background: #0969da; color: #ffffff; border: 1px solid #0969da; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    📊 Station Avails
+                </button>
+                <button type="button"
+                        id="radio_clear_all_spots"
+                        class="button"
+                        style="height: 36px; padding: 0 16px; background: #cf222e; color: #ffffff; border: 1px solid #cf222e; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center;">
+                    Clear All Spots
+                </button>
+            </div>
         </div>
-
-        <div>
-            <label for="industry_category_c" style="display: block; font-weight: 600; margin-bottom: 4px;">
-                Advertiser Category
-            </label>
-            <select id="industry_category_c"
-                    name="industry_category_c"
-                    style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-weight: 500;">
-                <option value="other" {if $RADIO_INDUSTRY_CATEGORY == 'other'}selected{/if}>General / Other</option>
-                <option value="automotive" {if $RADIO_INDUSTRY_CATEGORY == 'automotive'}selected{/if}>Automotive & Dealerships</option>
-                <option value="dining" {if $RADIO_INDUSTRY_CATEGORY == 'dining'}selected{/if}>Restaurants & Fast Food</option>
-                <option value="hospitality" {if $RADIO_INDUSTRY_CATEGORY == 'hospitality'}selected{/if}>Nightlife, Bars & Events</option>
-                <option value="financial" {if $RADIO_INDUSTRY_CATEGORY == 'financial'}selected{/if}>Banking & Financial</option>
-                <option value="campus" {if $RADIO_INDUSTRY_CATEGORY == 'campus'}selected{/if}>Campus Retail & Student Services</option>
-                <option value="telecom" {if $RADIO_INDUSTRY_CATEGORY == 'telecom'}selected{/if}>Telecom & Tech</option>
-                <option value="health" {if $RADIO_INDUSTRY_CATEGORY == 'health'}selected{/if}>Healthcare & Fitness</option>
-                <option value="education" {if $RADIO_INDUSTRY_CATEGORY == 'education'}selected{/if}>Education & Departments</option>
-            </select>
-        </div>
-
-        <div>
-            <label for="applied_package_c" style="display: block; font-weight: 600; margin-bottom: 4px;">
-                Package Preset
-            </label>
-            <select id="applied_package_c"
-                    name="applied_package_c"
-                    style="padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-weight: 500;">
-                <option value="">-- Custom Schedule --</option>
-                <option value="option_1" {if $RADIO_APPLIED_PACKAGE == 'option_1'}selected{/if}>Option 1: 50 Prime Recorded Ads (Weekly - R5,999)</option>
-                <option value="option_2" {if $RADIO_APPLIED_PACKAGE == 'option_2'}selected{/if}>Option 2: 50 Prime Live Reads (Weekly - R6,999)</option>
-                <option value="option_3" {if $RADIO_APPLIED_PACKAGE == 'option_3'}selected{/if}>Option 3: 120 Prime Recorded Ads (Monthly - R15,999)</option>
-                <option value="option_4" {if $RADIO_APPLIED_PACKAGE == 'option_4'}selected{/if}>Option 4: 120 Prime Live Reads (Monthly - R16,999)</option>
-            </select>
-        </div>
-
-        <div>
-            <button type="button"
-                    id="radio_toggle_avails"
-                    class="button"
-                    style="padding: 6px 14px; background: #0969da; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
-                📊 Station Avails
-            </button>
-        </div>
-
-        <!-- RADIO_CLEAR_ALL_SPOTS_START -->
-        <div>
-            <button type="button"
-                    id="radio_clear_all_spots"
-                    class="button"
-                    style="padding: 6px 14px; background: #d9534f; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
-                Clear All Spots
-            </button>
-        </div>
-        <!-- RADIO_CLEAR_ALL_SPOTS_END -->
     </div>
 
     <div id="radio_capacity_warning_msg"
@@ -212,6 +212,20 @@
         'SPECIALTY-SHOW-1': 240.00,
         'SPECIALTY-SHOW-2': 220.00,
         'MUSIC-UNLIMITED': 120.00
+    };
+
+    var RADIO_PACKAGES = {
+        'option_1': { rate: 5999.00, total_spots: 50, type: 'weekly' },
+        'option_2': { rate: 6999.00, total_spots: 50, type: 'weekly' },
+        'option_3': { rate: 15999.00, total_spots: 120, type: 'monthly' },
+        'option_4': { rate: 16999.00, total_spots: 120, type: 'monthly' }
+    };
+
+    var RADIO_DURATION_MULTIPLIERS = {
+        '15 sec': 0.50,
+        '30 sec': 1.00,
+        '45 sec': 1.50,
+        '60 sec': 2.00
     };
 
     var RADIO_SLOT_DESCRIPTIONS = {
@@ -360,6 +374,9 @@
                 if (typeof window.calculateLine === 'function') {
                     try { window.calculateLine(rowIdx, 'product_'); } catch (e) {}
                 }
+                setField('product_product_unit_price', Number(item.unit_price).toFixed(2));
+                setField('product_vat_amt', Number(item.vat_amt).toFixed(2));
+                setField('product_product_total_price', Number(item.net_total).toFixed(2));
             }
         }
 
@@ -469,36 +486,102 @@
 
         // Immediate synchronous DOM update so line items and totals update instantly on user input
         if (validationMsg === '') {
+            var durEl = document.getElementById('spot_duration_c');
+            var dur = durEl ? durEl.value : '30 sec';
+            var durMult = RADIO_DURATION_MULTIPLIERS[dur] || 1.0;
+
+            var pkgEl = document.getElementById('applied_package_c');
+            var pkgKey = pkgEl ? pkgEl.value : '';
+            var isPkg = Boolean(pkgKey && RADIO_PACKAGES[pkgKey]);
+            var pkgDef = isPkg ? RADIO_PACKAGES[pkgKey] : null;
+
             var localActive = [];
             var subtotal = 0.0;
             var tax = 0.0;
             var grandTotal = 0.0;
-            for (var pn in slotTotals) {
-                var st = slotTotals[pn];
-                var q = dateRangeValid ? st.total : st.weekly;
-                if (q > 0) {
-                    var rate = RADIO_SLOT_RATES[pn] || 0;
-                    var net = q * rate;
+
+            if (isPkg) {
+                var pkgBaseRate = Math.round(pkgDef.rate * durMult * 100) / 100;
+                var ratePerSpot = pkgBaseRate / pkgDef.total_spots;
+                var activeTotalQty = dateRangeValid ? totalSpots : weeklySpots;
+                var targetSubtotal = 0.0;
+                if (dateRangeValid) {
+                    targetSubtotal = Math.round(activeTotalQty * ratePerSpot * 100) / 100;
+                } else {
+                    targetSubtotal = (pkgDef.type === 'weekly')
+                        ? pkgBaseRate
+                        : Math.round((activeTotalQty / pkgDef.total_spots) * pkgBaseRate * 100) / 100;
+                }
+
+                var activeSlotsList = [];
+                for (var pn in slotTotals) {
+                    var st = slotTotals[pn];
+                    var q = dateRangeValid ? st.total : st.weekly;
+                    if (q > 0) {
+                        activeSlotsList.push({ pn: pn, q: q, st: st });
+                    }
+                }
+
+                var allocatedNet = 0.0;
+                for (var k = 0; k < activeSlotsList.length; k++) {
+                    var item = activeSlotsList[k];
+                    var net;
+                    if (k === activeSlotsList.length - 1) {
+                        net = Math.round((targetSubtotal - allocatedNet) * 100) / 100;
+                    } else {
+                        net = Math.round((item.q / (activeTotalQty || 1)) * targetSubtotal * 100) / 100;
+                    }
+                    allocatedNet = Math.round((allocatedNet + net) * 100) / 100;
+                    var unitPrice = item.q > 0 ? (Math.round((net / item.q) * 10000) / 10000) : 0;
                     var v = Math.round(net * 0.15 * 100) / 100;
                     var g = Math.round((net + v) * 100) / 100;
-                    subtotal += net;
-                    tax += v;
-                    grandTotal += g;
+                    subtotal = Math.round((subtotal + net) * 100) / 100;
+                    tax = Math.round((tax + v) * 100) / 100;
+                    grandTotal = Math.round((grandTotal + g) * 100) / 100;
                     localActive.push({
-                        part_number: pn,
-                        product_name: pn,
+                        part_number: item.pn,
+                        product_name: item.pn,
                         product_id: '',
-                        unit_price: rate,
-                        total_qty: q,
-                        weekly_qty: st.weekly,
+                        unit_price: unitPrice,
+                        total_qty: item.q,
+                        weekly_qty: item.st.weekly,
                         net_total: net,
                         vat_amt: v,
                         vat_rate: '15.0',
                         gross_total: g,
-                        description: RADIO_SLOT_DESCRIPTIONS[pn] || ''
+                        description: RADIO_SLOT_DESCRIPTIONS[item.pn] || ''
                     });
                 }
+            } else {
+                for (var pn in slotTotals) {
+                    var st = slotTotals[pn];
+                    var q = dateRangeValid ? st.total : st.weekly;
+                    if (q > 0) {
+                        var baseRate = RADIO_SLOT_RATES[pn] || 0;
+                        var rate = Math.round(baseRate * durMult * 100) / 100;
+                        var net = Math.round(q * rate * 100) / 100;
+                        var v = Math.round(net * 0.15 * 100) / 100;
+                        var g = Math.round((net + v) * 100) / 100;
+                        subtotal = Math.round((subtotal + net) * 100) / 100;
+                        tax = Math.round((tax + v) * 100) / 100;
+                        grandTotal = Math.round((grandTotal + g) * 100) / 100;
+                        localActive.push({
+                            part_number: pn,
+                            product_name: pn,
+                            product_id: '',
+                            unit_price: rate,
+                            total_qty: q,
+                            weekly_qty: st.weekly,
+                            net_total: net,
+                            vat_amt: v,
+                            vat_rate: '15.0',
+                            gross_total: g,
+                            description: RADIO_SLOT_DESCRIPTIONS[pn] || ''
+                        });
+                    }
+                }
             }
+
             applyProductsToQuoteDom({
                 active_products: localActive,
                 totals: {
@@ -693,7 +776,10 @@
     }
 
     function applyPackagePreset(pkgKey) {
-        if (!pkgKey) return;
+        if (!pkgKey) {
+            scheduleRecalcAndSync(true);
+            return;
+        }
         fetch('index.php?entryPoint=radio_schedule_ajax_sync&action=get_packages')
         .then(function(res) { return res.json(); })
         .then(function(data) {
@@ -773,6 +859,10 @@
                 for (var j = 0; j < allInputs.length; j++) {
                     allInputs[j].value = '0';
                     allInputs[j].style.borderColor = '#c0c7cf';
+                }
+                var pkgEl = document.getElementById('applied_package_c');
+                if (pkgEl) {
+                    pkgEl.value = '';
                 }
                 scheduleRecalcAndSync(true);
             });

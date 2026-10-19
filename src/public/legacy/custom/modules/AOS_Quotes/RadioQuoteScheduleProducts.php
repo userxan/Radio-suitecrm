@@ -269,13 +269,18 @@ class RadioQuoteScheduleProducts
                 ? (string) $bean->spot_duration_c
                 : (string) ($cstmRow['spot_duration_c'] ?? '30 sec');
 
+            $appliedPackage = ($bean !== null && property_exists($bean, 'applied_package_c') && !empty($bean->applied_package_c))
+                ? (string) $bean->applied_package_c
+                : (string) ($cstmRow['applied_package_c'] ?? '');
+
             // 3. Calculate schedule quantities across inclusive date range
             $calc = RadioScheduleService::calculateSchedule(
                 $inputData,
                 $startDate !== null ? (string) $startDate : null,
                 $endDate !== null ? (string) $endDate : null,
                 $db,
-                $spotDuration
+                $spotDuration,
+                $appliedPackage
             );
 
             // Map desired programme quantities by part_number
@@ -336,9 +341,9 @@ class RadioQuoteScheduleProducts
 
                 if ($qty > 0) {
                     $cleanDesc = self::cleanRadioLineDescription($prog['description'], $pn);
-                    $unitPrice = round((float) $prog['unit_price'], 2);
-                    $netTotal = round($qty * $unitPrice, 2);
-                    $vatAmt = round($netTotal * RadioScheduleService::DEFAULT_VAT_RATE, 2);
+                    $unitPrice = round((float) $prog['unit_price'], 4);
+                    $netTotal = round((float) $prog['net_total'], 2);
+                    $vatAmt = round((float) $prog['vat_amt'], 2);
                     $prodId = (string) ($prog['product_id'] ?? '');
                     $prodName = (string) ($prog['product_name'] ?: $pn);
 

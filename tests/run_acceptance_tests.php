@@ -434,6 +434,108 @@ assertTest(
     'pdfBytes=' . (file_exists($pdfFile) ? filesize($pdfFile) : 0)
 );
 
+// B4: Package Presets Pricing & Calculation (Option 1: 50 Prime Recorded Ads @ R5,999; Option 3: 120 Prime Recorded Ads @ R15,999)
+$pkgDefs = RadioScheduleService::getPackageDefinitions();
+$opt1Def = $pkgDefs['option_1'] ?? [];
+$opt3Def = $pkgDefs['option_3'] ?? [];
+
+// 1. Calculate Option 1 for 1 week (2026-06-15 to 2026-06-21)
+$calcOpt1 = RadioScheduleService::calculateSchedule(
+    $opt1Def['prime_slots'] ?? [],
+    '2026-06-15',
+    '2026-06-21',
+    $db,
+    '30 sec',
+    'option_1'
+);
+
+$opt1SpotsOk = ($calcOpt1['weekly_spots'] === 50) && ($calcOpt1['total_spots'] === 50);
+$opt1Subtotal = (float) ($calcOpt1['totals']['subtotal_amount'] ?? 0.0);
+$opt1Tax = (float) ($calcOpt1['totals']['tax_amount'] ?? 0.0);
+$opt1Total = (float) ($calcOpt1['totals']['total_amount'] ?? 0.0);
+$opt1PricingOk = (round($opt1Subtotal, 2) === 5999.00)
+    && (round($opt1Tax, 2) === 899.85)
+    && (round($opt1Total, 2) === 6898.85);
+
+// 2. Calculate Option 3 for 4 weeks (2026-06-01 to 2026-06-28)
+$calcOpt3 = RadioScheduleService::calculateSchedule(
+    $opt3Def['prime_slots'] ?? [],
+    '2026-06-01',
+    '2026-06-28',
+    $db,
+    '30 sec',
+    'option_3'
+);
+$opt3SpotsOk = ($calcOpt3['weekly_spots'] === 30) && ($calcOpt3['total_spots'] === 120);
+$opt3Subtotal = (float) ($calcOpt3['totals']['subtotal_amount'] ?? 0.0);
+$opt3Tax = (float) ($calcOpt3['totals']['tax_amount'] ?? 0.0);
+$opt3Total = (float) ($calcOpt3['totals']['total_amount'] ?? 0.0);
+$opt3PricingOk = (round($opt3Subtotal, 2) === 15999.00)
+    && (round($opt3Tax, 2) === 2399.85)
+    && (round($opt3Total, 2) === 18398.85);
+
+// 3. Save a Quote with Option 1 applied and verify aos_products_quotes rows and aos_quotes totals
+$quotePkg = BeanFactory::newBean('AOS_Quotes');
+$quotePkg->name = 'Acceptance Quote B4 Package Option 1';
+$quotePkg->stage = 'Draft';
+$quotePkg->assigned_user_id = $current_user->id;
+$quotePkg->campaign_start_date_c = '2026-06-15';
+$quotePkg->campaign_end_date_c = '2026-06-21';
+$quotePkg->applied_package_c = 'option_1';
+$quotePkg->spot_duration_c = '30 sec';
+foreach (($opt1Def['prime_slots'] ?? []) as $f => $val) {
+    $quotePkg->$f = $val;
+}
+$quotePkgId = (string) $quotePkg->save();
+
+$savedPkgQuoteRes = $db->query("SELECT subtotal_amount, tax_amount, total_amount FROM aos_quotes WHERE id = '" . $db->quote($quotePkgId) . "'", false);
+$savedPkgQuote = $savedPkgQuoteRes ? $db->fetchByAssoc($savedPkgQuoteRes) : null;
+$savedPkgLinesRes = $db->query(
+    "SELECT COALESCE(SUM(product_total_price), 0) AS line_subtotal, COALESCE(SUM(vat_amt), 0) AS line_tax, COUNT(*) AS cnt
+     FROM aos_products_quotes
+     WHERE parent_type = 'AOS_Quotes' AND parent_id = '" . $db->quote($quotePkgId) . "' AND deleted = 0",
+    false
+);
+$savedPkgLines = $savedPkgLinesRes ? $db->fetchByAssoc($savedPkgLinesRes) : null;
+
+$savedSubtotal = round((float) ($savedPkgQuote['subtotal_amount'] ?? 0.0), 2);
+$savedTax = round((float) ($savedPkgQuote['tax_amount'] ?? 0.0), 2);
+$savedTotal = round((float) ($savedPkgQuote['total_amount'] ?? 0.0), 2);
+$linesSubtotal = round((float) ($savedPkgLines['line_subtotal'] ?? 0.0), 2);
+$linesTax = round((float) ($savedPkgLines['line_tax'] ?? 0.0), 2);
+
+$quotePkgOk = ($savedSubtotal === 5999.00)
+    && ($savedTax === 899.85)
+    && ($savedTotal === 6898.85)
+    && ($linesSubtotal === 5999.00)
+    && ($linesTax === 899.85)
+    && ((int) ($savedPkgLines['cnt'] ?? 0) === 3);
+
+// Clean up test quote B4
+$db->query("DELETE FROM aos_quotes_cstm WHERE id_c = '" . $db->quote($quotePkgId) . "'", false);
+$db->query("DELETE FROM aos_products_quotes WHERE parent_type = 'AOS_Quotes' AND parent_id = '" . $db->quote($quotePkgId) . "'", false);
+$db->query("DELETE FROM aos_line_item_groups WHERE parent_id = '" . $db->quote($quotePkgId) . "'", false);
+$db->query("DELETE FROM aos_quotes WHERE id = '" . $db->quote($quotePkgId) . "'", false);
+
+assertTest(
+    'B4',
+    'Package Presets calculate correct advertised package prices (Option 1 R5,999.00, Option 3 R15,999.00) and persist accurately to Quote totals and line items',
+    $opt1SpotsOk && $opt1PricingOk && $opt3SpotsOk && $opt3PricingOk && $quotePkgOk,
+    sprintf(
+        'Opt1(sub=%s,tax=%s,tot=%s), Opt3(sub=%s,tax=%s,tot=%s), SavedQuote(sub=%s,tax=%s,tot=%s,lineSub=%s)',
+        $opt1Subtotal,
+        $opt1Tax,
+        $opt1Total,
+        $opt3Subtotal,
+        $opt3Tax,
+        $opt3Total,
+        $savedSubtotal,
+        $savedTax,
+        $savedTotal,
+        $linesSubtotal
+    )
+);
+
 // ---------------------------------------------------------------------------
 // 20.3 Radio Campaign conversion (C1 - C3) & 20.4 Export correctness (D1 - D6)
 // Reproduce the exact historical test Quote from Section 12.3 & Section 14.3:

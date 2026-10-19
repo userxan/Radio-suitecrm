@@ -370,6 +370,8 @@ class RadioScheduleService
      * @param string|null $rawStartDate
      * @param string|null $rawEndDate
      * @param mixed $db Optional DB instance for live catalogue rates
+     * @param string|null $spotDuration
+     * @param string|null $appliedPackage
      * @return array<string, mixed>
      */
     public static function calculateSchedule(
@@ -377,7 +379,8 @@ class RadioScheduleService
         ?string $rawStartDate,
         ?string $rawEndDate,
         mixed $db = null,
-        ?string $spotDuration = null
+        ?string $spotDuration = null,
+        ?string $appliedPackage = null
     ): array {
         $tz = new DateTimeZone(self::TIMEZONE);
         $startStr = self::normalizeDate($rawStartDate);
@@ -416,6 +419,11 @@ class RadioScheduleService
 
         $spotDur = $spotDuration ?? ($inputData['spot_duration_c'] ?? ($inputData['spot_length'] ?? '30 sec'));
         $durationMultiplier = self::getDurationMultiplier($spotDur);
+
+        $appliedPkg = $appliedPackage ?? ($inputData['applied_package_c'] ?? '');
+        $pkgDefinitions = self::getPackageDefinitions();
+        $isPackage = !empty($appliedPkg) && isset($pkgDefinitions[$appliedPkg]);
+        $pkgDef = $isPackage ? $pkgDefinitions[$appliedPkg] : null;
 
         $weeklySpots = 0;
         $totalSpots = 0;
@@ -475,25 +483,75 @@ class RadioScheduleService
         $taxAmount = 0.0;
         $totalAmount = 0.0;
 
-        foreach ($slotAggregates as $slotKey => &$agg) {
-            $lineQty = $dateRangeValid ? $agg['total_qty'] : 0;
-            $unitPrice = (float) $agg['unit_price'];
-            $net = round($lineQty * $unitPrice, 2);
-            $vat = round($net * self::DEFAULT_VAT_RATE, 2);
-            $gross = round($net + $vat, 2);
+        if ($isPackage && $dateRangeValid && $totalSpots > 0) {
+            $pkgBaseRate = round((float) $pkgDef['rate'] * $durationMultiplier, 2);
+            $ratePerSpot = $pkgBaseRate / (float) $pkgDef['total_spots'];
+            $targetSubtotal = round($totalSpots * $ratePerSpot, 2);
 
-            $agg['net_total'] = $net;
-            $agg['vat_amt'] = $vat;
-            $agg['gross_total'] = $gross;
+            $activeKeys = [];
+            foreach ($slotAggregates as $slotKey => $agg) {
+                if ($agg['total_qty'] > 0) {
+                    $activeKeys[] = $slotKey;
+                }
+            }
 
-            if ($lineQty > 0) {
-                $activeProducts[] = $agg;
+            $accumulatedNet = 0.0;
+            $countActive = count($activeKeys);
+            for ($i = 0; $i < $countActive; $i++) {
+                $slotKey = $activeKeys[$i];
+                $lineQty = $slotAggregates[$slotKey]['total_qty'];
+                if ($i === $countActive - 1) {
+                    $net = round($targetSubtotal - $accumulatedNet, 2);
+                } else {
+                    $net = round(($lineQty / $totalSpots) * $targetSubtotal, 2);
+                }
+                $accumulatedNet = round($accumulatedNet + $net, 2);
+                $unitPrice = $lineQty > 0 ? round($net / $lineQty, 4) : 0.0;
+                $vat = round($net * self::DEFAULT_VAT_RATE, 2);
+                $gross = round($net + $vat, 2);
+
+                $slotAggregates[$slotKey]['unit_price'] = $unitPrice;
+                $slotAggregates[$slotKey]['net_total'] = $net;
+                $slotAggregates[$slotKey]['vat_amt'] = $vat;
+                $slotAggregates[$slotKey]['gross_total'] = $gross;
+                $activeProducts[] = $slotAggregates[$slotKey];
+
                 $subtotalAmount = round($subtotalAmount + $net, 2);
                 $taxAmount = round($taxAmount + $vat, 2);
                 $totalAmount = round($totalAmount + $gross, 2);
             }
+        } else {
+            if ($isPackage && !$dateRangeValid && $weeklySpots > 0) {
+                $pkgBaseRate = round((float) $pkgDef['rate'] * $durationMultiplier, 2);
+                $ratePerSpot = $pkgBaseRate / (float) $pkgDef['total_spots'];
+                foreach ($slotAggregates as $slotKey => &$agg) {
+                    if ($agg['weekly_qty'] > 0) {
+                        $agg['unit_price'] = round($ratePerSpot, 4);
+                    }
+                }
+                unset($agg);
+            }
+
+            foreach ($slotAggregates as $slotKey => &$agg) {
+                $lineQty = $dateRangeValid ? $agg['total_qty'] : 0;
+                $unitPrice = (float) $agg['unit_price'];
+                $net = round($lineQty * $unitPrice, 2);
+                $vat = round($net * self::DEFAULT_VAT_RATE, 2);
+                $gross = round($net + $vat, 2);
+
+                $agg['net_total'] = $net;
+                $agg['vat_amt'] = $vat;
+                $agg['gross_total'] = $gross;
+
+                if ($lineQty > 0) {
+                    $activeProducts[] = $agg;
+                    $subtotalAmount = round($subtotalAmount + $net, 2);
+                    $taxAmount = round($taxAmount + $vat, 2);
+                    $totalAmount = round($totalAmount + $gross, 2);
+                }
+            }
+            unset($agg);
         }
-        unset($agg);
 
         return [
             'start_date' => $startStr,
@@ -507,6 +565,9 @@ class RadioScheduleService
             'total_spots' => $dateRangeValid ? $totalSpots : 0,
             'spot_duration' => $spotDur,
             'duration_multiplier' => $durationMultiplier,
+            'applied_package' => $appliedPkg,
+            'is_package' => $isPackage,
+            'package_definition' => $pkgDef,
             'cells' => $sanitizedCells,
             'programmes' => array_values($slotAggregates),
             'active_products' => $activeProducts,
