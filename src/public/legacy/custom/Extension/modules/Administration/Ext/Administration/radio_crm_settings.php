@@ -5,11 +5,11 @@ $admin_option_defs['Administration']['radio_station_wizard'] = [
     'Administration',
     'LBL_RADIO_STATION_SETUP_TITLE',
     'LBL_RADIO_STATION_SETUP_DESC',
-    './index.php?entryPoint=radio_station_wizard',
+    './index.php?module=Administration&action=radio_station_wizard',
     'admin-radio-settings',
 ];
 
-$admin_group_header['radio_crm'] = [
+$admin_group_header[] = [
     'LBL_RADIO_STATION_ADMIN_TITLE',
     '',
     false,

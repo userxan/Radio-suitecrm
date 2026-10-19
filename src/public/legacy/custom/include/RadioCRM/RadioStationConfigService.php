@@ -320,7 +320,7 @@ HTML;
         $now = gmdate('Y-m-d H:i:s');
         $db->query(
             "UPDATE aos_pdf_templates
-             SET header = '{$hdrEsc}', date_modified = '{$now}'
+             SET pdfheader = '{$hdrEsc}', date_modified = '{$now}'
              WHERE id = '{$templateId}'",
             false
         );
