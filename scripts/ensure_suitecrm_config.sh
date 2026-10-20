@@ -18,7 +18,17 @@ DB_PORT="${DB_PORT:-3306}"
 DB_NAME="${DB_NAME:-suitecrm_db}"
 DB_USER="${DB_USER:-suitecrm_user}"
 DB_PASS="${DB_PASS:-ChangeMe_DB_Pass!}"
-SUITECRM_SITE_URL="${SUITECRM_SITE_URL:-http://127.0.0.1}"
+SUITECRM_SITE_URL="${SUITECRM_SITE_URL:-}"
+
+# Auto-detect public or primary IP if SUITECRM_SITE_URL is not set or default
+if [ -z "${SUITECRM_SITE_URL}" ] || [ "${SUITECRM_SITE_URL}" = "http://127.0.0.1" ] || [ "${SUITECRM_SITE_URL}" = "http://84.8.141.105" ]; then
+    DETECTED_IP="$(curl -s4 --max-time 2 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}' || echo '')"
+    if [ -n "${DETECTED_IP}" ]; then
+        SUITECRM_SITE_URL="http://${DETECTED_IP}"
+    else
+        SUITECRM_SITE_URL="http://127.0.0.1"
+    fi
+fi
 
 # 2. Ensure /var/www/html/.env.local exists for Symfony
 if [ ! -f "${APP_ROOT}/.env.local" ]; then
@@ -55,14 +65,35 @@ if [ "${NEED_CONFIG}" -eq 1 ] && [ -f "${REPO_DIR}/docker/config.php.template" ]
         "${REPO_DIR}/docker/config.php.template" > "${LEGACY_DIR}/config.php"
     chown 33:33 "${LEGACY_DIR}/config.php"
     chmod 664 "${LEGACY_DIR}/config.php"
+elif [ -f "${LEGACY_DIR}/config.php" ] && [ -n "${SUITECRM_SITE_URL}" ]; then
+    CURRENT_SITE_URL="$(grep "'site_url'" "${LEGACY_DIR}/config.php" 2>/dev/null | head -n 1 | sed -E "s/.*'site_url' => '([^']*)'.*/\1/" || echo '')"
+    if [ -z "${CURRENT_SITE_URL}" ] || [ "${CURRENT_SITE_URL}" = "http://84.8.141.105" ] || [ "${CURRENT_SITE_URL}" = "http://127.0.0.1" ]; then
+        echo "[Config] Updating site_url in ${LEGACY_DIR}/config.php to ${SUITECRM_SITE_URL} ..."
+        sed -i "s|'site_url' => '.*'|'site_url' => '${SUITECRM_SITE_URL}'|g" "${LEGACY_DIR}/config.php" 2>/dev/null || true
+    fi
 fi
 
-# 4. Ensure config_override.php exists with max upload size
+# 4. Ensure config_override.php exists with max upload size and dynamic site_url
 if [ ! -f "${LEGACY_DIR}/config_override.php" ]; then
     cat > "${LEGACY_DIR}/config_override.php" <<'EOF'
 <?php
 $sugar_config['upload_maxsize'] = 67108864;
+if (isset($_SERVER['HTTP_HOST']) && !empty($_SERVER['HTTP_HOST'])) {
+    $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    $sugar_config['site_url'] = $proto . $_SERVER['HTTP_HOST'];
+}
 EOF
     chown 33:33 "${LEGACY_DIR}/config_override.php"
     chmod 664 "${LEGACY_DIR}/config_override.php"
+else
+    if ! grep -q "HTTP_HOST" "${LEGACY_DIR}/config_override.php" 2>/dev/null; then
+        cat >> "${LEGACY_DIR}/config_override.php" <<'EOF'
+
+// Dynamic site_url for multi-IP/domain access
+if (isset($_SERVER['HTTP_HOST']) && !empty($_SERVER['HTTP_HOST'])) {
+    $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    $sugar_config['site_url'] = $proto . $_SERVER['HTTP_HOST'];
+}
+EOF
+    fi
 fi

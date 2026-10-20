@@ -388,3 +388,55 @@ docker exec -u www-data radio_crm_web php /opt/radio_crm_repo/scripts/generate_i
 docker exec -u www-data radio_crm_web php /opt/radio_crm_repo/migrations/007_quick_repair_and_rebuild.php
 docker exec -u www-data radio_crm_web php /var/www/html/bin/console cache:clear
 ```
+
+### "Site Could Not Be Reached" Troubleshooting Checklist
+
+If you see **"This site can't be reached"**, **"Connection Refused"**, or **"Connection Timed Out"** in your browser after installation:
+
+1. **Explicitly type `http://` (not `https://`)**:
+   - Modern browsers (Chrome, Edge, Safari) default to `https://`.
+   - The web container serves over HTTP on port 80 out of the box unless an SSL reverse proxy / certificate is configured.
+   - Enter `http://<YOUR_SERVER_IP>` in the address bar (e.g. `http://84.8.141.105`).
+
+2. **Use the Server's Public IPv4 Address (not Private/VPC IP)**:
+   - If your server terminal shows an IP like `10.0.0.85` or `172.x.x.x` (private RFC 1918 addresses), external browsers cannot connect directly to that private IP over the Internet.
+   - Check your public IP by running:
+     ```bash
+     curl -4 ifconfig.me
+     ```
+   - Connect using `http://<PUBLIC_IP>`.
+
+3. **Cloud Firewall / Security Group (AWS, Azure, GCP, Hetzner, DigitalOcean)**:
+   - Cloud providers block incoming port 80 by default.
+   - Open your cloud console (e.g. AWS EC2 Security Groups, Azure NSG, Hetzner Cloud Console).
+   - Add an **Inbound Rule**:
+     - **Type**: HTTP
+     - **Protocol**: TCP
+     - **Port**: 80
+     - **Source**: `0.0.0.0/0` (Anywhere)
+
+4. **Ubuntu Host Firewall (`ufw`)**:
+   - Verify whether UFW is running:
+     ```bash
+     sudo ufw status
+     ```
+   - If `Status: active`, allow HTTP and SSH:
+     ```bash
+     sudo ufw allow 80/tcp
+     sudo ufw allow 22/tcp
+     sudo ufw reload
+     ```
+
+5. **Verify Web Server is Responding Locally**:
+   - Test locally on the server CLI:
+     ```bash
+     curl -IL http://127.0.0.1
+     ```
+   - If it returns `HTTP/1.1 200 OK`, the web application is running properly and the reachability issue is network/firewall related.
+
+6. **Update `SUITECRM_SITE_URL` in `.env`**:
+   - Check `/opt/suitecrm/.env` and verify `SUITECRM_SITE_URL` matches your public IP or domain:
+     ```bash
+     grep '^SUITECRM_SITE_URL=' /opt/suitecrm/.env
+     ```
+   - Run `./scripts/deploy.sh` to synchronize the URL into SuiteCRM.

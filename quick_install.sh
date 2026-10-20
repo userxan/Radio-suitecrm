@@ -78,10 +78,13 @@ chmod -R 2775 /srv/myriad_exports
 echo "[4/6] Configuring environment settings..."
 if [ ! -f .env ]; then
     cp .env.example .env
-    # Auto-detect public / primary host IP
-    DETECTED_IP="$(curl -s4 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
+fi
+# Auto-detect public / primary host IP if SUITECRM_SITE_URL is empty or placeholder
+CURRENT_SITE_URL="$(grep '^SUITECRM_SITE_URL=' .env 2>/dev/null | cut -d '=' -f2- || echo '')"
+if [ -z "${CURRENT_SITE_URL}" ] || [ "${CURRENT_SITE_URL}" = "http://127.0.0.1" ] || [ "${CURRENT_SITE_URL}" = "http://84.8.141.105" ]; then
+    DETECTED_IP="$(curl -s4 --max-time 2 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
     if [ -n "${DETECTED_IP}" ]; then
-        sed -i "s|SUITECRM_SITE_URL=.*|SUITECRM_SITE_URL=http://${DETECTED_IP}|g" .env
+        sed -i "s|^SUITECRM_SITE_URL=.*|SUITECRM_SITE_URL=http://${DETECTED_IP}|g" .env
         echo "  = Configured SUITECRM_SITE_URL=http://${DETECTED_IP}"
     fi
 fi
