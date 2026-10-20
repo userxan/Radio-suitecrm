@@ -4,14 +4,14 @@ This repository contains the complete, reproducible source code, Docker infrastr
 
 ---
 
-## 🚀 Quick Start & Installation Guide
+##  Quick Start & Installation Guide
 
 > [!IMPORTANT]
 > **Looking to install on a fresh server or deploy across multiple radio stations?**  
 > Please see the full step-by-step guide: **[INSTALL.md](INSTALL.md)**  
 > It covers hardware specifications, Docker setup, `.env` variables, automated master installation, Nginx SSL reverse proxy, Samba share setup for Myriad studio playout machines, and automated backup crons.
 
-### ⚡ 1-Line Automated Server Install (No GitHub Login Required):
+###  1-Line Automated Server Install:
 Run this single command on a fresh Ubuntu / Debian server:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/userxan/Radio-suitecrm/master/quick_install.sh | sudo bash
