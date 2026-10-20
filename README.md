@@ -11,10 +11,29 @@ This repository contains the complete, reproducible source code, Docker infrastr
 > Please see the full step-by-step guide: **[INSTALL.md](INSTALL.md)**  
 > It covers hardware specifications, Docker setup, `.env` variables, automated master installation, Nginx SSL reverse proxy, Samba share setup for Myriad studio playout machines, and automated backup crons.
 
-### Master Install in 3 Steps:
+### ⚡ 1-Line Automated Server Install (No GitHub Login Required):
+Run this single command on a fresh Ubuntu / Debian server:
 ```bash
-git clone https://github.com/<your-username>/radio-crm.git /opt/suitecrm && cd /opt/suitecrm
+curl -fsSL https://raw.githubusercontent.com/userxan/Radio-suitecrm/master/quick_install.sh | sudo bash
+```
+*This automatically installs Docker, fetches the Radio CRM codebase without requiring any GitHub credentials, configures `.env`, starts the containers, executes all migrations, and runs verification tests.*
+
+---
+
+### Manual Install (No Username/Password Needed):
+Because this repository is **public**, you do **not** need a GitHub username, password, or Personal Access Token:
+
+```bash
+# 1. Clone directly (no password needed):
+git clone https://github.com/userxan/Radio-suitecrm.git /opt/suitecrm && cd /opt/suitecrm
+
+# Or download the tarball directly if you don't even have git installed:
+# curl -fsSL https://github.com/userxan/Radio-suitecrm/archive/refs/heads/master.tar.gz | tar -xz -C /opt/suitecrm --strip-components=1 && cd /opt/suitecrm
+
+# 2. Configure environment:
 cp .env.example .env && nano .env
+
+# 3. Launch and run master installer:
 docker compose up -d && sudo ./install_radio_crm.sh
 ```
 

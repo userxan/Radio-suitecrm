@@ -67,11 +67,18 @@ docker compose version
 
 ## Step 2: Clone the Repository
 
-Clone the project repository into `/opt/suitecrm` (or your preferred deployment directory):
+> [!TIP]
+> **Prefer a 1-command installer?** You can skip Steps 1 through 5 entirely by running:  
+> `curl -fsSL https://raw.githubusercontent.com/userxan/Radio-suitecrm/master/quick_install.sh | sudo bash`
+
+Because this repository is **public**, you do **not** need a GitHub username, password, or Personal Access Token (PAT) to clone or copy the repo:
 
 ```bash
-# Clone the repository
-sudo git clone https://github.com/<your-username>/radio-crm.git /opt/suitecrm
+# Clone the repository directly (no login or password required):
+sudo git clone https://github.com/userxan/Radio-suitecrm.git /opt/suitecrm
+
+# (Alternative) If you don't want to use Git, download and extract the archive directly:
+# sudo mkdir -p /opt/suitecrm && curl -fsSL https://github.com/userxan/Radio-suitecrm/archive/refs/heads/master.tar.gz | sudo tar -xz -C /opt/suitecrm --strip-components=1
 
 # Grant ownership to your current user
 sudo chown -R $USER:$USER /opt/suitecrm
