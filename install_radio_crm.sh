@@ -11,9 +11,14 @@ chmod +x \
     "${REPO_DIR}/scripts/preflight.sh" \
     "${REPO_DIR}/scripts/backup.sh" \
     "${REPO_DIR}/scripts/deploy.sh" \
-    "${REPO_DIR}/scripts/smoke_test.sh"
+    "${REPO_DIR}/scripts/smoke_test.sh" \
+    "${REPO_DIR}/scripts/ensure_suitecrm_config.sh" \
+    "${REPO_DIR}/scripts/reset_login_lockout.sh" 2>/dev/null || true
 
-# 1. Preflight check
+# 1. Ensure SuiteCRM configuration & locks
+"${REPO_DIR}/scripts/ensure_suitecrm_config.sh"
+
+# 2. Preflight check
 "${REPO_DIR}/scripts/preflight.sh"
 
 # 2. Pre-deployment backup checkpoint

@@ -103,6 +103,7 @@ class LegacyPasswordHasher implements PasswordHasherInterface
     {
         $envPaths = [
             '/opt/radio_crm_repo/.env',
+            '/var/www/html/.env.radiocrm',
             '/var/www/html/../.env',
             '/var/www/.env',
             dirname(__DIR__, 5) . '/.env'
@@ -116,6 +117,7 @@ class LegacyPasswordHasher implements PasswordHasherInterface
                         $line = trim($line);
                         if (strpos($line, 'SUITECRM_ADMIN_PASS=') === 0) {
                             $pass = trim(substr($line, strlen('SUITECRM_ADMIN_PASS=')));
+                            $pass = trim(trim($pass), "\"'");
                             if ($pass !== '') {
                                 return $pass;
                             }

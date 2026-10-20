@@ -53,9 +53,10 @@ chown -R 33:33 \
     "${APP_ROOT}/extensions/defaultExt" \
     "${APP_ROOT}/logs" \
     "${APP_ROOT}/.env.local" \
+    "${APP_ROOT}/.env.radiocrm" \
     "${APP_ROOT}/public/legacy/config.php" \
     "${APP_ROOT}/public/legacy/upload" \
-    "/srv/myriad_exports"
+    "/srv/myriad_exports" 2>/dev/null || true
 chmod -R 2775 "/srv/myriad_exports" "${APP_ROOT}/media" "${APP_ROOT}/public/legacy/upload"
 
 # 5. Run PHP syntax checks on all custom & migration PHP files
@@ -84,7 +85,7 @@ done
 
 # 6. Synchronize admin user & credentials from .env into database
 echo "[Deploy] Synchronizing admin credentials..."
-chmod 644 "${REPO_DIR}/.env" 2>/dev/null || true
+chmod 644 "${REPO_DIR}/.env" "${APP_ROOT}/.env.radiocrm" 2>/dev/null || true
 docker exec -u www-data radio_crm_web php /opt/radio_crm_repo/scripts/sync_admin_user.php
 
 # 7. Clear SuiteCRM 8 Symfony cache and ensure cache ownership

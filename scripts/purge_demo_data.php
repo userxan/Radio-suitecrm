@@ -6,21 +6,32 @@
 declare(strict_types=1);
 
 $repoDir = dirname(__DIR__);
-$envFile = $repoDir . '/.env';
+$envPaths = [
+    $repoDir . '/.env',
+    '/opt/radio_crm_repo/.env',
+    '/var/www/html/.env.radiocrm',
+    '/var/www/html/.env',
+    '/var/www/.env'
+];
 
-if (file_exists($envFile) && is_readable($envFile)) {
-    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if ($line === '' || strpos($line, '#') === 0) {
-            continue;
-        }
-        if (strpos($line, '=') !== false) {
-            list($k, $v) = explode('=', $line, 2);
-            $k = trim($k);
-            $v = trim($v);
-            putenv("{$k}={$v}");
-            $_ENV[$k] = $v;
+foreach ($envPaths as $envFile) {
+    if (file_exists($envFile) && is_readable($envFile)) {
+        $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines) {
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line === '' || strpos($line, '#') === 0) {
+                    continue;
+                }
+                if (strpos($line, '=') !== false) {
+                    list($k, $v) = explode('=', $line, 2);
+                    $k = trim($k);
+                    $v = trim(trim($v), "\"'");
+                    putenv("{$k}={$v}");
+                    $_ENV[$k] = $v;
+                }
+            }
+            break;
         }
     }
 }

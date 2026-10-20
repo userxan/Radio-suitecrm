@@ -51,6 +51,11 @@ if [[ "${TABLE_COUNT}" =~ ^[0-9]+$ ]] && [[ "${TABLE_COUNT}" -eq 0 ]] && [[ -f "
     echo "  + Base database schema seeded successfully."
 fi
 
+# Ensure configuration, config.php, and installer locks are in place before HTTP check
+if [ -f "${REPO_DIR}/scripts/ensure_suitecrm_config.sh" ]; then
+    bash "${REPO_DIR}/scripts/ensure_suitecrm_config.sh"
+fi
+
 echo "[4/5] Checking Apache config & local HTTP response..."
 docker exec radio_crm_web apachectl configtest
 curl -sI http://127.0.0.1 | head -5

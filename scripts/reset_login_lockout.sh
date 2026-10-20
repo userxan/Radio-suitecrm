@@ -21,6 +21,7 @@ docker exec radio_crm_web rm -rf /var/www/html/cache/prod/pools/system/* 2>/dev/
 # 3. Synchronize credentials and reset user lockouts in MariaDB
 echo "[3/4] Synchronizing admin credentials and resetting user lockouts..."
 chmod 644 "${REPO_DIR}/.env" 2>/dev/null || true
+"${REPO_DIR}/scripts/ensure_suitecrm_config.sh" 2>/dev/null || true
 docker exec radio_crm_web php /opt/radio_crm_repo/scripts/sync_admin_user.php || true
 
 # 4. Clear Symfony production cache
