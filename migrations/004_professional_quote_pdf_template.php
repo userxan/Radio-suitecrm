@@ -25,6 +25,11 @@ require_once 'custom/include/RadioCRM/RadioStationConfigService.php';
 use RadioCRM\RadioStationConfigService;
 
 global $db;
+if (!isset($db) || !is_object($db)) {
+    require_once 'include/database/DBManagerFactory.php';
+    $db = DBManagerFactory::getInstance();
+    $GLOBALS['db'] = $db;
+}
 
 $stationSettings = class_exists('RadioCRM\RadioStationConfigService')
     ? RadioStationConfigService::getSettings($db)

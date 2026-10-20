@@ -22,6 +22,11 @@ require_once 'custom/include/RadioCRM/RadioScheduleService.php';
 use RadioCRM\RadioScheduleService;
 
 global $db;
+if (!isset($db) || !is_object($db)) {
+    require_once 'include/database/DBManagerFactory.php';
+    $db = DBManagerFactory::getInstance();
+    $GLOBALS['db'] = $db;
+}
 
 echo "[Migration 002] Ensuring aos_quotes_cstm and 168 schedule + 2 date columns exist...\n";
 

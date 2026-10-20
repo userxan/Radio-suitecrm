@@ -22,6 +22,11 @@ if (!defined('sugarEntry')) {
 require_once 'include/entryPoint.php';
 
 global $db;
+if (!isset($db) || !is_object($db)) {
+    require_once 'include/database/DBManagerFactory.php';
+    $db = DBManagerFactory::getInstance();
+    $GLOBALS['db'] = $db;
+}
 
 echo "[Migration 005] Applying Radio CRM market enhancements schema updates...\n";
 

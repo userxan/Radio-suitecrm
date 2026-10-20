@@ -19,6 +19,16 @@ if (!defined('sugarEntry')) {
 require_once 'include/entryPoint.php';
 
 global $db;
+if (!isset($db) || !is_object($db)) {
+    require_once 'include/database/DBManagerFactory.php';
+    $db = DBManagerFactory::getInstance();
+    $GLOBALS['db'] = $db;
+}
+
+if (!is_object($db)) {
+    fwrite(STDERR, "ERROR: Could not initialize database manager. Check /var/www/html/public/legacy/config.php dbconfig.\n");
+    exit(1);
+}
 
 function columnExists(object $db, string $table, string $column): bool
 {

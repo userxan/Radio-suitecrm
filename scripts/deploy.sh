@@ -39,16 +39,21 @@ docker exec radio_crm_web ln -sfn "/srv/myriad_exports/myriad_reconciliation" "/
 echo "[Deploy] Syncing src/ into ${APP_ROOT} ..."
 rsync -a "${REPO_DIR}/src/" "${APP_ROOT}/"
 
-# 3. Set ownership to www-data (UID 33)
+# 3. Ensure SuiteCRM 8 .env.local and Legacy config.php exist
+"${REPO_DIR}/scripts/ensure_suitecrm_config.sh"
+
+# 4. Set ownership to www-data (UID 33)
 chown -R 33:33 \
     "${APP_ROOT}/cache" \
     "${APP_ROOT}/public" \
     "${APP_ROOT}/extensions/defaultExt" \
     "${APP_ROOT}/logs" \
+    "${APP_ROOT}/.env.local" \
+    "${APP_ROOT}/public/legacy/config.php" \
     "/srv/myriad_exports"
 chmod -R 2775 "/srv/myriad_exports"
 
-# 4. Run PHP syntax checks on all custom & migration PHP files
+# 5. Run PHP syntax checks on all custom & migration PHP files
 echo "[Deploy] Running PHP syntax checks..."
 docker exec radio_crm_web bash -c '
     set -e

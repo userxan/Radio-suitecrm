@@ -25,6 +25,11 @@ require_once 'custom/include/RadioCRM/RadioScheduleService.php';
 use RadioCRM\RadioStationConfigService;
 
 global $db;
+if (!isset($db) || !is_object($db)) {
+    require_once 'include/database/DBManagerFactory.php';
+    $db = DBManagerFactory::getInstance();
+    $GLOBALS['db'] = $db;
+}
 
 echo "[Migration 006] Ensuring radio_station_settings table exists...\n";
 
