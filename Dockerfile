@@ -38,6 +38,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY docker/apache-suitecrm.conf /etc/apache2/sites-available/000-default.conf
 COPY docker/php-suitecrm.ini /etc/php/8.3/apache2/conf.d/99-suitecrm.ini
 COPY docker/php-suitecrm.ini /etc/php/8.3/cli/conf.d/99-suitecrm.ini
+COPY docker/entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 RUN mkdir -p /var/www/html /srv/myriad_exports/myriad_daily_logs /srv/radio_crm_backups /var/run/apache2 \
     && chown -R www-data:www-data /var/www/html /srv/myriad_exports
@@ -46,4 +48,4 @@ WORKDIR /var/www/html
 
 EXPOSE 80
 
-CMD ["apachectl", "-D", "FOREGROUND"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

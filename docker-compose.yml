@@ -27,6 +27,7 @@ services:
     pull_policy: build
     container_name: radio_crm_web
     restart: unless-stopped
+    entrypoint: ["/opt/radio_crm_repo/docker/entrypoint.sh"]
     depends_on:
       mariadb:
         condition: service_healthy
