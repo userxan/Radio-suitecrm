@@ -22,10 +22,10 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-# 2. Install base prerequisites (curl, git, tar, ca-certificates)
+# 2. Install base prerequisites (curl, git, tar, ca-certificates, unzip)
 echo "[1/6] Installing system prerequisites..."
 apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl git tar ca-certificates jq rsync
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl git tar unzip ca-certificates jq rsync
 
 # 3. Ensure Docker and Docker Compose plugin are installed
 if ! command -v docker >/dev/null 2>&1; then
@@ -59,7 +59,22 @@ fi
 
 cd "${TARGET_DIR}"
 
-# 5. Prepare .env configuration
+# 5. Ensure SuiteCRM 8.10.1 core files exist in /var/www/html
+if [ ! -f /var/www/html/bin/console ]; then
+    echo "  + SuiteCRM 8.10.1 core not found in /var/www/html. Downloading official release..."
+    mkdir -p /var/www/html /tmp/suitecrm_dl
+    curl -fsSL https://github.com/SuiteCRM/SuiteCRM-Core/releases/download/v8.10.1/SuiteCRM-8.10.1.zip -o /tmp/suitecrm_dl/suitecrm.zip
+    unzip -q /tmp/suitecrm_dl/suitecrm.zip -d /var/www/html
+    rm -rf /tmp/suitecrm_dl
+    chown -R 33:33 /var/www/html
+    chmod -R 775 /var/www/html
+fi
+
+mkdir -p /srv/myriad_exports/myriad_daily_logs /srv/myriad_exports/myriad_reconciliation /srv/radio_crm_backups
+chown -R 33:33 /srv/myriad_exports
+chmod -R 2775 /srv/myriad_exports
+
+# 6. Prepare .env configuration
 echo "[4/6] Configuring environment settings..."
 if [ ! -f .env ]; then
     cp .env.example .env
@@ -71,9 +86,9 @@ if [ ! -f .env ]; then
     fi
 fi
 
-# 6. Launch Docker containers & run master installer
-echo "[5/6] Launching Docker containers..."
-docker compose up -d
+# 7. Launch Docker containers (build local image without pulling from Docker Hub)
+echo "[5/6] Building and launching Docker containers..."
+docker compose up -d --build
 
 echo "[6/6] Running master installer, migrations, and verification suite..."
 chmod +x ./install_radio_crm.sh ./scripts/*.sh

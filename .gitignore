@@ -3,6 +3,7 @@ backups/
 *.tar.gz
 *.sql
 *.sql.gz
+!docker/suitecrm_base_db.sql.gz
 
 # Local station-specific profile overrides (keeps repo white-labeled)
 station_profile.json

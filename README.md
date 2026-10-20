@@ -34,7 +34,7 @@ git clone https://github.com/userxan/Radio-suitecrm.git /opt/suitecrm && cd /opt
 cp .env.example .env && nano .env
 
 # 3. Launch and run master installer:
-docker compose up -d && sudo ./install_radio_crm.sh
+docker compose up -d --build && sudo ./install_radio_crm.sh
 ```
 
 ---

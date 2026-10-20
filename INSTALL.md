@@ -144,7 +144,7 @@ If `station_profile.json` exists in the repository root, the installer will auto
 
 ### 1. Build & Start the Docker Stack
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 Verify that both containers are running:
