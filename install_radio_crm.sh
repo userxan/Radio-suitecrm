@@ -28,6 +28,11 @@ chmod +x \
 # 5. Post-verification backup checkpoint
 "${REPO_DIR}/scripts/backup.sh" verified_release
 
+# 6. Purge test records and any demo data for a 100% clean production system
+echo "[Purge] Leaving system 100% clean and fresh for production use..."
+docker exec radio_crm_web php /opt/radio_crm_repo/scripts/purge_demo_data.php
+docker exec radio_crm_web php /opt/radio_crm_repo/scripts/sync_admin_user.php
+
 echo "============================================================"
 echo "Radio CRM installation and verification COMPLETE!"
 echo "============================================================"

@@ -389,6 +389,12 @@ docker exec -u www-data radio_crm_web php /opt/radio_crm_repo/migrations/007_qui
 docker exec -u www-data radio_crm_web php /var/www/html/bin/console cache:clear
 ```
 
+### Purging Demo / Seed Data for a 100% Fresh Installation
+If you want to clear all sample / preloaded accounts, contacts, leads, opportunities, activities, and test campaigns while preserving the Radio Rate Card catalogue, station settings, and admin user:
+```bash
+docker exec radio_crm_web php /opt/radio_crm_repo/scripts/purge_demo_data.php
+```
+
 ### "Site Could Not Be Reached" Troubleshooting Checklist
 
 If you see **"This site can't be reached"**, **"Connection Refused"**, or **"Connection Timed Out"** in your browser after installation:
