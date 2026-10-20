@@ -20,8 +20,7 @@ curl -fsSL https://raw.githubusercontent.com/userxan/Radio-suitecrm/master/quick
 
 ---
 
-### Manual Install (No Username/Password Needed):
-Because this repository is **public**, you do **not** need a GitHub username, password, or Personal Access Token:
+### Manual Install:
 
 ```bash
 # 1. Clone directly (no password needed):
