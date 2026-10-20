@@ -82,7 +82,12 @@ do
     docker exec -u www-data radio_crm_web php "/opt/radio_crm_repo/migrations/${mig}"
 done
 
-# 6. Clear SuiteCRM 8 Symfony cache and ensure cache ownership
+# 6. Synchronize admin user & credentials from .env into database
+echo "[Deploy] Synchronizing admin credentials..."
+chmod 644 "${REPO_DIR}/.env" 2>/dev/null || true
+docker exec -u www-data radio_crm_web php /opt/radio_crm_repo/scripts/sync_admin_user.php
+
+# 7. Clear SuiteCRM 8 Symfony cache and ensure cache ownership
 echo "[Deploy] Clearing SuiteCRM 8 Symfony cache..."
 docker exec -u www-data radio_crm_web php /var/www/html/bin/console cache:clear
 chown -R 33:33 "${APP_ROOT}/cache" "${APP_ROOT}/public/legacy/cache" "${APP_ROOT}/logs"

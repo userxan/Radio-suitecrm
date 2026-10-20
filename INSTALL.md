@@ -440,3 +440,24 @@ If you see **"This site can't be reached"**, **"Connection Refused"**, or **"Con
      grep '^SUITECRM_SITE_URL=' /opt/suitecrm/.env
      ```
    - Run `./scripts/deploy.sh` to synchronize the URL into SuiteCRM.
+
+### "Invalid Credentials" Troubleshooting Checklist
+
+If logging into SuiteCRM displays **"Invalid credentials"**:
+
+1. **Verify Username Spelling**:
+   - The default username is **`admin`** (check for typos like `adimn`).
+   - If configured as `Xander` or another username in `.env`, try both `admin` and `Xander`.
+
+2. **Synchronize Credentials from `.env` to the Database**:
+   - The base database image seeds a default password hash that may differ from your newly edited `SUITECRM_ADMIN_PASS` in `.env`.
+   - Run the automated admin credential sync script:
+     ```bash
+     docker exec radio_crm_web php /opt/radio_crm_repo/scripts/sync_admin_user.php
+     ```
+   - This immediately hashes `SUITECRM_ADMIN_PASS` (e.g. `1114`) and updates both `admin` and `Xander` in the database with active status and administrator privileges.
+
+3. **Verify Directly in Database (Emergency Reset)**:
+   ```bash
+   docker exec -u www-data radio_crm_web php /opt/radio_crm_repo/scripts/sync_admin_user.php
+   ```
