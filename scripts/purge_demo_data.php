@@ -142,14 +142,47 @@ foreach ($tablesToTruncate as $tbl) {
 }
 echo "  ✓ Cleared {$cleared} demo business tables.\n";
 
-// Remove seed demo users (keep admin, Xander, Lyell)
-$mysqli->query("DELETE FROM users WHERE id LIKE 'seed_%'");
-echo "  ✓ Removed preloaded demo seed users.\n";
+// Remove all secondary and seed demo users, keeping only primary system admin
+$mysqli->query("DELETE FROM users WHERE id != '1'");
+$mysqli->query("UPDATE users SET 
+    user_name = 'admin',
+    first_name = 'System',
+    last_name = 'Administrator',
+    title = 'System Administrator',
+    department = NULL,
+    phone_work = NULL,
+    phone_home = NULL,
+    phone_mobile = NULL,
+    phone_other = NULL,
+    phone_fax = NULL,
+    address_street = NULL,
+    address_city = NULL,
+    address_state = NULL,
+    address_country = NULL,
+    address_postalcode = NULL,
+    status = 'Active',
+    employee_status = 'Active',
+    is_admin = 1,
+    deleted = 0
+WHERE id = '1'");
+echo "  ✓ Removed all secondary and demo users (User ID 1 reset to clean System Administrator).\n";
 
-// Clean orphan email addresses
-$mysqli->query("DELETE FROM email_addr_bean_rel WHERE bean_module != 'Users'");
-$mysqli->query("DELETE FROM email_addresses WHERE id NOT IN (SELECT email_address_id FROM email_addr_bean_rel WHERE deleted = 0)");
-echo "  ✓ Cleaned up demo email addresses.\n";
+// Clean orphan and personal email addresses; establish clean default admin email
+$mysqli->query("DELETE FROM email_addr_bean_rel");
+$mysqli->query("DELETE FROM email_addresses");
+$mysqli->query("INSERT INTO email_addresses (id, email_address, email_address_caps, invalid_email, opt_out, confirm_opt_in, date_created, date_modified, deleted)
+                VALUES ('1', 'admin@radiocrm.local', 'ADMIN@RADIOCRM.LOCAL', 0, 0, 'not-opt-in', NOW(), NOW(), 0)");
+$mysqli->query("INSERT INTO email_addr_bean_rel (id, email_address_id, bean_id, bean_module, primary_address, reply_to_address, date_created, date_modified, deleted)
+                VALUES ('1', '1', '1', 'Users', 1, 0, NOW(), NOW(), 0)");
+echo "  ✓ Cleaned up email addresses and established admin@radiocrm.local.\n";
+
+// Clean orphan user preferences
+$mysqli->query("DELETE FROM user_preferences WHERE assigned_user_id != '1'");
+
+// Sanitize station settings and calendar
+$mysqli->query("UPDATE radio_station_settings SET setting_value = 'traffic@station.local' WHERE setting_key = 'station_email'");
+$mysqli->query("UPDATE radio_station_settings SET setting_value = 'Broadcasting House, Studio 1, Main Campus' WHERE setting_key = 'studio_address'");
+$mysqli->query("TRUNCATE TABLE vcals");
 
 // Reset auto-increment on quotes and invoices
 $mysqli->query("ALTER TABLE aos_quotes AUTO_INCREMENT = 1");

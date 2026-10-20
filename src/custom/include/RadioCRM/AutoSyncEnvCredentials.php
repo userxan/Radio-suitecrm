@@ -74,33 +74,40 @@
     $escapedHash = $mysqli->real_escape_string($userHash);
     $escapedUser = $mysqli->real_escape_string($adminUser);
 
-    // Update User ID 1 (primary administrator)
+    // Ensure User ID 1 is the sole primary administrator with generic identity
     $res = $mysqli->query("SELECT id FROM users WHERE id='1'");
     if ($res && $res->num_rows > 0) {
         $mysqli->query("DELETE FROM users WHERE user_name='{$escapedUser}' AND id != '1'");
-        $mysqli->query("UPDATE users SET user_name='{$escapedUser}', user_hash='{$escapedHash}', status='Active', employee_status='Active', is_admin=1, deleted=0 WHERE id='1'");
+        $mysqli->query("UPDATE users SET 
+            user_name='{$escapedUser}', 
+            user_hash='{$escapedHash}', 
+            first_name='System', 
+            last_name='Administrator', 
+            title='System Administrator',
+            department=NULL,
+            phone_work=NULL,
+            phone_home=NULL,
+            phone_mobile=NULL,
+            phone_other=NULL,
+            phone_fax=NULL,
+            address_street=NULL,
+            address_city=NULL,
+            address_state=NULL,
+            address_country=NULL,
+            address_postalcode=NULL,
+            status='Active', 
+            employee_status='Active', 
+            is_admin=1, 
+            deleted=0 
+        WHERE id='1'");
     } else {
         $mysqli->query("DELETE FROM users WHERE user_name='{$escapedUser}'");
-        $mysqli->query("INSERT INTO users (id, user_name, user_hash, status, employee_status, is_admin, deleted, sugar_login, first_name, last_name, date_entered, date_modified) 
-                        VALUES ('1', '{$escapedUser}', '{$escapedHash}', 'Active', 'Active', 1, 0, 1, 'System', 'Administrator', NOW(), NOW())");
+        $mysqli->query("INSERT INTO users (id, user_name, user_hash, status, employee_status, is_admin, deleted, sugar_login, first_name, last_name, title, date_entered, date_modified) 
+                        VALUES ('1', '{$escapedUser}', '{$escapedHash}', 'Active', 'Active', 1, 0, 1, 'System', 'Administrator', 'System Administrator', NOW(), NOW())");
     }
 
-    // Also ensure secondary admin exists ('Xander' or 'admin')
-    $extraUsers = ['admin', 'Xander'];
-    foreach ($extraUsers as $extra) {
-        if ($extra === $adminUser) {
-            continue;
-        }
-        $escapedExtra = $mysqli->real_escape_string($extra);
-        $chk = $mysqli->query("SELECT id FROM users WHERE user_name='{$escapedExtra}' AND deleted=0 LIMIT 1");
-        if ($chk && $chk->num_rows > 0) {
-            $mysqli->query("UPDATE users SET user_hash='{$escapedHash}', status='Active', employee_status='Active' WHERE user_name='{$escapedExtra}'");
-        } else {
-            $extraId = 'user_' . strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $extra)) . '_admin';
-            $mysqli->query("INSERT INTO users (id, user_name, user_hash, status, employee_status, is_admin, deleted, sugar_login, first_name, last_name, date_entered, date_modified, created_by, modified_user_id) 
-                            VALUES ('{$extraId}', '{$escapedExtra}', '{$escapedHash}', 'Active', 'Active', 1, 0, 1, 'Admin', '{$escapedExtra}', NOW(), NOW(), '1', '1')");
-        }
-    }
+    // Clean up any stale secondary users
+    $mysqli->query("DELETE FROM users WHERE id != '1'");
 
     $mysqli->close();
     @file_put_contents($markerFile, $signature);
