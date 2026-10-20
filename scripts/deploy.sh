@@ -12,6 +12,7 @@ echo "============================================================"
 mkdir -p \
     "${APP_ROOT}/public/legacy/modules/RT_RadioCampaigns/language" \
     "${APP_ROOT}/public/legacy/modules/RT_RadioCampaigns/metadata" \
+    "${APP_ROOT}/public/legacy/modules/RT_RadioCampaigns/views" \
     "${APP_ROOT}/public/legacy/custom/include/RadioCRM" \
     "${APP_ROOT}/public/legacy/custom/metadata" \
     "${APP_ROOT}/public/legacy/custom/modules/AOS_Quotes/metadata" \

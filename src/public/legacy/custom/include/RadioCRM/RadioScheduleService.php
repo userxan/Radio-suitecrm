@@ -1016,7 +1016,7 @@ class RadioScheduleService
                 $origName = trim((string) ($audioInfo['original_name'] ?? 'advert.mp3'));
                 $ext = strtolower((string) pathinfo($origName, PATHINFO_EXTENSION));
                 if ($ext === '') {
-                    $ext = 'mp3';
+                    $ext = (($audioInfo['mime_type'] ?? '') === 'audio/wav') ? 'wav' : 'mp3';
                 }
                 $baseOrig = (string) pathinfo($origName, PATHINFO_FILENAME);
                 $safeOrigBase = self::safeFilenameSegment($baseOrig !== '' ? $baseOrig : 'advert');
@@ -1061,7 +1061,213 @@ class RadioScheduleService
     }
 
     /**
-     * Locate an uploaded MP3 / audio file for an RT_RadioCampaigns record in either
+     * Detect whether an audio file is WAV or MP3 based on filename extension and/or file header.
+     */
+    public static function detectAudioMimeType(string $filename, string $filePath = ''): string
+    {
+        $ext = strtolower((string) pathinfo(trim($filename), PATHINFO_EXTENSION));
+        if ($ext === 'wav' || $ext === 'wave') {
+            return 'audio/wav';
+        }
+        if ($ext === 'mp3') {
+            return 'audio/mpeg';
+        }
+        if ($filePath !== '' && is_file($filePath) && is_readable($filePath)) {
+            $fh = @fopen($filePath, 'rb');
+            if ($fh) {
+                $hdr = (string) @fread($fh, 12);
+                @fclose($fh);
+                if (strlen($hdr) >= 12 && substr($hdr, 0, 4) === 'RIFF' && substr($hdr, 8, 4) === 'WAVE') {
+                    return 'audio/wav';
+                }
+            }
+        }
+        return 'audio/mpeg';
+    }
+
+    /**
+     * Store an uploaded MP3 or WAV file for an RT_RadioCampaigns record in both
+     * legacy upload/ storage and SuiteCRM 8 private_documents_media_objects, and update rt_radiocampaigns.
+     *
+     * @return array{success:bool, message:string, filename?:string, mime_type?:string, source_path?:string}
+     */
+    public static function saveCampaignAudioFile(
+        mixed $db,
+        string $campaignId,
+        string $sourceFilePath,
+        string $originalFilename
+    ): array {
+        $campaignId = trim($campaignId);
+        $originalFilename = trim(basename(str_replace('\\', '/', $originalFilename)));
+        if ($campaignId === '') {
+            return ['success' => false, 'message' => 'Campaign ID is required.'];
+        }
+        if ($sourceFilePath === '' || !is_file($sourceFilePath) || !is_readable($sourceFilePath)) {
+            return ['success' => false, 'message' => 'Uploaded audio file could not be read.'];
+        }
+        $fileSize = (int) @filesize($sourceFilePath);
+        if ($fileSize <= 0) {
+            return ['success' => false, 'message' => 'Uploaded audio file is empty (0 bytes).'];
+        }
+
+        if ($originalFilename === '') {
+            $originalFilename = 'advert.mp3';
+        }
+        $ext = strtolower((string) pathinfo($originalFilename, PATHINFO_EXTENSION));
+        $mimeType = self::detectAudioMimeType($originalFilename, $sourceFilePath);
+        if ($ext === '') {
+            $ext = ($mimeType === 'audio/wav') ? 'wav' : 'mp3';
+            $originalFilename .= '.' . $ext;
+        }
+        if (!in_array($ext, ['mp3', 'wav', 'wave'], true)) {
+            return [
+                'success' => false,
+                'message' => 'Only MP3 (.mp3) and WAV (.wav) audio files are supported.',
+            ];
+        }
+
+        if ($db === null && isset($GLOBALS['db']) && is_object($GLOBALS['db'])) {
+            $db = $GLOBALS['db'];
+        }
+
+        // 1. Store in /var/www/html/public/legacy/upload/<campaignId> for Legacy download.php & DetailView/EditView
+        $legacyUploadDir = '/var/www/html/public/legacy/upload';
+        if (!is_dir($legacyUploadDir)) {
+            @mkdir($legacyUploadDir, 0775, true);
+        }
+        $legacyDest = $legacyUploadDir . '/' . $campaignId;
+        if (realpath($sourceFilePath) !== realpath($legacyDest)) {
+            $tmpLegacy = $legacyDest . '.tmp.' . uniqid('', true);
+            if (@copy($sourceFilePath, $tmpLegacy)) {
+                @rename($tmpLegacy, $legacyDest);
+                @chmod($legacyDest, 0664);
+            } else {
+                @unlink($tmpLegacy);
+            }
+        }
+
+        // 2. Store in /var/www/html/media/documents/YYYY/MM/<uuid> and sync private_documents_media_objects
+        $ymDir = '/var/www/html/media/documents/' . gmdate('Y/m');
+        if (!is_dir($ymDir)) {
+            @mkdir($ymDir, 0775, true);
+        }
+        $mediaUuid = sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            random_int(0, 0xffff),
+            random_int(0, 0xffff),
+            random_int(0, 0xffff),
+            random_int(0, 0x0fff) | 0x4000,
+            random_int(0, 0x3fff) | 0x8000,
+            random_int(0, 0xffff),
+            random_int(0, 0xffff),
+            random_int(0, 0xffff)
+        );
+        $mediaDest = $ymDir . '/' . $mediaUuid;
+        $storedPath = is_file($legacyDest) ? $legacyDest : $sourceFilePath;
+        if (@copy($storedPath, $mediaDest)) {
+            @chmod($mediaDest, 0664);
+            $storedPath = $mediaDest;
+        }
+
+        if (is_object($db) && method_exists($db, 'query')) {
+            $cIdEsc = $db->quote($campaignId);
+            $fnEsc = $db->quote($originalFilename);
+            $mimeEsc = $db->quote($mimeType);
+            $nowUtc = gmdate('Y-m-d H:i:s');
+
+            $db->query(
+                "UPDATE rt_radiocampaigns
+                 SET filename = '{$fnEsc}',
+                     file_mime_type = '{$mimeEsc}',
+                     date_modified = '{$nowUtc}'
+                 WHERE id = '{$cIdEsc}'",
+                false
+            );
+
+            $tblCheck = $db->query("SHOW TABLES LIKE 'private_documents_media_objects'", false);
+            if ($tblCheck && $db->fetchByAssoc($tblCheck)) {
+                $db->query(
+                    "UPDATE private_documents_media_objects
+                     SET deleted = 1, date_modified = '{$nowUtc}'
+                     WHERE parent_type = 'RT_RadioCampaigns'
+                       AND parent_id = '{$cIdEsc}'
+                       AND deleted = 0",
+                    false
+                );
+                $rowUuid = sprintf(
+                    '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+                    random_int(0, 0xffff),
+                    random_int(0, 0xffff),
+                    random_int(0, 0xffff),
+                    random_int(0, 0x0fff) | 0x4000,
+                    random_int(0, 0x3fff) | 0x8000,
+                    random_int(0, 0xffff),
+                    random_int(0, 0xffff),
+                    random_int(0, 0xffff)
+                );
+                $pathEsc = $db->quote($mediaUuid);
+                $db->query(
+                    "INSERT INTO private_documents_media_objects
+                        (id, name, date_entered, date_modified, deleted, file_path, size, mime_type, original_name, parent_type, parent_id, parent_field, temporary)
+                     VALUES
+                        ('{$rowUuid}', '{$fnEsc}', '{$nowUtc}', '{$nowUtc}', 0, '{$pathEsc}', {$fileSize}, '{$mimeEsc}', '{$fnEsc}', 'RT_RadioCampaigns', '{$cIdEsc}', 'file', 0)",
+                    false
+                );
+            }
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Audio file (' . $originalFilename . ') uploaded successfully.',
+            'filename' => $originalFilename,
+            'mime_type' => $mimeType,
+            'source_path' => $storedPath,
+        ];
+    }
+
+    /**
+     * Remove any attached MP3 or WAV audio file for an RT_RadioCampaigns record.
+     */
+    public static function removeCampaignAudioFile(mixed $db, string $campaignId): void
+    {
+        $campaignId = trim($campaignId);
+        if ($campaignId === '') {
+            return;
+        }
+        if ($db === null && isset($GLOBALS['db']) && is_object($GLOBALS['db'])) {
+            $db = $GLOBALS['db'];
+        }
+        $legacyDest = '/var/www/html/public/legacy/upload/' . $campaignId;
+        if (is_file($legacyDest)) {
+            @unlink($legacyDest);
+        }
+        if (is_object($db) && method_exists($db, 'query')) {
+            $cIdEsc = $db->quote($campaignId);
+            $nowUtc = gmdate('Y-m-d H:i:s');
+            $db->query(
+                "UPDATE rt_radiocampaigns
+                 SET filename = '',
+                     file_mime_type = '',
+                     date_modified = '{$nowUtc}'
+                 WHERE id = '{$cIdEsc}'",
+                false
+            );
+            $tblCheck = $db->query("SHOW TABLES LIKE 'private_documents_media_objects'", false);
+            if ($tblCheck && $db->fetchByAssoc($tblCheck)) {
+                $db->query(
+                    "UPDATE private_documents_media_objects
+                     SET deleted = 1, date_modified = '{$nowUtc}'
+                     WHERE parent_type = 'RT_RadioCampaigns'
+                       AND parent_id = '{$cIdEsc}'
+                       AND deleted = 0",
+                    false
+                );
+            }
+        }
+    }
+
+    /**
+     * Locate an uploaded MP3 / WAV audio file for an RT_RadioCampaigns record in either
      * SuiteCRM 8 private_documents_media_objects or legacy upload/ storage.
      *
      * @return array{source_path:string, original_name:string, mime_type:string}|null
@@ -1078,6 +1284,16 @@ class RadioScheduleService
 
         if ($db === null && isset($GLOBALS['db']) && is_object($GLOBALS['db'])) {
             $db = $GLOBALS['db'];
+        }
+
+        // If fallbackFilename is empty, check rt_radiocampaigns.filename
+        if ($fallbackFilename === '' && is_object($db) && method_exists($db, 'query')) {
+            $cIdEsc = $db->quote($campaignId);
+            $fnRes = $db->query("SELECT filename, file_mime_type FROM rt_radiocampaigns WHERE id = '{$cIdEsc}' AND deleted = 0 LIMIT 1", false);
+            $fnRow = $fnRes ? $db->fetchByAssoc($fnRes) : null;
+            if ($fnRow && !empty($fnRow['filename'])) {
+                $fallbackFilename = (string) $fnRow['filename'];
+            }
         }
 
         // 1. Check SuiteCRM 8 private_documents_media_objects table
@@ -1109,10 +1325,15 @@ class RadioScheduleService
                     }
                     foreach ($candidates as $cand) {
                         if (is_file($cand) && is_readable($cand)) {
+                            $origName = (string) ($row['original_name'] ?: ($fallbackFilename ?: 'advert.mp3'));
+                            $mime = (string) ($row['mime_type'] ?? '');
+                            if ($mime === '' || $mime === 'application/octet-stream') {
+                                $mime = self::detectAudioMimeType($origName, $cand);
+                            }
                             return [
                                 'source_path' => $cand,
-                                'original_name' => (string) ($row['original_name'] ?: ($fallbackFilename ?: 'advert.mp3')),
-                                'mime_type' => (string) ($row['mime_type'] ?: 'audio/mpeg'),
+                                'original_name' => $origName,
+                                'mime_type' => $mime,
                             ];
                         }
                     }
@@ -1127,10 +1348,14 @@ class RadioScheduleService
         ];
         foreach ($legacyCandidates as $cand) {
             if (is_file($cand) && is_readable($cand)) {
+                $realCand = realpath($cand) ?: $cand;
+                $mime = self::detectAudioMimeType($fallbackFilename, $realCand);
+                $defaultExt = ($mime === 'audio/wav') ? 'wav' : 'mp3';
+                $origName = $fallbackFilename !== '' ? $fallbackFilename : "campaign_{$campaignId}.{$defaultExt}";
                 return [
-                    'source_path' => realpath($cand) ?: $cand,
-                    'original_name' => $fallbackFilename !== '' ? $fallbackFilename : "campaign_{$campaignId}.mp3",
-                    'mime_type' => 'audio/mpeg',
+                    'source_path' => $realCand,
+                    'original_name' => $origName,
+                    'mime_type' => $mime,
                 ];
             }
         }

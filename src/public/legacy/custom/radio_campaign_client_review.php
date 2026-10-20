@@ -76,10 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Find audio file if available
 $audioInfo = RadioScheduleService::findCampaignAudioFile($db, $campId, (string) ($camp['filename'] ?? ''));
 $hasAudio = is_array($audioInfo) && !empty($audioInfo['source_path']) && file_exists($audioInfo['source_path']);
+$audioMime = $hasAudio ? (string) ($audioInfo['mime_type'] ?? 'audio/mpeg') : 'audio/mpeg';
+$audioOrigName = $hasAudio ? (string) ($audioInfo['original_name'] ?? ($camp['filename'] ?? 'advert.mp3')) : (string) ($camp['filename'] ?? '');
 
 // Serve audio stream if stream=1 requested
 if (isset($_GET['stream']) && $_GET['stream'] === '1' && $hasAudio) {
-    header('Content-Type: audio/mpeg');
+    header('Content-Type: ' . $audioMime);
+    header('Accept-Ranges: bytes');
     header('Content-Length: ' . filesize($audioInfo['source_path']));
     readfile($audioInfo['source_path']);
     exit;
@@ -161,10 +164,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helve
         <h3 style="color:#5E2B83; margin-bottom:8px;">2. Advert Audio Preview</h3>
         <div class="audio-box">
             <audio controls style="width: 100%; max-width: 500px;">
-                <source src="index.php?entryPoint=radio_campaign_client_review&token=<?= htmlspecialchars($token, ENT_QUOTES) ?>&stream=1" type="audio/mpeg">
+                <source src="index.php?entryPoint=radio_campaign_client_review&token=<?= htmlspecialchars($token, ENT_QUOTES) ?>&stream=1" type="<?= htmlspecialchars($audioMime, ENT_QUOTES) ?>">
                 Your browser does not support audio playback.
             </audio>
-            <div style="font-size:12px; color:#57606a; margin-top:8px;">Uploaded File: <?= htmlspecialchars((string) $camp['filename'], ENT_QUOTES) ?></div>
+            <div style="font-size:12px; color:#57606a; margin-top:8px;">Uploaded File: <?= htmlspecialchars($audioOrigName, ENT_QUOTES) ?></div>
         </div>
     <?php endif; ?>
 

@@ -39,3 +39,8 @@ $entry_point_registry['radio_station_dashboard'] = [
     'file' => 'custom/radio_station_dashboard.php',
     'auth' => true,
 ];
+
+$entry_point_registry['upload_campaign_audio'] = [
+    'file' => 'custom/upload_campaign_audio.php',
+    'auth' => true,
+];

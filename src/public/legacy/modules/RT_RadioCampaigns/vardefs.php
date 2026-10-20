@@ -110,6 +110,7 @@ $dictionary['RT_RadioCampaigns'] = [
             'len' => '100',
             'comment' => 'Advert audio attachment MIME type',
             'importable' => false,
+            'inline_edit' => false,
         ],
         'file_url' => [
             'name' => 'file_url',
@@ -122,6 +123,7 @@ $dictionary['RT_RadioCampaigns'] = [
             'reportable' => false,
             'comment' => 'Path to advert audio file',
             'importable' => false,
+            'inline_edit' => false,
         ],
         'file' => [
             'name' => 'file',
@@ -130,8 +132,9 @@ $dictionary['RT_RadioCampaigns'] = [
             'len' => '255',
             'source' => 'non-db',
             'reportable' => true,
-            'comment' => 'Advert MP3 audio file associated with the campaign',
+            'comment' => 'Advert MP3 or WAV audio file associated with the campaign',
             'importable' => false,
+            'inline_edit' => false,
             'metadata' => [
                 'storage_type' => 'private-documents',
             ],
@@ -143,8 +146,19 @@ $dictionary['RT_RadioCampaigns'] = [
             'dbType' => 'varchar',
             'len' => '255',
             'reportable' => true,
-            'comment' => 'Advert MP3 audio file name',
+            'comment' => 'Advert MP3 or WAV audio file name',
             'importable' => false,
+            'inline_edit' => false,
+        ],
+        'show_preview' => [
+            'name' => 'show_preview',
+            'vname' => 'LBL_SHOW_PREVIEW',
+            'type' => 'bool',
+            'source' => 'non-db',
+            'default' => false,
+            'reportable' => false,
+            'importable' => false,
+            'inline_edit' => false,
         ],
         'industry_category' => [
             'name' => 'industry_category',

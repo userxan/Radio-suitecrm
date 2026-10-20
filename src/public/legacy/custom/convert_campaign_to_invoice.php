@@ -7,9 +7,11 @@ if (!defined('sugarEntry') || !sugarEntry) {
 }
 
 require_once 'custom/include/RadioCRM/RadioScheduleService.php';
+require_once 'custom/include/RadioCRM/RadioStationConfigService.php';
 require_once 'custom/modules/AOS_Quotes/RadioQuoteScheduleProducts.php';
 
 use RadioCRM\RadioScheduleService;
+use RadioCRM\RadioStationConfigService;
 
 global $db, $current_user;
 
@@ -24,9 +26,10 @@ if ($recordId === '') {
 
 $cIdEsc = $db->quote($recordId);
 $campRes = $db->query(
-    "SELECT c.*, q.billing_account_id, q.billing_contact_id, q.name AS quote_name, q.id AS quote_id
+    "SELECT c.*, q.billing_account_id, q.billing_contact_id, q.name AS quote_name, q.id AS quote_id,
+            q.subtotal_amount AS q_subtotal, q.tax_amount AS q_tax, q.total_amount AS q_total
      FROM rt_radiocampaigns c
-     LEFT JOIN aos_quotes q ON q.id = c.linked_quote_id
+     LEFT JOIN aos_quotes q ON q.id = c.linked_quote_id AND q.deleted = 0
      WHERE c.id = '{$cIdEsc}' AND c.deleted = 0
      LIMIT 1",
     false
@@ -36,7 +39,36 @@ if (!$camp) {
     die('Campaign record not found.');
 }
 
-$quoteId = (string) ($camp['quote_id'] ?? '');
+$quoteId = (string) ($camp['quote_id'] ?? ($camp['linked_quote_id'] ?? ''));
+if ($quoteId === '') {
+    $jRes = $db->query(
+        "SELECT rt_radiocampaigns_aos_quotesaos_quotes_idb AS quote_id
+         FROM rt_radiocampaigns_aos_quotes_c
+         WHERE rt_radiocampaigns_aos_quotesrt_radiocampaigns_ida = '{$cIdEsc}'
+           AND deleted = 0
+         ORDER BY date_modified DESC
+         LIMIT 1",
+        false
+    );
+    $jRow = $jRes ? $db->fetchByAssoc($jRes) : null;
+    if ($jRow && !empty($jRow['quote_id'])) {
+        $quoteId = (string) $jRow['quote_id'];
+        $qRes = $db->query(
+            "SELECT id, billing_account_id, billing_contact_id, name, subtotal_amount, tax_amount, total_amount
+             FROM aos_quotes WHERE id = '" . $db->quote($quoteId) . "' AND deleted = 0 LIMIT 1",
+            false
+        );
+        $qData = $qRes ? $db->fetchByAssoc($qRes) : null;
+        if ($qData) {
+            $camp['billing_account_id'] = $qData['billing_account_id'];
+            $camp['billing_contact_id'] = $qData['billing_contact_id'];
+            $camp['q_subtotal'] = $qData['subtotal_amount'];
+            $camp['q_tax'] = $qData['tax_amount'];
+            $camp['q_total'] = $qData['total_amount'];
+        }
+    }
+}
+
 $accountId = (string) ($camp['billing_account_id'] ?? '');
 $contactId = (string) ($camp['billing_contact_id'] ?? '');
 $cart = (string) ($camp['myriad_cart_number'] ?: '');
@@ -56,29 +88,42 @@ $nowUtc = gmdate('Y-m-d H:i:s');
 $todayDate = date('Y-m-d');
 $dueDate = date('Y-m-d', strtotime('+30 days'));
 
-// Calculate invoice total based on reconciled spots or total spots
-$totalSpots = (int) ($camp['reconciled_spots'] > 0 ? $camp['reconciled_spots'] : ($camp['number_of_spots'] ?: 1));
-$spotDur = (string) ($camp['spot_length'] ?: '30 sec');
-$durationMult = RadioScheduleService::getDurationMultiplier($spotDur);
-
-// Default 30s rate is ~R350 prime average, or use schedule line items
-$unitPrice = round(350.00 * $durationMult, 2);
+// Fetch quote line items if available
+$quoteLines = [];
 if ($quoteId !== '') {
     $qLinesRes = $db->query(
-        "SELECT product_unit_price FROM aos_products_quotes
-         WHERE parent_type = 'AOS_Quotes' AND parent_id = '" . $db->quote($quoteId) . "' AND deleted = 0 AND product_unit_price > 0
-         LIMIT 1",
+        "SELECT * FROM aos_products_quotes
+         WHERE parent_type = 'AOS_Quotes' AND parent_id = '" . $db->quote($quoteId) . "' AND deleted = 0
+         ORDER BY number ASC",
         false
     );
-    $qLine = $qLinesRes ? $db->fetchByAssoc($qLinesRes) : null;
-    if ($qLine && !empty($qLine['product_unit_price'])) {
-        $unitPrice = round((float) $qLine['product_unit_price'], 2);
+    if ($qLinesRes) {
+        while ($ql = $db->fetchByAssoc($qLinesRes)) {
+            $quoteLines[] = $ql;
+        }
     }
 }
 
-$subtotal = round($totalSpots * $unitPrice, 2);
-$vatAmt = round($subtotal * RadioScheduleService::DEFAULT_VAT_RATE, 2);
-$grandTotal = round($subtotal + $vatAmt, 2);
+// Calculate invoice total based on reconciled spots, quote totals, or campaign spots
+$reconciledSpots = (int) ($camp['reconciled_spots'] ?? 0);
+$totalSpots = (int) ($reconciledSpots > 0 ? $reconciledSpots : ($camp['number_of_spots'] ?: 1));
+$spotDur = (string) ($camp['spot_length'] ?: '30 sec');
+$durationMult = RadioScheduleService::getDurationMultiplier($spotDur);
+
+$unitPrice = round(350.00 * $durationMult, 2);
+if (!empty($quoteLines) && !empty($quoteLines[0]['product_unit_price'])) {
+    $unitPrice = round((float) $quoteLines[0]['product_unit_price'], 2);
+}
+
+if ($reconciledSpots <= 0 && !empty($quoteLines) && (float) ($camp['q_subtotal'] ?? 0) > 0) {
+    $subtotal = round((float) $camp['q_subtotal'], 2);
+    $vatAmt = round((float) ($camp['q_tax'] ?? ($subtotal * RadioScheduleService::DEFAULT_VAT_RATE)), 2);
+    $grandTotal = round((float) ($camp['q_total'] ?? ($subtotal + $vatAmt)), 2);
+} else {
+    $subtotal = round($totalSpots * $unitPrice, 2);
+    $vatAmt = round($subtotal * RadioScheduleService::DEFAULT_VAT_RATE, 2);
+    $grandTotal = round($subtotal + $vatAmt, 2);
+}
 
 $stConfig = RadioStationConfigService::getSettings($db);
 $stName = (string) ($stConfig['station_name'] ?? 'Radio Station');
@@ -124,21 +169,73 @@ if ($invRow) {
         false
     );
 
-    // Add line item with part_number for ICASA & Invoice slot reporting
-    $lineId = RadioQuoteScheduleProducts::generateUuid();
-    $prodName = $stName . ' Commercial Broadcast - ' . $spotDur;
+    $groupId = RadioQuoteScheduleProducts::generateUuid();
     $db->query(
-        "INSERT INTO aos_products_quotes (
-            id, name, part_number, date_entered, date_modified, modified_user_id, created_by,
-            description, deleted, assigned_user_id, parent_type, parent_id,
-            product_qty, product_unit_price, product_total_price, vat, vat_amt
+        "INSERT INTO aos_line_item_groups (
+            id, name, date_entered, date_modified, modified_user_id, created_by,
+            deleted, assigned_user_id, total_amt, discount_amount, subtotal_amount,
+            tax_amount, subtotal_tax_amount, total_amount, parent_type, parent_id, number, currency_id
         ) VALUES (
-            '{$lineId}', '" . $db->quote($prodName) . "', 'MORNING-BUZZ', '{$nowUtc}', '{$nowUtc}', '1', '1',
-            '{$descEsc}', 0, '1', 'AOS_Invoices', '{$invId}',
-            {$totalSpots}, {$unitPrice}, {$subtotal}, '15.0', {$vatAmt}
+            '{$groupId}', 'Broadcast Schedule', '{$nowUtc}', '{$nowUtc}', '1', '1',
+            0, '1', {$subtotal}, 0.00, {$subtotal},
+            {$vatAmt}, {$grandTotal}, {$grandTotal}, 'AOS_Invoices', '{$invId}', 1, '-99'
         )",
         false
     );
+
+    if ($reconciledSpots <= 0 && !empty($quoteLines)) {
+        $lineNum = 1;
+        foreach ($quoteLines as $ql) {
+            $lineId = RadioQuoteScheduleProducts::generateUuid();
+            $lName = $db->quote((string) ($ql['name'] ?? ($stName . ' Commercial Broadcast')));
+            $lPart = $db->quote((string) ($ql['part_number'] ?: 'MORNING-BUZZ'));
+            $lProdId = $db->quote((string) ($ql['product_id'] ?? ''));
+            $lDesc = $db->quote((string) ($ql['description'] ?? $desc));
+            $lQty = (float) ($ql['product_qty'] ?? 1);
+            $lUnit = (float) ($ql['product_unit_price'] ?? $unitPrice);
+            $lTot = (float) ($ql['product_total_price'] ?? round($lQty * $lUnit, 2));
+            $lVat = $db->quote((string) ($ql['vat'] ?? '15.0'));
+            $lVatAmt = (float) ($ql['vat_amt'] ?? round($lTot * RadioScheduleService::DEFAULT_VAT_RATE, 2));
+            $db->query(
+                "INSERT INTO aos_products_quotes (
+                    id, name, part_number, product_id, group_id, number, date_entered, date_modified,
+                    modified_user_id, created_by, description, deleted, assigned_user_id,
+                    parent_type, parent_id, product_qty, product_list_price, product_unit_price,
+                    product_total_price, vat, vat_amt, currency_id
+                ) VALUES (
+                    '{$lineId}', '{$lName}', '{$lPart}', '{$lProdId}', '{$groupId}', {$lineNum}, '{$nowUtc}', '{$nowUtc}',
+                    '1', '1', '{$lDesc}', 0, '1',
+                    'AOS_Invoices', '{$invId}', {$lQty}, {$lUnit}, {$lUnit},
+                    {$lTot}, '{$lVat}', {$lVatAmt}, '-99'
+                )",
+                false
+            );
+            $lineNum++;
+        }
+    } else {
+        // Add line item with part_number for ICASA & Invoice slot reporting
+        $lineId = RadioQuoteScheduleProducts::generateUuid();
+        $prodName = $stName . ' Commercial Broadcast - ' . $spotDur;
+        $db->query(
+            "INSERT INTO aos_products_quotes (
+                id, name, part_number, group_id, number, date_entered, date_modified, modified_user_id, created_by,
+                description, deleted, assigned_user_id, parent_type, parent_id,
+                product_qty, product_list_price, product_unit_price, product_total_price, vat, vat_amt, currency_id
+            ) VALUES (
+                '{$lineId}', '" . $db->quote($prodName) . "', 'MORNING-BUZZ', '{$groupId}', 1, '{$nowUtc}', '{$nowUtc}', '1', '1',
+                '{$descEsc}', 0, '1', 'AOS_Invoices', '{$invId}',
+                {$totalSpots}, {$unitPrice}, {$unitPrice}, {$subtotal}, '15.0', {$vatAmt}, '-99'
+            )",
+            false
+        );
+    }
+
+    if ($quoteId !== '') {
+        $db->query(
+            "UPDATE aos_quotes SET invoice_status = 'Invoiced', date_modified = '{$nowUtc}' WHERE id = '" . $db->quote($quoteId) . "'",
+            false
+        );
+    }
 }
 
 // Redirect to invoice record in SuiteCRM

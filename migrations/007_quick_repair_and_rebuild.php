@@ -19,19 +19,35 @@ if (!defined('sugarEntry')) {
 require_once 'include/entryPoint.php';
 require_once 'modules/Administration/QuickRepairAndRebuild.php';
 
-global $current_user;
+global $current_user, $mod_strings;
 $current_user = BeanFactory::newBean('Users');
 $current_user->getSystemUser();
+$mod_strings = return_module_language('en_us', 'Administration');
 
 echo "[Migration 007] Running SuiteCRM Quick Repair and Rebuild...\n";
 
 $rac = new RepairAndClear();
 $rac->repairAndClearAll(
     ['clearAll'],
-    [$GLOBALS['mod_strings']['LBL_ALL_MODULES'] ?? 'All Modules'],
+    [$mod_strings['LBL_ALL_MODULES'] ?? 'All Modules', 'RT_RadioCampaigns', 'AOS_Quotes', 'AOS_Invoices', 'Administration'],
     true,
     false
 );
+
+// Explicitly purge cached language, theme template, inline editing, and Smarty compiled files for RT_RadioCampaigns
+foreach ([
+    $legacyDir . '/cache/modules/RT_RadioCampaigns/language/*.php',
+    $legacyDir . '/cache/themes/*/modules/RT_RadioCampaigns/*.tpl',
+    $legacyDir . '/cache/include/InlineEditing/*RT_RadioCampaigns*.tpl',
+    $legacyDir . '/cache/smarty/templates_c/*.php',
+] as $globPattern) {
+    foreach (glob($globPattern) ?: [] as $cachedFile) {
+        if (is_file($cachedFile)) {
+            @unlink($cachedFile);
+        }
+    }
+}
+LanguageManager::clearLanguageCache('RT_RadioCampaigns');
 
 require_once 'modules/ACLActions/ACLAction.php';
 ACLAction::addActions('RT_RadioCampaigns', 'module');

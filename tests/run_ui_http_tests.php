@@ -233,6 +233,32 @@ checkUi(
     'vardef=' . ($hasAudioVardef ? 'yes' : 'no') . ', views=' . ($hasAudioInViews ? 'yes' : 'no') . ', audioExport=' . basename($exportedAudioFile)
 );
 
+// 6. Verify RT_RadioCampaigns DetailView Convert to Invoice action & WAV/MP3 audio upload via RadioScheduleService::saveCampaignAudioFile()
+$rcDetailButtonsJson = json_encode($viewdefs['RT_RadioCampaigns']['DetailView']['templateMeta']['form']['buttons'] ?? []);
+$hasRcConvertInvoiceBtn = strpos($rcDetailButtonsJson, 'entryPoint=convert_campaign_to_invoice') !== false
+    && isset($viewdefs['RT_RadioCampaigns']['DetailView']['recordActions']['actions']['radio-campaign-convert-to-invoice']);
+$inlineEditDisabledOnFile = (($rcFieldDefs['file']['inline_edit'] ?? true) === false);
+
+$wavSavedOk = false;
+if (!empty($testCampId)) {
+    $tmpWav = sys_get_temp_dir() . '/test_spot_' . uniqid() . '.wav';
+    // Valid minimal RIFF WAVE header
+    file_put_contents($tmpWav, "RIFF\x24\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x44\xac\x00\x00\x88\x58\x01\x00\x02\x00\x10\x00data\x00\x00\x00\x00");
+    $wavSaveRes = RadioScheduleService::saveCampaignAudioFile($db, $testCampId, $tmpWav, 'Broadcast_Master_Spot.wav');
+    @unlink($tmpWav);
+    $loadedCamp = BeanFactory::getBean('RT_RadioCampaigns', $testCampId);
+    $wavSavedOk = !empty($wavSaveRes['success'])
+        && ($wavSaveRes['mime_type'] ?? '') === 'audio/wav'
+        && ($loadedCamp->file ?? '') === 'Broadcast_Master_Spot.wav'
+        && ($loadedCamp->filename ?? '') === 'Broadcast_Master_Spot.wav';
+}
+
+checkUi(
+    'UI-6: RT_RadioCampaigns exposes Convert to Invoice action, disables broken inline_edit on file, and supports WAV (.wav) + MP3 (.mp3) uploads',
+    $hasRcConvertInvoiceBtn && $inlineEditDisabledOnFile && $wavSavedOk,
+    'convertBtn=' . ($hasRcConvertInvoiceBtn ? 'yes' : 'no') . ', fileInlineEditFalse=' . ($inlineEditDisabledOnFile ? 'yes' : 'no') . ', wavUpload=' . ($wavSavedOk ? 'yes' : 'no')
+);
+
 echo "======================================================================\n";
 if ($failures > 0) {
     echo "UI / Container Verification FAILED ({$failures} failed)\n";
