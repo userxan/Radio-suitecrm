@@ -28,6 +28,9 @@ mkdir -p \
     "${APP_ROOT}/extensions/defaultExt/config/modules/RT_RadioCampaigns/recordview/actions" \
     "${APP_ROOT}/extensions/defaultExt/modules/RT_RadioCampaigns/Process/Service/RecordActions" \
     "${APP_ROOT}/logs/legacy" \
+    "${APP_ROOT}/media/documents" \
+    "${APP_ROOT}/public/legacy/upload" \
+    "/srv/myriad_exports/myriad_audio" \
     "/srv/myriad_exports/myriad_daily_logs" \
     "/srv/myriad_exports/myriad_reconciliation" \
     "/srv/radio_crm_backups"
@@ -46,12 +49,14 @@ rsync -a "${REPO_DIR}/src/" "${APP_ROOT}/"
 chown -R 33:33 \
     "${APP_ROOT}/cache" \
     "${APP_ROOT}/public" \
+    "${APP_ROOT}/media" \
     "${APP_ROOT}/extensions/defaultExt" \
     "${APP_ROOT}/logs" \
     "${APP_ROOT}/.env.local" \
     "${APP_ROOT}/public/legacy/config.php" \
+    "${APP_ROOT}/public/legacy/upload" \
     "/srv/myriad_exports"
-chmod -R 2775 "/srv/myriad_exports"
+chmod -R 2775 "/srv/myriad_exports" "${APP_ROOT}/media" "${APP_ROOT}/public/legacy/upload"
 
 # 5. Run PHP syntax checks on all custom & migration PHP files
 echo "[Deploy] Running PHP syntax checks..."

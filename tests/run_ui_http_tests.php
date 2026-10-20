@@ -77,10 +77,23 @@ $app_list_strings = return_app_list_strings_language('en_us');
 $mod_strings = return_module_language('en_us', 'AOS_Quotes');
 $theme = 'SuiteP';
 
-// Find the test Quote created during acceptance tests
-$qRes = $db->query("SELECT id FROM aos_quotes WHERE name = 'Test Radio Advert Quote' AND deleted = 0 ORDER BY date_entered DESC LIMIT 1", false);
+// Find or restore the test Quote created during acceptance tests
+$qRes = $db->query("SELECT id FROM aos_quotes WHERE name = 'Test Radio Advert Quote' ORDER BY date_entered DESC LIMIT 1", false);
 $qRow = $qRes ? $db->fetchByAssoc($qRes) : null;
 $testQuoteId = (string) ($qRow['id'] ?? '');
+
+if ($testQuoteId !== '') {
+    $db->query("UPDATE aos_quotes SET deleted = 0 WHERE id = '" . $db->quote($testQuoteId) . "'", false);
+} else {
+    $qBean = BeanFactory::newBean('AOS_Quotes');
+    $qBean->name = 'Test Radio Advert Quote';
+    $qBean->stage = 'Draft';
+    $qBean->campaign_start_date_c = '2026-06-15';
+    $qBean->campaign_end_date_c = '2026-06-27';
+    $qBean->tue_specialty_show_2_2100_2200_c = 1;
+    $qBean->thu_music_unlimited_0400_0500_c = 2;
+    $testQuoteId = (string) $qBean->save();
+}
 
 $_REQUEST['module'] = 'AOS_Quotes';
 $_REQUEST['action'] = 'EditView';
@@ -180,10 +193,27 @@ $hasAudioInViews = strpos($editPanelsJson, '"file"') !== false
     && strpos($detailPanelsJson, '"file"') !== false;
 
 // Simulate an uploaded MP3 in private_documents_media_objects for the test campaign and verify exportCampaignToMyriad copies it to /srv/myriad_exports/myriad_audio/
-$cRes = $db->query("SELECT id, name, start_date, end_date, spot_length, myriad_cart_number, quote_reference, linked_quote_id FROM rt_radiocampaigns WHERE linked_quote_id = '" . $db->quote($testQuoteId) . "' AND deleted = 0 LIMIT 1", false);
+$cRes = $db->query("SELECT id, name, start_date, end_date, spot_length, myriad_cart_number, quote_reference, linked_quote_id FROM rt_radiocampaigns WHERE (linked_quote_id = '" . $db->quote($testQuoteId) . "' OR name = 'Radio Campaign - Test Radio Advert Quote') ORDER BY date_entered DESC LIMIT 1", false);
 $cRow = $cRes ? $db->fetchByAssoc($cRes) : null;
 $audioExportedOk = false;
 $exportedAudioFile = '';
+
+if ($cRow && !empty($cRow['id'])) {
+    $db->query("UPDATE rt_radiocampaigns SET deleted = 0, linked_quote_id = '" . $db->quote($testQuoteId) . "' WHERE id = '" . $db->quote($cRow['id']) . "'", false);
+} else {
+    $cBean = BeanFactory::newBean('RT_RadioCampaigns');
+    $cBean->name = 'Radio Campaign - Test Radio Advert Quote';
+    $cBean->start_date = '2026-06-15';
+    $cBean->end_date = '2026-06-27';
+    $cBean->number_of_spots = 6;
+    $cBean->spot_length = '30 sec';
+    $cBean->status = 'Draft';
+    $cBean->myriad_cart_number = '1';
+    $cBean->linked_quote_id = $testQuoteId;
+    $cId = (string) $cBean->save();
+    $cRes = $db->query("SELECT id, name, start_date, end_date, spot_length, myriad_cart_number, quote_reference, linked_quote_id FROM rt_radiocampaigns WHERE id = '" . $db->quote($cId) . "' LIMIT 1", false);
+    $cRow = $cRes ? $db->fetchByAssoc($cRes) : null;
+}
 
 if ($cRow && !empty($cRow['id'])) {
     $testCampId = (string) $cRow['id'];
@@ -191,10 +221,21 @@ if ($cRow && !empty($cRow['id'])) {
     if (!is_dir($ymDir)) {
         @mkdir($ymDir, 0775, true);
     }
+    $fakeMp3Content = "ID3\x03\x00\x00\x00\x00\x00\x0aTIT2\x00\x00\x00\x02\x00\x00\x00A\xff\xfb\x90\x64" . str_repeat("\x00", 128);
+
     $fakeMediaUuid = '01a15099-mp30-7000-8000-' . substr(md5($testCampId), 0, 12);
     $fakeMp3Path = $ymDir . '/' . $fakeMediaUuid;
-    // Write a valid minimal MP3 ID3v2 header + frame
-    file_put_contents($fakeMp3Path, "ID3\x03\x00\x00\x00\x00\x00\x0aTIT2\x00\x00\x00\x02\x00\x00\x00A\xff\xfb\x90\x64" . str_repeat("\x00", 128));
+    @file_put_contents($fakeMp3Path, $fakeMp3Content);
+
+    // Also write to legacy upload/<testCampId> as fallback
+    $legacyUpDir = '/var/www/html/public/legacy/upload';
+    if (!is_dir($legacyUpDir)) {
+        @mkdir($legacyUpDir, 0775, true);
+    }
+    @file_put_contents($legacyUpDir . '/' . $testCampId, $fakeMp3Content);
+
+    // Ensure myriad_audio directory exists
+    @mkdir('/srv/myriad_exports/myriad_audio', 0775, true);
 
     $mediaRowId = '1f1cb299-mp30-6000-9000-' . substr(md5($testCampId), 0, 12);
     $nowStr = gmdate('Y-m-d H:i:s');
@@ -206,6 +247,9 @@ if ($cRow && !empty($cRow['id'])) {
             ('{$mediaRowId}', 'Radio_Promo_Spot.mp3', '{$nowStr}', '{$nowStr}', 0, '{$fakeMediaUuid}', 164, 'audio/mpeg', 'Radio_Promo_Spot.mp3', 'RT_RadioCampaigns', '" . $db->quote($testCampId) . "', 'file', 0)",
         false
     );
+
+    $cRow['filename'] = 'Radio_Promo_Spot.mp3';
+    $db->query("UPDATE rt_radiocampaigns SET filename = 'Radio_Promo_Spot.mp3', file_mime_type = 'audio/mpeg' WHERE id = '" . $db->quote($testCampId) . "'", false);
 
     $qCstmRes = $db->query("SELECT * FROM aos_quotes_cstm WHERE id_c = '" . $db->quote($testQuoteId) . "'", false);
     $qCstmRow = ($qCstmRes ? $db->fetchByAssoc($qCstmRes) : null) ?: [];
