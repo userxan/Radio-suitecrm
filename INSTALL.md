@@ -467,3 +467,21 @@ If logging into SuiteCRM displays **"Invalid credentials"**:
    ```bash
    docker exec -u www-data radio_crm_web php /opt/radio_crm_repo/scripts/sync_admin_user.php
    ```
+
+### Resetting "Too Many Failed Attempts" / Rate Limiter Lockout
+
+If you tried multiple incorrect passwords and see **"Too many failed login attempts, please try again later"**:
+
+Run the automated lockout reset script:
+```bash
+sudo /opt/suitecrm/scripts/reset_login_lockout.sh
+```
+Or run the commands individually:
+```bash
+# Clear Symfony rate limiter pool and cached tokens
+docker exec radio_crm_web php /var/www/html/bin/console cache:pool:clear cache.rate_limiter
+docker exec radio_crm_web rm -rf /var/www/html/cache/prod/pools/system/*
+
+# Synchronize admin credentials and reset login attempts
+docker exec radio_crm_web php /opt/radio_crm_repo/scripts/sync_admin_user.php
+```

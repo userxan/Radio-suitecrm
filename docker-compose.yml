@@ -43,6 +43,9 @@ services:
       DB_NAME: ${DB_NAME:-suitecrm_db}
       DB_USER: ${DB_USER:-suitecrm_user}
       DB_PASS: ${DB_PASS}
+      LOGIN_THROTTLING_MAX_ATTEMPTS: ${LOGIN_THROTTLING_MAX_ATTEMPTS:-100}
+      LOGIN_THROTTLING_IP_LOGIN_MAX_ATTEMPTS: ${LOGIN_THROTTLING_IP_LOGIN_MAX_ATTEMPTS:-500}
+      LOGIN_THROTTLING_INTERVAL: ${LOGIN_THROTTLING_INTERVAL:-1 minute}
       TZ: ${TZ:-Africa/Johannesburg}
     volumes:
       - /var/www/html:/var/www/html
